@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { SPELLS } from '../data/spellsData.js';
+import { SPELLS } from './spells';
 import { Sparkles, Search, Info, Check } from 'lucide-react';
 
 export function SpellSelectionStep({ character, onUpdate }) {
