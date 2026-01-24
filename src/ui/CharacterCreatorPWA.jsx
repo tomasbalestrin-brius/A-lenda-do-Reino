@@ -2,172 +2,163 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Shield, Sword, Scroll, Sparkles, ChevronRight, 
-  ChevronLeft, Check, Info, Dices, Save 
+  ChevronLeft, Check, Info, Dices, Save, Plus, Minus 
 } from 'lucide-react';
 
-// DADOS EMBUTIDOS PARA GARANTIR O BUILD
-const RACES = [
-  { id: 'humano', name: 'Humano', description: 'Versáteis e adaptáveis.', type: 'Versátil' },
-  { id: 'anao', name: 'Anão', description: 'Resistentes e tradicionais.', type: 'Resistente' },
-  { id: 'elfo', name: 'Elfo', description: 'Graciosos e mágicos.', type: 'Mágico' },
-  { id: 'dahllan', name: 'Dahllan', description: 'Meio-plantas guardiões da natureza.', type: 'Natureza' },
-  { id: 'lefou', name: 'Lefou', description: 'Tocados pela Tormenta.', type: 'Aberração' },
-  { id: 'qareen', name: 'Qareen', description: 'Meio-gênios bondosos.', type: 'Mágico' }
-];
-
-const CLASSES = [
-  { id: 'guerreiro', name: 'Guerreiro', pv: 20, pm: 3, role: 'Combate' },
-  { id: 'mago', name: 'Mago', pv: 8, pm: 6, role: 'Magia', hasSpells: true },
-  { id: 'clerigo', name: 'Clérigo', pv: 16, pm: 5, role: 'Suporte', hasSpells: true },
-  { id: 'paladino', name: 'Paladino', pv: 20, pm: 4, role: 'Tanque' },
-  { id: 'ladino', name: 'Ladino', pv: 12, pm: 4, role: 'Especialista' }
-];
-
-const ORIGINS = [
-  { id: 'acólito', name: 'Acólito', description: 'Criado em um templo.' },
-  { id: 'artesão', name: 'Artesão', description: 'Mestre em um ofício.' },
-  { id: 'eremita', name: 'Eremita', description: 'Viveu isolado do mundo.' }
-];
-
-// Componente de Card Estilizado
-const SelectionCard = ({ title, subtitle, selected, onClick, icon, badge }) => (
-  <motion.button
-    whileHover={{ scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={onClick}
-    className={`w-full p-4 rounded-2xl border-2 text-left transition-all relative overflow-hidden mb-3 ${
-      selected 
-        ? 'border-amber-500 bg-amber-500/10 shadow-[0_0_15px_rgba(245,158,11,0.2)]' 
-        : 'border-slate-800 bg-slate-900/50 hover:border-slate-700'
-    }`}
-  >
-    <div className="flex justify-between items-start relative z-10">
-      <div>
-        <h3 className={`font-bold text-lg ${selected ? 'text-amber-400' : 'text-slate-100'}`}>{title}</h3>
-        <p className="text-xs text-slate-400 mt-1 line-clamp-2">{subtitle}</p>
-      </div>
-      {badge && <span className="bg-slate-800 text-[10px] px-2 py-1 rounded-full text-slate-300 uppercase tracking-wider">{badge}</span>}
-    </div>
-    {selected && (
-      <motion.div 
-        layoutId="active-glow"
-        className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none"
-      />
-    )}
-  </motion.button>
-);
+// IMPORTAÇÃO DOS MÓDULOS REAIS
+import { RACES } from './racesData'; 
+import { CLASSES } from './classesData';
+import { ORIGINS } from './originsData';
+// Tabela de custos oficial de T20 (Livro Jogo do Ano)
+const ATTRIBUTE_COSTS = {
+  '-2': -4, '-1': -2, '0': 0, '1': 1, '2': 2, '3': 5, '4': 9, '5': 14
+};
 
 export function CharacterCreatorPWA({ onComplete }) {
   const [step, setStep] = useState(1);
   const [character, setCharacter] = useState({
-    name: '', race: null, class: null, origin: null,
-    attributes: { for: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-    powers: [], spells: []
+    name: '',
+    race: null,
+    class: null,
+    origin: null,
+    attributes: { for: 0, des: 0, con: 0, int: 0, sab: 0, car: 0 },
+    points: 10, // Você começa com 10 pontos em T20
   });
 
   const steps = [
-    { id: 1, title: 'Conceito', icon: User },
-    { id: 2, title: 'Raça', icon: Sparkles },
-    { id: 3, title: 'Classe', icon: Sword },
-    { id: 4, title: 'Origem', icon: Scroll },
-    { id: 5, title: 'Atributos', icon: Dices },
-    { id: 6, title: 'Revisão', icon: Shield }
+    { id: 1, title: 'Identidade', icon: <User size={20} /> },
+    { id: 2, title: 'Atributos', icon: <Dices size={20} /> },
+    { id: 3, title: 'Raça', icon: <Shield size={20} /> },
+    { id: 4, title: 'Classe', icon: <Sword size={20} /> },
+    { id: 5, title: 'Revisão', icon: <Check size={20} /> }
   ];
 
-  const nextStep = () => setStep(prev => Math.min(prev + 1, steps.length));
-  const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
+  // Lógica de Compra de Pontos
+  const updateAttribute = (attr, delta) => {
+    const currentValue = character.attributes[attr];
+    const newValue = currentValue + delta;
+
+    if (newValue < -2 || newValue > 5) return;
+
+    const currentCost = ATTRIBUTE_COSTS[currentValue.toString()];
+    const newCost = ATTRIBUTE_COSTS[newValue.toString()];
+    const costDiff = newCost - currentCost;
+
+    if (character.points >= costDiff) {
+      setCharacter({
+        ...character,
+        attributes: { ...character.attributes, [attr]: newValue },
+        points: character.points - costDiff
+      });
+    }
+  };
+
+  // Calcula o atributo final somando os bônus de raça
+  const getFinalAttribute = (attr) => {
+    let base = character.attributes[attr];
+    if (character.race?.attributeBonus?.fixed) {
+      base += (character.race.attributeBonus.fixed[attr] || 0);
+    }
+    return base;
+  };
+
+  const nextStep = () => setStep(s => Math.min(s + 1, steps.length));
+  const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
   const renderStep = () => {
-    switch(step) {
+    switch (step) {
       case 1:
         return (
-          <div className="space-y-6">
-            <div className="bg-slate-900/80 p-6 rounded-3xl border border-slate-800">
-              <label className="block text-sm font-medium text-slate-400 mb-2 uppercase tracking-widest">Nome do Herói</label>
-              <input
-                type="text"
-                value={character.name}
-                onChange={(e) => setCharacter({...character, name: e.target.value})}
-                placeholder="Ex: Valeros de Arton"
-                className="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-4 text-xl text-white focus:border-amber-500 outline-none transition-all"
-              />
-            </div>
+          <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800">
+            <label className="block text-amber-500 text-sm font-bold mb-4 uppercase tracking-widest">Nome do Herói</label>
+            <input
+              type="text"
+              value={character.name}
+              onChange={(e) => setCharacter({ ...character, name: e.target.value })}
+              placeholder="Ex: Valeros de Arton"
+              className="w-full bg-slate-950 border-2 border-slate-800 rounded-2xl p-4 text-white focus:border-amber-500 outline-none transition-all"
+            />
           </div>
         );
       case 2:
         return (
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-            {RACES.map(race => (
-              <SelectionCard
-                key={race.id}
-                title={race.name}
-                subtitle={race.description}
-                selected={character.race?.id === race.id}
-                onClick={() => setCharacter({...character, race})}
-                badge={race.type}
-              />
-            ))}
+          <div className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex justify-between items-center">
+              <span className="text-amber-500 font-bold uppercase text-sm">Pontos Disponíveis</span>
+              <span className="text-2xl font-black text-amber-500">{character.points}</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {Object.keys(character.attributes).map(attr => (
+                <div key={attr} className="bg-slate-900/50 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+                  <div>
+                    <span className="text-white font-bold uppercase">{attr}</span>
+                    <p className="text-[10px] text-slate-500">Final: <span className="text-amber-500">{getFinalAttribute(attr)}</span></p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => updateAttribute(attr, -1)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700"><Minus size={16} /></button>
+                    <span className="text-xl font-bold text-white w-8 text-center">{character.attributes[attr]}</span>
+                    <button onClick={() => updateAttribute(attr, 1)} className="p-2 bg-slate-800 rounded-lg hover:bg-slate-700"><Plus size={16} /></button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         );
       case 3:
         return (
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-            {CLASSES.map(cls => (
-              <SelectionCard
-                key={cls.id}
-                title={cls.name}
-                subtitle={`PV: ${cls.pv} | PM: ${cls.pm}`}
-                selected={character.class?.id === cls.id}
-                onClick={() => setCharacter({...character, class: cls})}
-                badge={cls.role}
-              />
+          <div className="grid grid-cols-1 gap-3">
+            {RACES.map(race => (
+              <button
+                key={race.id}
+                onClick={() => setCharacter({ ...character, race })}
+                className={`p-4 rounded-2xl border-2 text-left transition-all ${character.race?.id === race.id ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-900/50'}`}
+              >
+                <h3 className="font-bold text-white">{race.name}</h3>
+                <p className="text-xs text-slate-400 mt-1">{race.description}</p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {race.abilities.map(a => (
+                    <span key={a.name} className="text-[9px] bg-slate-800 text-amber-500 px-2 py-0.5 rounded-full border border-amber-500/20">{a.name}</span>
+                  ))}
+                </div>
+              </button>
             ))}
           </div>
         );
       case 4:
         return (
-          <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-            {ORIGINS.map(origin => (
-              <SelectionCard
-                key={origin.id}
-                title={origin.name}
-                subtitle={origin.description}
-                selected={character.origin?.id === origin.id}
-                onClick={() => setCharacter({...character, origin})}
-              />
+          <div className="grid grid-cols-1 gap-3">
+            {CLASSES.map(cls => (
+              <button
+                key={cls.id}
+                onClick={() => setCharacter({ ...character, class: cls })}
+                className={`p-4 rounded-2xl border-2 text-left transition-all ${character.class?.id === cls.id ? 'border-amber-500 bg-amber-500/10' : 'border-slate-800 bg-slate-900/50'}`}
+              >
+                <div className="flex justify-between items-center">
+                  <h3 className="font-bold text-white">{cls.name}</h3>
+                  <span className="text-[10px] text-amber-500 font-bold">PV {cls.pv} | PM {cls.pm}</span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">{cls.description}</p>
+              </button>
             ))}
           </div>
         );
       case 5:
         return (
-          <div className="bg-slate-900/80 p-6 rounded-3xl border border-slate-800 space-y-4">
-            {Object.entries(character.attributes).map(([attr, val]) => (
-              <div key={attr} className="flex items-center justify-between bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                <span className="uppercase font-bold text-slate-300 w-12">{attr}</span>
-                <div className="flex items-center gap-6">
-                  <button onClick={() => setCharacter({...character, attributes: {...character.attributes, [attr]: Math.max(8, val - 1)}})} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xl font-bold">-</button>
-                  <span className="text-2xl font-black text-amber-500 w-8 text-center">{val}</span>
-                  <button onClick={() => setCharacter({...character, attributes: {...character.attributes, [attr]: Math.min(20, val + 1)}})} className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-xl font-bold">+</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        );
-      case 6:
-        return (
-          <div className="space-y-4">
-            <div className="bg-amber-500/10 p-6 rounded-3xl border-2 border-amber-500/30">
-              <h2 className="text-3xl font-black text-white mb-1">{character.name || 'Herói Sem Nome'}</h2>
-              <p className="text-amber-500 font-bold uppercase tracking-widest text-sm">
-                {character.race?.name} {character.class?.name}
-              </p>
+          <div className="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 space-y-6">
+            <div className="border-b border-slate-800 pb-4">
+              <h2 className="text-2xl font-bold text-white">{character.name || 'Herói Sem Nome'}</h2>
+              <p className="text-amber-500 font-bold uppercase text-xs tracking-widest">{character.race?.name} {character.class?.name}</p>
             </div>
-            <button
-              onClick={() => onComplete(character)}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-5 rounded-2xl flex items-center justify-center gap-3 text-xl shadow-lg shadow-amber-500/20 transition-all mt-6"
-            >
-              <Save size={24} />
-              FINALIZAR PERSONAGEM
+            <div className="grid grid-cols-3 gap-2">
+              {Object.keys(character.attributes).map(attr => (
+                <div key={attr} className="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-center">
+                  <p className="text-[10px] text-slate-500 uppercase font-bold">{attr}</p>
+                  <p className="text-xl font-bold text-white">{getFinalAttribute(attr)}</p>
+                </div>
+              ))}
+            </div>
+            <button onClick={() => onComplete(character)} className="w-full p-5 rounded-2xl bg-amber-500 text-slate-950 font-bold flex items-center justify-center gap-2 shadow-xl shadow-amber-500/20">
+              <Save size={20} /> Finalizar Personagem
             </button>
           </div>
         );
@@ -176,34 +167,45 @@ export function CharacterCreatorPWA({ onComplete }) {
   };
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-[#020617] text-slate-100 p-4 pb-24 font-sans">
-      <header className="flex items-center justify-between mb-8 pt-4">
+    <div className="min-h-screen bg-[#020617] text-slate-200 p-4 pb-32">
+      <header className="max-w-md mx-auto pt-8 pb-12 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-black tracking-tighter text-white">CRIADOR</h1>
-          <p className="text-[10px] text-amber-500 font-bold tracking-[0.2em] uppercase">A Lenda do Reino</p>
+          <h1 className="text-3xl font-black text-white tracking-tighter uppercase">Criador</h1>
+          <p className="text-amber-500 text-xs font-bold tracking-[0.3em] uppercase">A Lenda do Reino</p>
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+        <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20">
           <Shield className="text-slate-950" size={24} />
         </div>
       </header>
-      <div className="flex gap-1 mb-8">
-        {steps.map((s, idx) => (
-          <div key={s.id} className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${idx + 1 <= step ? 'bg-amber-500' : 'bg-slate-800'}`} />
-        ))}
+
+      <div className="max-w-md mx-auto mb-8">
+        <div className="flex justify-between mb-4">
+          {steps.map(s => (
+            <div key={s.id} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${step === s.id ? 'bg-white text-slate-950 scale-110 shadow-lg' : step > s.id ? 'bg-amber-500 text-slate-950' : 'bg-slate-900 text-slate-500'}`}>
+              {step > s.id ? <Check size={18} /> : s.icon}
+            </div>
+          ))}
+        </div>
+        <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
+          <motion.div className="h-full bg-amber-500" initial={{ width: 0 }} animate={{ width: `${(step / steps.length) * 100}%` }} />
+        </div>
       </div>
-      <AnimatePresence mode="wait">
-        <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-          {renderStep()}
-        </motion.div>
-      </AnimatePresence>
+
+      <main className="max-w-md mx-auto">
+        <AnimatePresence mode="wait">
+          <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+            {renderStep()}
+          </motion.div>
+        </AnimatePresence>
+      </main>
+
       <footer className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-[#020617] via-[#020617] to-transparent">
         <div className="max-w-md mx-auto flex gap-3">
           {step > 1 && (
             <button onClick={prevStep} className="p-5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-300"><ChevronLeft size={24} /></button>
           )}
-          <button onClick={nextStep} disabled={step === steps.length} className="flex-1 p-5 rounded-2xl font-bold flex items-center justify-center gap-2 bg-white text-slate-950">
-            {step === steps.length ? 'Revisão Final' : 'Próximo Passo'}
-            <ChevronRight size={20} />
+          <button onClick={nextStep} disabled={step === steps.length} className="flex-1 p-5 rounded-2xl font-bold flex items-center justify-center gap-2 bg-white text-slate-950 shadow-lg shadow-white/5">
+            {step === steps.length ? 'Revisão Final' : 'Próximo Passo'} <ChevronRight size={20} />
           </button>
         </div>
       </footer>
