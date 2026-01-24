@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RACES } from '../data/data-races.js';
-import { CLASSES } from '../data/data-classes.js';
-import { ORIGINS } from '../data/data-origins.js';
-import { GENERAL_POWERS } from '../data/data-powers.js';
+import { RACES } from './data-races.js';
+import { CLASSES } from './data-classes.js';
+import { ORIGINS } from './data-origins.js';
+import { GENERAL_POWERS } from './data-powers.js';
 import { 
   User, 
   Shield, 
