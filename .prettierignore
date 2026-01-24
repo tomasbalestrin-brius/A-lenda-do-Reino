@@ -1,0 +1,9 @@
+﻿node_modules
+build
+dist
+The Lost Vikings
+src/data/Ameaças.jsx
+src/data/geradordeambientes.jsx
+src/data/Geradordehistoria.jsx
+src/data/npc.jsx
+src/data/pericias.jsx

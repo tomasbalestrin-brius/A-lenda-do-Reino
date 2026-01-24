@@ -1,0 +1,15 @@
+﻿node_modules
+dist
+build
+**/*.cjs
+scripts/**
+src/legacy/**
+# ignore everything then re-include vertical slice
+src/**
+!src/core/**
+!src/ui/**
+!src/canvas/**
+!src/combat/**
+!src/index.css
+!src/App.jsx
+!src/main.jsx
