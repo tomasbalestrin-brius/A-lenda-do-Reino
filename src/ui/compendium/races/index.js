@@ -11,13 +11,12 @@ import { hynne } from './hynne';
 import { osteon } from './osteon';
 import { trog } from './trog';
 import { tritao } from './tritao';
-import { medusa } from './medusa';
 import { aggelus } from './aggelus';
 import { sulfure } from './sulfure';
 
 export const RACES = [
   humano, anao, elfo, dahllan, goblin, 
   lefou, minotauro, qareen, golem, hynne,
-  osteon, trog, tritao, sereia, medusa,
+  osteon, trog, tritao, sereia,
   aggelus, sulfure
 ];
