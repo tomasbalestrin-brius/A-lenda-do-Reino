@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 
 // Importando nossa nova biblioteca modular
-import { RACES } from './data/races';
-import { CLASSES } from './data/classes';
-import { ORIGINS } from './data/origins';
-import { SKILLS } from './data/skills';
-import { POWERS } from './data/powers';
+import { RACES } from './compendium/races';
+import { CLASSES } from './compendium/classes';
+import { ORIGINS } from './compendium/origins';
+import { SKILLS } from './compendium/skills';
+import { POWERS } from './compendium/powers';
 
 const CharacterCreatorPWA = () => {
   const [step, setStep] = useState(1);
