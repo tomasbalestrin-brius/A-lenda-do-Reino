@@ -1,10 +1,10 @@
 import { arcanista } from './arcanista';
-import { barbaro } from './barbaro';
+import { barbaro } from './classe-barbaro';
 import { bardo } from './bardo';
 import { bucaneiro } from './bucaneiro';
 import { cacador } from './classe-cacador'; // NOME NOVO AQUI
 import { cavaleiro } from './cavaleiro';
-import { clerigo } from './clerigo';
+import { clerigo } from './classe-clerigo';
 import { druida } from './druida';
 import { guerreiro } from './guerreiro';
 import { inventor } from './inventor';
