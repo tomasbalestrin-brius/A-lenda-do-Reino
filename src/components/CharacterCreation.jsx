@@ -21,9 +21,9 @@ const ATTR_EFFECTS = {
 
 const RACE_ICONS = {
   humano: '🧑', anao: '⛏️', elfo: '🌟', dahllan: '🌺',
-  lefou: '💀', qareen: '💎', minotauro: '🐂', hynne: '🎯',
-  golem: '⚙️', osteon: '☠️', trog: '🦎', kliren: '🔬',
-  medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
+  goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
+  hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
+  kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
 };
 
 const CLASS_ICONS = {
@@ -134,20 +134,23 @@ function computeStats(char) {
   const DES = attrs.DES;
   const FOR = attrs.FOR;
 
-  // PV = vidaInicial(classe) + CON (+ bônus raciais)
+  // PV = vidaInicial(classe) + CON (+ bônus raciais passivos)
   let pv = (cls?.vidaInicial || 10) + CON;
+  // Anão: Duro como Pedra → +3 PV no 1º nível
   if (raceData?.habilidades?.some(h => h.nome === 'Duro como Pedra')) pv += 3;
   if (origem?.beneficio?.includes('+2 PV')) pv += 2;
 
-  // PM = pm(classe) * nível + atributo mental
+  // PM = pm(classe) + atributo mental
   const pmKey = PM_ATTR_MAP[char.classe] || 'SAB';
   let pm = (cls?.pm || 3) + attrs[pmKey];
-  if (raceData?.habilidades?.some(h => h.nome === 'Herança Arcaica')) pm += 1;
+  // Elfo: Sangue Mágico → +1 PM por nível (nível 1 = +1)
+  if (raceData?.habilidades?.some(h => h.nome === 'Sangue Mágico')) pm += 1;
 
-  // DEF = 10 + DES + bônus de armadura/racial
+  // DEF = 10 + DES + bônus passivos raciais (apenas os que não custam ação/PM)
   let def = 10 + DES;
-  ['Pele de Árvore', 'Couro Rígido', 'Chassi', 'Pele de Escamas'].forEach(n => {
-    if (raceData?.habilidades?.some(h => h.nome === n)) def += 2;
+  // Minotauro: Couro Rígido +1, Golem: Chassi +2, Trog: Reptiliano +1
+  raceData?.habilidades?.forEach(h => {
+    if (h.bonus?.def) def += h.bonus.def;
   });
 
   // ATK = FOR (ou DES para caçador) + bônus de proficiência nível 1 (+2)
@@ -432,20 +435,27 @@ function StepRace({ char, onChange }) {
         })}
       </div>
 
+      {/* Picker para raças com bônus de escolha (Humano, Lefou, Osteon, Sereia) */}
       {hasEscolha && (
         <div className="bg-blue-900/20 border border-blue-700/40 rounded-xl p-3">
           <p className="text-sm text-blue-300 font-semibold mb-2">
-            Escolha {selectedRace.atributos.escolha} atributos para +{selectedRace.atributos.valor}:
+            Escolha {selectedRace.atributos.escolha} atributos para +{selectedRace.atributos.valor}
+            {selectedRace.escolhaRestricao?.length > 0 && (
+              <span className="text-red-400 text-xs ml-1">(exceto {selectedRace.escolhaRestricao.map(k => ATTR_LABELS[k]).join(', ')})</span>
+            )}:
           </p>
           <div className="flex flex-wrap gap-2">
             {ATTR_KEYS.map(k => {
+              const isRestricted = selectedRace.escolhaRestricao?.includes(k);
               const isChosen = char.racaEscolha?.includes(k);
               const maxChoices = selectedRace.atributos.escolha;
-              const canAdd = !isChosen && (char.racaEscolha?.length || 0) < maxChoices;
+              const canAdd = !isChosen && !isRestricted && (char.racaEscolha?.length || 0) < maxChoices;
               return (
                 <button
                   key={k}
+                  disabled={isRestricted}
                   onClick={() => {
+                    if (isRestricted) return;
                     const current = char.racaEscolha || [];
                     const next = isChosen
                       ? current.filter(x => x !== k)
@@ -453,7 +463,8 @@ function StepRace({ char, onChange }) {
                     onChange({ racaEscolha: next });
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${
-                    isChosen ? 'bg-blue-700 border-blue-500 text-white'
+                    isRestricted ? 'bg-gray-900 border-gray-800 text-gray-700 cursor-not-allowed line-through'
+                    : isChosen ? 'bg-blue-700 border-blue-500 text-white'
                     : canAdd ? 'bg-gray-800 border-gray-600 text-gray-300 hover:border-blue-500'
                     : 'bg-gray-900 border-gray-700 text-gray-600 cursor-not-allowed'
                   }`}
@@ -464,6 +475,29 @@ function StepRace({ char, onChange }) {
             })}
           </div>
           <p className="text-[11px] text-blue-400/70 mt-1">{char.racaEscolha?.length || 0}/{selectedRace.atributos.escolha} escolhidos</p>
+        </div>
+      )}
+
+      {/* Picker de variante para Suraggel */}
+      {selectedRace?.atributos?.variante && selectedRace.variantes && (
+        <div className="bg-purple-900/20 border border-purple-700/40 rounded-xl p-3">
+          <p className="text-sm text-purple-300 font-semibold mb-2">Escolha sua linhagem:</p>
+          <div className="flex gap-2">
+            {Object.entries(selectedRace.variantes).map(([varId, varData]) => (
+              <button
+                key={varId}
+                onClick={() => onChange({ racaVariante: varId })}
+                className={`flex-1 p-3 rounded-xl border text-left transition-all ${
+                  char.racaVariante === varId
+                    ? 'border-purple-500 bg-purple-900/30 text-purple-200'
+                    : 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-purple-600'
+                }`}
+              >
+                <p className="font-bold text-sm">{varData.nome}</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">{varData.descricao}</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>
