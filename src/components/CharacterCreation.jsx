@@ -66,26 +66,49 @@ const SPRITE_MAP = {
 };
 
 const STEP_LABELS = ['Raça', 'Classe', 'Origem', 'Divindade', 'Atributos', 'Perícias', 'Revisão'];
-const POINT_POOL = 20;
-const ATTR_MIN = 8;
-const ATTR_MAX = 18;
+
+// T20: atributos começam em 0, o valor JÁ É o modificador
+// Custo total por valor: -2→+2pts, -1→+1pt, 0→0, 1→1pt, 2→2pts, 3→4pts, 4→7pts
+const POINT_POOL = 10;
+const ATTR_MIN = -2;
+const ATTR_MAX = 4;
+const ATTR_TOTAL_COST = { '-2': -2, '-1': -1, '0': 0, '1': 1, '2': 2, '3': 4, '4': 7 };
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────
 
-function calcMod(v) { return Math.floor(((parseInt(v, 10) || 10) - 10) / 2); }
-function modStr(v) { const m = calcMod(v); return (m >= 0 ? '+' : '') + m; }
+// T20: o valor do atributo JÁ É o modificador — não precisa calcular
+function signStr(v) { const n = parseInt(v, 10) || 0; return (n >= 0 ? '+' : '') + n; }
 
-function getRaceAttrBonus(raceData, escolha) {
+// Custo incremental para aumentar v em 1 (negativo = ganha pontos)
+function costToIncrease(v) {
+  const cur = ATTR_TOTAL_COST[String(v)] ?? 0;
+  const nxt = ATTR_TOTAL_COST[String(v + 1)] ?? 99;
+  return nxt - cur;
+}
+
+// Pontos gastos no pool por um atributo com valor v
+function attrPointCost(v) { return ATTR_TOTAL_COST[String(v)] ?? 0; }
+
+function getRaceAttrBonus(raceData, escolha, variante) {
   const a = raceData?.atributos || {};
   const out = { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 };
   const keyMap = { forca: 'FOR', destreza: 'DES', constituicao: 'CON', inteligencia: 'INT', sabedoria: 'SAB', carisma: 'CAR' };
+
+  // Suraggel com variantes (Aggelus/Sulfure)
+  if (a.variante && variante && raceData.variantes?.[variante]) {
+    const va = raceData.variantes[variante].atributos || {};
+    Object.entries(va).forEach(([k, v]) => { const m = keyMap[k]; if (m) out[m] += v; });
+    return out;
+  }
+
   Object.entries(a).forEach(([k, v]) => {
-    if (k === 'escolha' || k === 'valor') return;
+    if (k === 'escolha' || k === 'valor' || k === 'variante') return;
     const mapped = keyMap[k];
     if (mapped) out[mapped] += v;
   });
+  // "Escolha" races: +valor em atributos escolhidos
   if (a.escolha && a.valor && escolha) {
     escolha.forEach(k => { if (out[k] !== undefined) out[k] += a.valor; });
   }
@@ -96,52 +119,53 @@ function computeStats(char) {
   const cls = CLASSES[char.classe] || null;
   const raceData = RACES[char.raca] || null;
   const origem = ORIGENS[char.origem] || null;
-  const raceBonus = getRaceAttrBonus(raceData, char.racaEscolha);
+  const raceBonus = getRaceAttrBonus(raceData, char.racaEscolha, char.racaVariante);
 
+  // T20: atributos base (0 por padrão) + bônus racial + bônus de origem
   const attrs = {};
   ATTR_KEYS.forEach(k => {
-    let val = (char.atributos[k] || 10) + (raceBonus[k] || 0);
+    let val = (char.atributos[k] || 0) + (raceBonus[k] || 0);
     if (origem?.atributos?.[k]) val += origem.atributos[k];
     attrs[k] = val;
   });
 
-  const modCON = calcMod(attrs.CON);
-  const modDES = calcMod(attrs.DES);
-  const modFOR = calcMod(attrs.FOR);
+  // T20: valor do atributo É diretamente o modificador
+  const CON = attrs.CON;
+  const DES = attrs.DES;
+  const FOR = attrs.FOR;
 
-  let pv = (cls?.vidaInicial || 10) + modCON;
+  // PV = vidaInicial(classe) + CON (+ bônus raciais)
+  let pv = (cls?.vidaInicial || 10) + CON;
   if (raceData?.habilidades?.some(h => h.nome === 'Duro como Pedra')) pv += 3;
   if (origem?.beneficio?.includes('+2 PV')) pv += 2;
 
+  // PM = pm(classe) * nível + atributo mental
   const pmKey = PM_ATTR_MAP[char.classe] || 'SAB';
-  let pm = (cls?.pm || 3) + calcMod(attrs[pmKey]);
+  let pm = (cls?.pm || 3) + attrs[pmKey];
   if (raceData?.habilidades?.some(h => h.nome === 'Herança Arcaica')) pm += 1;
 
-  let def = 10 + modDES;
+  // DEF = 10 + DES + bônus de armadura/racial
+  let def = 10 + DES;
   ['Pele de Árvore', 'Couro Rígido', 'Chassi', 'Pele de Escamas'].forEach(n => {
     if (raceData?.habilidades?.some(h => h.nome === n)) def += 2;
   });
 
+  // ATK = FOR (ou DES para caçador) + bônus de proficiência nível 1 (+2)
   const isRanged = char.classe === 'cacador';
-  const atk = (isRanged ? modDES : modFOR) + 2;
-  const ini = modDES;
-  const fort = modCON;
-  const ref = modDES;
-  const von = calcMod(attrs.SAB);
+  const atk = (isRanged ? DES : FOR) + 2;
+  const ini = DES;
+  const fort = CON;
+  const ref = DES;
+  const von = attrs.SAB;
 
-  let pontosUsados = 0;
-  let pontosLiberados = 0;
-  ATTR_KEYS.forEach(k => {
-    const v = char.atributos[k] || 10;
-    if (v > 10) pontosUsados += (v - 10);
-    else if (v < 10) pontosLiberados += (10 - v);
-  });
+  // Pontos disponíveis: POINT_POOL menos o custo total de todos os atributos base
+  const pontosGastos = ATTR_KEYS.reduce((sum, k) => sum + attrPointCost(char.atributos[k] || 0), 0);
 
   return {
     attrs, raceBonus,
     pv: Math.max(1, pv), pm: Math.max(0, pm),
     def, atk, ini, fort, ref, von,
-    pontosDisponiveis: POINT_POOL - pontosUsados + pontosLiberados,
+    pontosDisponiveis: POINT_POOL - pontosGastos,
   };
 }
 
@@ -176,9 +200,11 @@ function getInitialChar() {
     classe: 'guerreiro',
     origem: '',
     deus: '',
-    atributos: { FOR: 10, DES: 10, CON: 10, INT: 10, SAB: 10, CAR: 10 },
+    // T20: todos os atributos começam em 0
+    atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
     pericias: [],
-    racaEscolha: ['FOR', 'DES', 'CON'],
+    racaEscolha: ['FOR', 'DES', 'CON'], // para raças com "escolha"
+    racaVariante: 'aggelus',             // para suraggel
   };
 }
 
@@ -245,17 +271,18 @@ function CharacterPreview({ char, stats }) {
         <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Atributos</p>
         <div className="grid grid-cols-3 gap-1.5">
           {ATTR_KEYS.map(k => {
+            const base = char.atributos[k] || 0;
             const bonus = stats.raceBonus[k] || 0;
             const total = stats.attrs[k];
-            const mod = calcMod(total);
             return (
               <div key={k} className="flex flex-col items-center bg-gray-900/80 rounded-lg py-2 px-1">
                 <span className="text-[9px] text-gray-500 uppercase tracking-widest">{k}</span>
-                <span className="text-lg font-bold text-white leading-none mt-0.5">{total}</span>
-                <span className={`text-sm font-bold ${mod >= 0 ? 'text-amber-400' : 'text-red-400'}`}>{modStr(total)}</span>
+                <span className={`text-xl font-bold leading-none mt-0.5 ${total >= 0 ? 'text-amber-400' : 'text-red-400'}`}>
+                  {signStr(total)}
+                </span>
                 {bonus !== 0 && (
                   <span className={`text-[9px] mt-0.5 ${bonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    {bonus > 0 ? `+${bonus}` : bonus}
+                    {signStr(base)}{bonus > 0 ? `+${bonus}` : bonus}
                   </span>
                 )}
               </div>
@@ -644,10 +671,11 @@ function StepAttributes({ char, onChange, stats }) {
   const remaining = stats.pontosDisponiveis;
 
   function handleChange(key, delta) {
-    const current = char.atributos[key] || 10;
+    const current = char.atributos[key] || 0;
     const next = current + delta;
     if (next < ATTR_MIN || next > ATTR_MAX) return;
-    if (delta > 0 && remaining <= 0) return;
+    // Custo para aumentar: se não há pontos suficientes, bloqueia
+    if (delta > 0 && costToIncrease(current) > remaining) return;
     onChange({ atributos: { ...char.atributos, [key]: next } });
   }
 
@@ -656,7 +684,10 @@ function StepAttributes({ char, onChange, stats }) {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-amber-400 mb-1">Atributos</h2>
-          <p className="text-gray-400 text-sm">Distribua {POINT_POOL} pontos. Mín {ATTR_MIN}, Máx {ATTR_MAX} (antes do bônus racial).</p>
+          <p className="text-gray-400 text-sm">
+            Distribua <strong className="text-amber-400">{POINT_POOL} pontos</strong>. Todos começam em 0.
+            Custo: +1 e +2 = 1pt cada, +3 = 2pts, +4 = 3pts. Reduzir a –1 ou –2 recupera 1pt cada.
+          </p>
         </div>
         <div className={`flex flex-col items-center bg-gray-800 border rounded-xl px-4 py-2 shrink-0 ${remaining > 0 ? 'border-amber-600/60' : remaining === 0 ? 'border-green-700/60' : 'border-red-700/60'}`}>
           <span className={`text-2xl font-bold ${remaining > 0 ? 'text-amber-400' : remaining === 0 ? 'text-green-400' : 'text-red-400'}`}>{remaining}</span>
@@ -666,11 +697,11 @@ function StepAttributes({ char, onChange, stats }) {
 
       <div className="flex flex-col gap-2">
         {ATTR_KEYS.map(key => {
-          const base = char.atributos[key] || 10;
+          const base = char.atributos[key] || 0;
           const bonus = stats.raceBonus[key] || 0;
           const total = stats.attrs[key];
-          const mod = calcMod(total);
-          const canIncrease = base < ATTR_MAX && remaining > 0;
+          const increaseCost = costToIncrease(base);
+          const canIncrease = base < ATTR_MAX && increaseCost <= remaining;
           const canDecrease = base > ATTR_MIN;
           const isPmAttr = PM_ATTR_MAP[char.classe] === key;
           const isAtkAttr = (char.classe === 'cacador' && key === 'DES') || (char.classe !== 'cacador' && key === 'FOR');
@@ -693,9 +724,17 @@ function StepAttributes({ char, onChange, stats }) {
                   >−</button>
 
                   <div className="flex-1 text-center">
-                    <div className="text-2xl font-bold text-white">{total}</div>
+                    {/* T20: o valor base já é o modificador */}
+                    <div className={`text-2xl font-bold ${base >= 0 ? 'text-white' : 'text-red-400'}`}>
+                      {signStr(base)}
+                    </div>
                     {bonus !== 0 && (
-                      <div className="text-[10px] text-gray-500">base {base} {bonus > 0 ? `+${bonus}` : bonus} raça</div>
+                      <div className={`text-xs font-semibold ${bonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {bonus > 0 ? `+${bonus}` : bonus} raça → <span className="text-white">{signStr(total)}</span>
+                      </div>
+                    )}
+                    {increaseCost > 0 && canIncrease && (
+                      <div className="text-[9px] text-amber-600/70 mt-0.5">{increaseCost}pt p/ +1</div>
                     )}
                   </div>
 
@@ -706,11 +745,6 @@ function StepAttributes({ char, onChange, stats }) {
                       canIncrease ? 'bg-amber-700 hover:bg-amber-600 text-white' : 'bg-gray-900 text-gray-700 cursor-not-allowed'
                     }`}
                   >+</button>
-                </div>
-
-                <div className={`w-14 text-center bg-gray-900 rounded-lg py-2 border ${mod >= 0 ? 'border-amber-700/40' : 'border-red-700/40'}`}>
-                  <div className={`text-lg font-bold ${mod >= 0 ? 'text-amber-400' : 'text-red-400'}`}>{modStr(total)}</div>
-                  <div className="text-[9px] text-gray-500">mod</div>
                 </div>
               </div>
 
