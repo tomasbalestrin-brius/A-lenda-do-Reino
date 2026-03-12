@@ -818,16 +818,33 @@ function StepAttributes({ char, onChange, stats }) {
 // STEP 5 — PERÍCIAS
 // ─────────────────────────────────────────────────────────────
 
-function StepPericias({ char, onChange }) {
+function StepPericias({ char, onChange, stats }) {
   const cls = CLASSES[char.classe];
   const origem = ORIGENS[char.origem];
   const originSkills = origem?.pericias || [];
-  const maxPericias = cls?.pericias || 2;
+
+  // Perícias obrigatórias da classe (podem ter "ou": [['Luta','Pontaria'], 'Fortitude'])
+  const rawObrig = cls?.periciasObrigatorias || [];
+  const fixedObrig = rawObrig.filter(s => typeof s === 'string');
+  const orChoices = rawObrig.filter(s => Array.isArray(s)); // ex: ['Luta','Pontaria']
+
+  // Escolha das "ou" obrigatórias fica em char.periciasObrigEscolha
+  const obrigEscolhas = char.periciasObrigEscolha || {};
+  const chosenObrig = orChoices.map((opts, i) => obrigEscolhas[i] || opts[0]);
+  const allMandatory = [...new Set([...fixedObrig, ...chosenObrig])];
+
+  // Bônus de INT: se INT > 0, jogador ganha INT perícias extras de qualquer lista
+  const intBonus = Math.max(0, stats?.attrs?.INT || 0);
+
+  const maxPericias = (cls?.pericias || 2) + intBonus;
   const classSkills = cls?.periciasClasse || [];
   const available = maxPericias - char.pericias.length;
 
+  // Todas as perícias locadas (obrigatórias + origem + escolhidas)
+  const lockedSkills = [...new Set([...allMandatory, ...originSkills])];
+
   function toggle(skill) {
-    if (originSkills.includes(skill)) return;
+    if (lockedSkills.includes(skill)) return;
     const has = char.pericias.includes(skill);
     if (has) {
       onChange({ pericias: char.pericias.filter(p => p !== skill) });
@@ -841,13 +858,52 @@ function StepPericias({ char, onChange }) {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-bold text-amber-400 mb-1">Perícias</h2>
-          <p className="text-gray-400 text-sm">Escolha em quais perícias seu personagem é treinado.</p>
+          <p className="text-gray-400 text-sm">
+            Escolha em quais perícias seu personagem é treinado.
+            {intBonus > 0 && <span className="text-green-400 ml-1">+{intBonus} extra (INT {signStr(stats?.attrs?.INT)})</span>}
+          </p>
         </div>
         <div className={`flex flex-col items-center bg-gray-800 border rounded-xl px-4 py-2 shrink-0 ${available > 0 ? 'border-amber-600/60' : 'border-green-700/60'}`}>
           <span className={`text-2xl font-bold ${available > 0 ? 'text-amber-400' : 'text-green-400'}`}>{available}</span>
           <span className="text-[11px] text-gray-400">restantes</span>
         </div>
       </div>
+
+      {/* Escolha das perícias "ou" obrigatórias */}
+      {orChoices.length > 0 && (
+        <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-3">
+          <p className="text-[11px] text-amber-300 font-semibold mb-2">🔒 Perícia obrigatória — escolha uma:</p>
+          {orChoices.map((opts, i) => (
+            <div key={i} className="flex gap-2">
+              {opts.map(opt => (
+                <button
+                  key={opt}
+                  onClick={() => onChange({ periciasObrigEscolha: { ...obrigEscolhas, [i]: opt } })}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${
+                    (obrigEscolhas[i] || opts[0]) === opt
+                      ? 'border-amber-500 bg-amber-900/30 text-amber-300'
+                      : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-600'
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Obrigatórias fixas da classe */}
+      {allMandatory.length > 0 && (
+        <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-3">
+          <p className="text-[11px] text-gray-400 font-semibold mb-2">🔒 Automáticas da classe ({cls?.nome}):</p>
+          <div className="flex flex-wrap gap-1">
+            {allMandatory.map(s => (
+              <span key={s} className="text-[11px] bg-amber-900/40 text-amber-300 border border-amber-700/40 px-2 py-1 rounded-lg">{s}</span>
+            ))}
+          </div>
+        </div>
+      )}
 
       {originSkills.length > 0 && (
         <div className="bg-blue-900/20 border border-blue-700/40 rounded-xl p-3">
@@ -1171,7 +1227,7 @@ export function CharacterCreation({ onComplete }) {
           {step === 2 && <StepOrigin char={char} onChange={updateChar} />}
           {step === 3 && <StepDeus char={char} onChange={updateChar} />}
           {step === 4 && <StepAttributes char={char} onChange={updateChar} stats={stats} />}
-          {step === 5 && <StepPericias char={char} onChange={updateChar} />}
+          {step === 5 && <StepPericias char={char} onChange={updateChar} stats={stats} />}
           {step === 6 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
         </div>
 
