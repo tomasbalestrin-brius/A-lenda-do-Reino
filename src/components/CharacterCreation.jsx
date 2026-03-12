@@ -370,7 +370,7 @@ function StepRace({ char, onChange }) {
         <p className="text-gray-400 text-sm">Sua raça define atributos raciais e habilidades inatas permanentes.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {races.map(([id, race]) => {
           const isSelected = char.raca === id;
           const bonuses = attrBonusDisplay(race);
@@ -457,7 +457,7 @@ function StepClass({ char, onChange }) {
         <p className="text-gray-400 text-sm">Sua classe define estilo de jogo, PV, PM e habilidades únicas.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {classes.map(([id, cls]) => {
           const isSelected = char.classe === id;
           const role = CLASS_ROLE[id] || 'Aventureiro';
@@ -796,7 +796,7 @@ function StepPericias({ char, onChange }) {
         <p className="text-sm text-gray-300 mb-2">
           Escolha <span className="text-amber-400 font-bold">{maxPericias}</span> perícias da lista da {cls?.nome}:
         </p>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
           {classSkills.map(skill => {
             const isOrigin = originSkills.includes(skill);
             const isChosen = char.pericias.includes(skill);
@@ -936,7 +936,7 @@ function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
             <p className="text-sm">Crie seu primeiro herói para começar a aventura.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             {characters.map((char, idx) => {
               const cls = CLASSES[char.classe];
               const race = RACES[char.raca];
@@ -1003,6 +1003,7 @@ export function CharacterCreation({ onComplete }) {
   const [view, setView] = useState('library');
   const [step, setStep] = useState(0);
   const [char, setChar] = useState(getInitialChar);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [savedChars, setSavedChars] = useState(() => {
     try { return JSON.parse(localStorage.getItem('lenda_personagens') || '[]'); }
     catch { return []; }
@@ -1071,12 +1072,14 @@ export function CharacterCreation({ onComplete }) {
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col">
       {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/60 px-6 py-3 flex items-center justify-between">
-        <button onClick={() => setView('library')} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors">
-          ← Biblioteca
+      <div className="border-b border-gray-800 bg-gray-900/60 px-4 lg:px-6 py-3 flex items-center justify-between gap-2">
+        <button onClick={() => setView('library')} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors shrink-0">
+          ← <span className="hidden sm:inline">Biblioteca</span>
         </button>
-        <h1 className="text-sm font-bold text-amber-400 tracking-wider uppercase">Criação de Personagem — T20</h1>
-        <div className="flex items-center gap-2">
+        <h1 className="text-xs sm:text-sm font-bold text-amber-400 tracking-wider uppercase truncate">
+          <span className="hidden sm:inline">Criação de Personagem — </span>T20
+        </h1>
+        <div className="flex items-center gap-1.5 shrink-0">
           {STEP_LABELS.map((label, i) => (
             <button key={i} onClick={() => i < step && setStep(i)} title={label} className="flex flex-col items-center gap-0.5">
               <div className={`w-2 h-2 rounded-full transition-all ${i < step ? 'bg-green-500' : i === step ? 'bg-amber-400 scale-125' : 'bg-gray-700'}`} />
@@ -1094,7 +1097,7 @@ export function CharacterCreation({ onComplete }) {
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Step content */}
-        <div className="flex-1 overflow-y-auto p-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
           {step === 0 && <StepRace char={char} onChange={updateChar} />}
           {step === 1 && <StepClass char={char} onChange={updateChar} />}
           {step === 2 && <StepOrigin char={char} onChange={updateChar} />}
@@ -1104,8 +1107,8 @@ export function CharacterCreation({ onComplete }) {
           {step === 6 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
         </div>
 
-        {/* Right: Live preview */}
-        <div className="w-72 shrink-0 border-l border-gray-800 bg-gray-900/40 p-4 overflow-hidden flex flex-col">
+        {/* Right: Live preview — desktop only */}
+        <div className="hidden lg:flex w-72 shrink-0 border-l border-gray-800 bg-gray-900/40 p-4 overflow-hidden flex-col">
           <p className="text-[11px] text-gray-600 uppercase tracking-widest mb-3 font-semibold shrink-0">Personagem</p>
           <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
             <CharacterPreview char={char} stats={stats} />
@@ -1113,8 +1116,42 @@ export function CharacterCreation({ onComplete }) {
         </div>
       </div>
 
+      {/* Mobile: floating preview button */}
+      <button
+        onClick={() => setPreviewOpen(true)}
+        className="lg:hidden fixed bottom-20 right-4 z-40 flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-gray-900 font-bold text-sm px-4 py-2.5 rounded-full shadow-lg shadow-amber-900/40 transition-all"
+      >
+        👁 Personagem
+        <span className="bg-gray-900/30 rounded-full px-1.5 py-0.5 text-xs font-semibold">
+          {stats.pv}PV
+        </span>
+      </button>
+
+      {/* Mobile: preview drawer */}
+      {previewOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-50 bg-black/70 flex items-end"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div
+            className="w-full bg-gray-900 border-t border-gray-700 rounded-t-2xl p-4 max-h-[85vh] overflow-y-auto"
+            style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm font-bold text-amber-400 uppercase tracking-widest">Personagem</p>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="w-8 h-8 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-lg text-gray-400 hover:text-white transition-all"
+              >✕</button>
+            </div>
+            <CharacterPreview char={char} stats={stats} />
+          </div>
+        </div>
+      )}
+
       {/* Footer navigation */}
-      <div className="border-t border-gray-800 bg-gray-900/60 px-6 py-3 flex items-center justify-between">
+      <div className="border-t border-gray-800 bg-gray-900/60 px-4 lg:px-6 py-3 flex items-center justify-between">
         <button
           onClick={handleBack}
           className="px-5 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 text-sm font-semibold transition-all"
