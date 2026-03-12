@@ -51,12 +51,15 @@ const ROLE_COLORS = {
   Social: 'bg-yellow-900 text-yellow-200', Paladino: 'bg-amber-900 text-amber-200',
 };
 
+// Atributo que é somado ao PM da classe (além do valor base da classe)
 const PM_ATTR_MAP = {
   arcanista: 'INT', inventor: 'INT',
   clerigo: 'SAB', druida: 'SAB', cacador: 'SAB',
-  bardo: 'CAR', bucaneiro: 'CAR', cavaleiro: 'CAR', nobre: 'CAR', paladino: 'CAR',
-  barbaro: 'CON', guerreiro: 'CON', lutador: 'CON',
-  ladino: 'DES',
+  bardo: 'CAR', // bardo soma CAR ao PM total
+  bucaneiro: null, cavaleiro: null, nobre: null, // sem bônus de atributo no PM
+  paladino: null,
+  barbaro: null, guerreiro: null, lutador: null, // PM 3×nível sem bônus
+  ladino: null,
 };
 
 const SPRITE_MAP = {
@@ -140,9 +143,9 @@ function computeStats(char) {
   if (raceData?.habilidades?.some(h => h.nome === 'Duro como Pedra')) pv += 3;
   if (origem?.beneficio?.includes('+2 PV')) pv += 2;
 
-  // PM = pm(classe) + atributo mental
-  const pmKey = PM_ATTR_MAP[char.classe] || 'SAB';
-  let pm = (cls?.pm || 3) + attrs[pmKey];
+  // PM = pm(classe) + atributo mental (se houver)
+  const pmKey = PM_ATTR_MAP[char.classe];
+  let pm = (cls?.pm || 3) + (pmKey ? (attrs[pmKey] || 0) : 0);
   // Elfo: Sangue Mágico → +1 PM por nível (nível 1 = +1)
   if (raceData?.habilidades?.some(h => h.nome === 'Sangue Mágico')) pm += 1;
 

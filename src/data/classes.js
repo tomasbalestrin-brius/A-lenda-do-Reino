@@ -52,56 +52,79 @@ export const CLASSES = {
     pm: 3,
     pericias: 4,
     periciasObrigatorias: ['Fortitude', 'Luta'],
-    periciasClasse: ["Adestramento", "Atletismo", "Cavalgar", "Iniciativa", "Intimidação", "Ofício", "Percepção", "Pontaria", "Reflexos", "Sobrevivência"],
-    proficiencias: ["Armas Marciais", "Armaduras Médias"],
+    periciasClasse: ["Adestramento", "Atletismo", "Cavalgar", "Iniciativa", "Intimidação", "Ofício", "Percepção", "Pontaria", "Sobrevivência", "Vontade"],
+    proficiencias: ["Armas Marciais", "Escudos"],
     atributoChave: "Força",
     habilidades: {
       1: [
         {
-          nome: "Fúria",
-          descricao: "Você pode entrar em fúria como uma ação livre. Enquanto em fúria: +2 em testes de ataque e rolagens de dano corpo a corpo, mas não pode usar magias. A fúria dura até o fim da cena ou você decide encerrar."
-        },
-        {
-          nome: "Instinto Selvagem",
-          descricao: "+2 em Percepção e Sobrevivência. Você nunca fica surpreendido."
+          nome: "Fúria +2",
+          descricao: "Você pode gastar 2 PM para invocar uma fúria selvagem. Você recebe +2 em testes de ataque e rolagens de dano corpo a corpo, mas não pode fazer ações que exijam calma (Furtividade ou magias). A cada 5 níveis, pode gastar +1 PM extra para aumentar os bônus em +1. A fúria termina se ao fim da rodada você não atacou nem foi alvo de efeito hostil."
         }
       ],
-      2: [{ nome: "Poder de Bárbaro", descricao: "Escolha um poder da lista de poderes de bárbaro." }]
+      2: [{ nome: "Poder de Bárbaro", descricao: "Escolha um poder da lista de poderes de bárbaro." }],
+      3: [{ nome: "Instinto Selvagem +1", descricao: "+1 em Percepção e Reflexos. A cada seis níveis, este bônus aumenta em +1." }],
+      5: [{ nome: "Redução de Dano 2", descricao: "Você ignora parte de seus ferimentos. Recebe redução de dano 2. A cada 3 níveis, aumenta em 2 (máximo RD 10 no 17º nível)." }],
+      6: [{ nome: "Fúria +3", descricao: "O bônus de Fúria aumenta para +3 (gastando 3PM). Pode gastar +1PM por +1 extra." }],
+      11: [{ nome: "Fúria +4", descricao: "O bônus de Fúria aumenta para +4." }],
+      16: [{ nome: "Fúria +5", descricao: "O bônus de Fúria aumenta para +5." }],
+      20: [{ nome: "Fúria Titânica", descricao: "O bônus de Fúria é dobrado (ex: gastando 8PM, recebe +10 em vez de +5 em ataque e dano)." }]
     },
     poderes: [
-      { nome: "Pele de Aço", descricao: "Enquanto em fúria, você recebe redução de dano 2." },
-      { nome: "Fúria Ampliada", descricao: "Os bônus da sua fúria aumentam para +4 em ataque e dano." },
-      { nome: "Aumento de Atributo", descricao: "+1 em um atributo." }
+      { nome: "Alma de Bronze", descricao: "Quando entra em fúria, recebe PV temporários = nível + Força." },
+      { nome: "Destruidor", descricao: "Com arma corpo a corpo de duas mãos, pode rolar novamente resultados 1 ou 2 nas rolagens de dano.", prereq: "For 1" },
+      { nome: "Espírito Inquebrável", descricao: "Enquanto em fúria, não fica inconsciente a 0PV (morre apenas com -metade dos PV máximos).", prereq: "Alma de Bronze" },
+      { nome: "Esquiva Sobrenatural", descricao: "Seus instintos estão tão apurados que você nunca fica surpreendido." },
+      { nome: "Força Indomável", descricao: "Gasta 1PM para somar nível em um teste de Força ou Atletismo (após rolar, antes do resultado)." },
+      { nome: "Golpe Poderoso", descricao: "Ao acertar ataque corpo a corpo, gasta 1PM para causar um dado extra de dano do mesmo tipo." },
+      { nome: "Frenesi", descricao: "Uma vez por rodada, se em fúria e usar ação agredir, gasta 2PM para fazer ataque adicional." },
+      { nome: "Pele de Ferro", descricao: "+2 na Defesa (apenas se não estiver usando armadura pesada)." },
+      { nome: "Vigor Primal", descricao: "Ação de movimento + 1PM: recupera 1d12 PV. Cada 2PM extras = +1d12 de cura." },
+      { nome: "Totem Espiritual", descricao: "Soma Sabedoria ao PM. Escolha um animal totêmico e aprenda uma magia relacionada (atrib-chave SAB). Pode usar em fúria.", prereq: "Sab 1, 4º nível" },
+      { nome: "Aumento de Atributo", descricao: "+1 em um atributo (máx 2x por atributo)." }
     ]
   },
 
   bardo: {
     nome: "Bardo",
-    descricao: "Um artista errante e faz-tudo versátil, sempre com a solução certa para cada ocasião. Mestre das palavras, magias e inspiração.",
+    descricao: "Um artista errante e faz-tudo versátil, sempre com a solução certa para cada ocasião. Mestre das palavras, magias e inspiração. Soma Carisma ao PM total.",
     vidaInicial: 12,
     vidaPorNivel: 3,
-    pm: 4,
+    pm: 4, // + Carisma no total de PM (somado na criação)
     pericias: 6,
     periciasObrigatorias: ['Atuação', 'Reflexos'],
-    periciasClasse: ["Acrobacia", "Cavalgar", "Conhecimento", "Diplomacia", "Enganação", "Furtividade", "Iniciativa", "Intuição", "Investigação", "Jogatina", "Ladronagem", "Misticismo", "Nobreza", "Ofício", "Percepção", "Pontaria", "Vontade"],
-    proficiencias: ["Armas Simples", "Armaduras Leves"],
+    periciasClasse: ["Acrobacia", "Cavalgar", "Conhecimento", "Diplomacia", "Enganação", "Furtividade", "Iniciativa", "Intuição", "Investigação", "Jogatina", "Ladinagem", "Luta", "Misticismo", "Nobreza", "Percepção", "Pontaria", "Vontade"],
+    proficiencias: ["Armas Marciais"],
     atributoChave: "Carisma",
+    pmBonusAttr: 'CAR', // bardo soma Carisma ao PM total
     habilidades: {
       1: [
         {
-          nome: "Inspiração",
-          descricao: "Você pode usar uma ação de movimento para inspirar um aliado. Ele recebe +2 em testes de perícia até o início do seu próximo turno. Pode usar um número de vezes por cena igual ao seu Carisma."
+          nome: "Inspiração +1",
+          descricao: "Ação padrão + 2 PM: você e aliados em alcance curto ganham +1 em testes de perícia até o fim da cena. A cada 4 níveis, pode gastar +2PM para aumentar o bônus em +1."
         },
         {
           nome: "Magias (1º Círculo)",
-          descricao: "Você pode lançar magias bardísticas de 1º círculo (atributo-chave Carisma)."
+          descricao: "Escolha 3 escolas de magia. Você pode lançar magias arcanas de 1º círculo dessas escolas (atrib-chave Carisma). Começa com 2 magias. Aprende 1 por nível par. Pode usar armadura leve sem testes de Misticismo."
         }
       ],
-      2: [{ nome: "Poder de Bardo", descricao: "Escolha um poder da lista de poderes de bardo." }]
+      2: [
+        { nome: "Poder de Bardo", descricao: "Escolha um poder da lista de poderes de bardo." },
+        { nome: "Eclético", descricao: "Você pode gastar 1PM para receber todos os benefícios de ser treinado em uma perícia por um teste." }
+      ],
+      6: [{ nome: "Magias (2º Círculo)", descricao: "Você pode lançar magias de 2º círculo." }],
+      10: [{ nome: "Magias (3º Círculo)", descricao: "Você pode lançar magias de 3º círculo." }],
+      14: [{ nome: "Magias (4º Círculo)", descricao: "Você pode lançar magias de 4º círculo." }],
+      20: [{ nome: "Artista Completo", descricao: "Inspiração como ação livre. Enquanto sob efeito de Inspiração, custo em PM de habilidades de bardo (incluindo magias) é reduzido à metade." }]
     },
     poderes: [
-      { nome: "Inspiração Heroica", descricao: "Sua Inspiração concede +2 em testes de ataque em vez de perícia." },
-      { nome: "Aumento de Atributo", descricao: "+1 em um atributo." }
+      { nome: "Arte Mágica", descricao: "Enquanto sob Inspiração, CD para resistir a suas magias de bardo aumenta +2." },
+      { nome: "Aumentar Repertório", descricao: "Aprende 2 magias de qualquer círculo que possa lançar (devem ser das escolas escolhidas)." },
+      { nome: "Esgrima Mágica", descricao: "Se sob Inspiração, pode substituir testes de Luta por Atuação em ataques corpo a corpo com armas leves ou de uma mão.", prereq: "Int 1" },
+      { nome: "Inspiração Marcial", descricao: "Quando usa Inspiração, o bônus também se aplica a rolagens de dano." },
+      { nome: "Música: Melodia Curativa", descricao: "Ativa com 1PM: aliados em alcance curto recuperam 1d6 PV. Cada PM extra = +1d6 de cura." },
+      { nome: "Música: Balada Fascinante", descricao: "Atuação vs Vontade: alvo fica fascinado enquanto você se concentra. Hostil recebe +5 no teste." },
+      { nome: "Aumento de Atributo", descricao: "+1 em um atributo (máx 2x por atributo)." }
     ]
   },
 
@@ -113,55 +136,83 @@ export const CLASSES = {
     pm: 3,
     pericias: 4,
     periciasObrigatorias: [['Luta', 'Pontaria'], 'Reflexos'],
-    periciasClasse: ["Acrobacia", "Atletismo", "Atuação", "Cavalgar", "Diplomacia", "Enganação", "Fortitude", "Furtividade", "Iniciativa", "Intimidação", "Jogatina", "Ladronagem", "Nobreza", "Ofício", "Percepção", "Pilotagem"],
-    proficiencias: ["Armas Marciais", "Armaduras Leves"],
+    periciasClasse: ["Acrobacia", "Atletismo", "Atuação", "Enganação", "Fortitude", "Furtividade", "Iniciativa", "Intimidação", "Jogatina", "Luta", "Ofício", "Percepção", "Pilotagem", "Pontaria"],
+    proficiencias: ["Armas Marciais"],
     atributoChave: "Destreza",
     habilidades: {
       1: [
         {
           nome: "Audácia",
-          descricao: "Você soma seu Carisma em testes de perícia (exceto em testes de ataque). Isso afeta qualquer teste de perícia que você faça."
+          descricao: "Quando faz um teste de perícia, você pode gastar 2PM para somar seu Carisma no teste. Não pode usar em testes de ataque."
         },
         {
           nome: "Insolência",
-          descricao: "Você soma seu Carisma na Defesa, desde que não esteja usando armadura pesada ou escudo."
+          descricao: "Você soma seu Carisma na Defesa, limitado pelo seu nível. Exige liberdade de movimentos: não funciona com armadura pesada ou na condição imóvel."
         }
       ],
-      2: [{ nome: "Poder de Bucaneiro", descricao: "Escolha um poder da lista de poderes de bucaneiro." }]
+      2: [
+        { nome: "Evasão", descricao: "Quando sofre efeito com teste de Reflexos para metade, se passar não sofre dano algum. Não funciona com armadura pesada ou imóvel." },
+        { nome: "Poder de Bucaneiro", descricao: "Escolha um poder da lista de poderes de bucaneiro." }
+      ],
+      3: [{ nome: "Esquiva Sagaz +1", descricao: "+1 na Defesa. Aumenta +1 a cada 4 níveis (máx +5 no 19º). Exige liberdade de movimentos." }],
+      5: [{ nome: "Panache", descricao: "Sempre que faz acerto crítico ou reduz inimigo a 0PV, você recupera 1PM." }],
+      10: [{ nome: "Evasão Aprimorada", descricao: "Quando sofre efeito com Reflexos: se passar não sofre dano; se falhar sofre apenas metade. Exige liberdade de movimentos." }],
+      20: [{ nome: "Sorte de Nimb", descricao: "Gasta 5PM para rolar novamente um teste. Qualquer resultado 11+ na segunda rolagem conta como 20 natural." }]
     },
     poderes: [
-      { nome: "Fanfarrão", descricao: "Você pode gastar 2 PM para realizar uma provocação e forçar um inimigo a atacar você." },
-      { nome: "Aumento de Atributo", descricao: "+1 em um atributo." }
+      { nome: "Aparar", descricao: "Uma vez por rodada, quando atingido por ataque corpo a corpo, gasta 1PM e testa ataque (bônus = nível). Se seu resultado > oponente, evita o ataque. Requer arma leve ou ágil.", prereq: "Esgrimista" },
+      { nome: "Esgrimista", descricao: "Com arma corpo a corpo leve ou ágil, soma Inteligência nas rolagens de dano (limitado pelo nível).", prereq: "Int 1" },
+      { nome: "En Garde", descricao: "Ação de movimento + 1PM: postura de luta até fim da cena. +2 na margem de ameaça e +2 na Defesa com arma leve/ágil.", prereq: "Esgrimista" },
+      { nome: "Pistoleiro", descricao: "Proficiência com armas de fogo e +2 nas rolagens de dano com elas." },
+      { nome: "Presença Paralisante", descricao: "Soma Carisma em Iniciativa. Se for primeiro na iniciativa, ganha uma ação padrão extra na 1ª rodada.", prereq: "Car 1, 4º nível" },
+      { nome: "Ataque Acrobático", descricao: "Quando se aproxima de um inimigo usando Acrobacia/Atletismo e o ataca no mesmo turno: +2 ataque e dano." },
+      { nome: "Aumento de Atributo", descricao: "+1 em um atributo (máx 2x por atributo)." }
     ]
   },
 
   cacador: {
     nome: "Caçador",
-    descricao: "Um exterminador de monstros e mestre da sobrevivência em áreas selvagens. Rastreia presas, usa armadilhas e tem afinidade com animais.",
+    descricao: "Um exterminador de monstros e mestre da sobrevivência. Rastreia presas com paciência e astúcia. Não é apenas um mateiro — é uma enciclopédia dos ermos.",
     vidaInicial: 16,
     vidaPorNivel: 4,
     pm: 4,
-    pericias: 4,
+    pericias: 6,
     periciasObrigatorias: [['Luta', 'Pontaria'], 'Sobrevivência'],
-    periciasClasse: ["Adestramento", "Atletismo", "Cavalgar", "Cura", "Fortitude", "Furtividade", "Iniciativa", "Intuição", "Investigação", "Ofício", "Percepção", "Reflexos"],
-    proficiencias: ["Armas Marciais", "Armaduras Médias"],
+    periciasClasse: ["Adestramento", "Atletismo", "Cavalgar", "Cura", "Fortitude", "Furtividade", "Iniciativa", "Investigação", "Luta", "Ofício", "Percepção", "Pontaria", "Reflexos"],
+    proficiencias: ["Armas Marciais", "Escudos"],
     atributoChave: "Força ou Destreza",
     habilidades: {
       1: [
         {
-          nome: "Marca do Caçador",
-          descricao: "Você pode gastar 1 PM para marcar uma criatura como sua presa como uma ação livre. Você causa +1d6 de dano extra contra ela. Uma criatura só pode ser sua presa se você puder vê-la. A marca dura até o fim da cena ou até a criatura morrer."
+          nome: "Marca da Presa +1d4",
+          descricao: "Ação de movimento + 1PM: você analisa uma criatura em alcance curto. Até o fim da cena, recebe +1d4 nas rolagens de dano contra ela. A cada 4 níveis, pode gastar +1PM para aumentar: +1d8 (5º), +1d12 (9º), +2d8 (13º), +2d10 (17º)."
         },
         {
           nome: "Rastreador",
-          descricao: "Você pode rastrear criaturas por suas pegadas e rastros. Recebe +2 em Sobrevivência para rastrear."
+          descricao: "+2 em Sobrevivência. Você pode se mover em velocidade normal enquanto rastreia sem sofrer penalidades no teste."
         }
       ],
-      2: [{ nome: "Poder de Caçador", descricao: "Escolha um poder da lista de poderes de caçador." }]
+      2: [{ nome: "Poder de Caçador", descricao: "Escolha um poder da lista de poderes de caçador." }],
+      3: [{ nome: "Explorador", descricao: "Escolha um tipo de terreno. Quando nesse terreno, soma Sabedoria (mín +1) na Defesa e em Acrobacia, Atletismo, Furtividade, Percepção e Sobrevivência. A cada 4 níveis, escolhe outro terreno ou aumenta bônus em +2." }],
+      5: [
+        { nome: "Marca da Presa +1d8", descricao: "O bônus base de Marca da Presa aumenta para +1d8." },
+        { nome: "Caminho do Explorador", descricao: "Nos terrenos com Explorador: você atravessa terreno difícil sem redução no deslocamento e a CD para rastrear você aumenta +10." }
+      ],
+      9: [{ nome: "Marca da Presa +1d12", descricao: "O bônus base aumenta para +1d12." }],
+      13: [{ nome: "Marca da Presa +2d8", descricao: "O bônus base aumenta para +2d8." }],
+      17: [{ nome: "Marca da Presa +2d10", descricao: "O bônus base aumenta para +2d10." }],
+      20: [{ nome: "Mestre Caçador", descricao: "Marca da Presa como ação livre. Pode gastar 5PM para +2 na margem de ameaça contra a presa. Se reduzir a presa a 0PV, recupera 5PM." }]
     },
     poderes: [
-      { nome: "Companheiro Animal", descricao: "Você tem um animal companheiro que obedece suas ordens e luta ao seu lado." },
-      { nome: "Aumento de Atributo", descricao: "+1 em um atributo." }
+      { nome: "Arqueiro", descricao: "Com arma de ataque à distância, soma Sabedoria nas rolagens de dano (limitado pelo nível).", prereq: "Sab 1" },
+      { nome: "Companheiro Animal", descricao: "Você recebe um companheiro animal que obedece ordens e combate ao seu lado.", prereq: "treinado em Adestramento" },
+      { nome: "Elo com a Natureza", descricao: "Soma Sabedoria ao PM total. Aprende Caminhos da Natureza (atrib-chave SAB).", prereq: "Sab 1, 3º nível" },
+      { nome: "Inimigo de (Criatura)", descricao: "Escolha um tipo de criatura. Quando usa Marca da Presa contra esse tipo, dobra os dados de bônus no dano." },
+      { nome: "Emboscar", descricao: "Gasta 2PM para realizar ação padrão adicional no turno (apenas na 1ª rodada de combate).", prereq: "treinado em Furtividade" },
+      { nome: "Escaramuça", descricao: "Quando se move 6m+: +2 Defesa e Reflexos, +1d8 no dano de ataques corpo a corpo e à distância em alcance curto até próximo turno. Sem armadura pesada.", prereq: "Des 2, 6º nível" },
+      { nome: "Armadilha: Arataca", descricao: "Ação completa + 3PM: 2d6 dano de perfuração e alvo fica agarrado (Força ou Acrobacia CD Sab para escapar)." },
+      { nome: "Ambidestria", descricao: "Com duas armas (ao menos uma leve), ação agredir faz dois ataques (-2 em todos os ataques até próximo turno).", prereq: "Des 2" },
+      { nome: "Aumento de Atributo", descricao: "+1 em um atributo (máx 2x por atributo)." }
     ]
   },
 
