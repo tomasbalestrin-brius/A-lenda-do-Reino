@@ -1,24 +1,24 @@
 import React, { useState } from "react";
-// Importando com o caminho exato e extensão .jsx para não ter erro
-import { CharacterCreatorPWA } from "./ui/CharacterCreatorPWA.jsx";
-;
+import { CharacterCreation } from "./components/CharacterCreation";
+import { SideScrollerGame } from "./canvas/SideScrollerGame";
+import { useGameStore } from "./core/store";
 import "./index.css";
 
 export default function App() {
-  const [character, setCharacter] = useState(null);
+  const gameState = useGameStore(s => s.gameState);
+  const setHero = useGameStore(s => s.setHero);
 
-  const handleComplete = (data) => {
-    console.log("Personagem Criado:", data);
-    setCharacter(data);
+  const handleComplete = (heroData) => {
+    console.log("Personagem Criado:", heroData);
+    setHero(heroData);
   };
 
   return (
-    <div className="min-h-screen bg-[#020617]">
-      <CharacterCreatorPWA onComplete={handleComplete} />
-      {character && (
-        <div className="fixed bottom-4 right-4 bg-amber-600 text-white p-4 rounded-xl shadow-2xl z-50">
-          Personagem {character.name} salvo!
-        </div>
+    <div className="min-h-screen bg-[#020617] text-white">
+      {gameState === 'menu' || gameState === 'criacao' ? (
+        <CharacterCreation onComplete={handleComplete} />
+      ) : (
+        <SideScrollerGame />
       )}
     </div>
   );
