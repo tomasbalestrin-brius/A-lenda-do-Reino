@@ -4,15 +4,16 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.1",
+    "@vitejs/plugin-react": "^5.0.4",
+    "classnames": "^2.5.1",
+    "framer-motion": "^12.23.24",
+    "howler": "^2.2.4",
+    "lucide-react": "^0.545.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "framer-motion": "^12.23.24",
-    "lucide-react": "^0.545.0",
-    "zustand": "^5.0.8",
-    "classnames": "^2.5.1",
-    "howler": "^2.2.4",
     "vite": "^7.1.10",
-    "@vitejs/plugin-react": "^5.0.4"
+    "zustand": "^5.0.8"
   },
   "scripts": {
     "dev": "vite",

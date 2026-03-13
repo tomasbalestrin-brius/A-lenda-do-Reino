@@ -8,6 +8,7 @@ import { rollDice, rollAttribute } from '../utils/diceSystem';
 import ITENS from '../data/items';
 import GENERAL_POWERS from '../data/powers';
 import DiceRollerBG3 from './DiceRollerBG3';
+import { supabase } from '../lib/supabase';
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -88,86 +89,99 @@ function AttributePill({ value, label }) {
 }
 
 function RaceModal({ id, race, onClose, onConfirm, isSelected }) {
-  const bonuses = attrBonusDisplay(race);
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        onClick={onClose}
+        className="absolute inset-0 bg-gray-950/80 backdrop-blur-md" 
+      />
+      
       <motion.div
-        initial={{ scale: 0.9, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
-        onClick={e => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
-        {/* Left: Artwork */}
-        <div className="w-full md:w-1/2 bg-gray-950 flex items-center justify-center relative group">
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent z-10 opacity-60" />
-          <div className="w-full h-full min-h-[300px] flex items-center justify-center p-8">
-            <div className="relative z-20 text-center">
-              <span className="text-8xl mb-4 block animate-pulse">{RACE_ICONS[id] || '🧑'}</span>
-              <p className="text-amber-500/50 text-xs font-mono uppercase tracking-[0.2em]">Registro de Raça — Arton</p>
-            </div>
-            <div className="absolute w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        {/* Left: Visual Content */}
+        <div className="w-full md:w-2/5 relative h-64 md:h-auto overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
+          <img 
+            src={RACE_IMAGES[id]} 
+            alt={race.nome} 
+            className="absolute inset-0 w-full h-full object-cover" 
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-900/40 to-transparent md:hidden" />
+          
+          <div className="absolute bottom-0 left-0 p-8">
+             <span className="text-5xl block mb-2 drop-shadow-2xl">{RACE_ICONS[id]}</span>
+             <h3 className="text-4xl font-black text-white uppercase tracking-tighter drop-shadow-xl">{race.nome}</h3>
           </div>
-          <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10">✕</button>
         </div>
 
-        {/* Right: Info */}
-        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
-          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-            <div className="border-b border-amber-900/20 pb-4">
-              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                {race.nome}
-                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativo</span>}
-              </h3>
-              <p className="text-amber-400/80 text-sm mt-1 font-medium leading-relaxed italic">"{race.descricao}"</p>
-            </div>
+        {/* Right: Info Content */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-950/50">
+           <div className="p-8 pb-4 flex items-center justify-between border-b border-white/5">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Detalhes de Linhagem</span>
+              <button onClick={onClose} className="text-slate-500 hover:text-white text-xl transition-colors">✕</button>
+           </div>
 
-            <div className="grid grid-cols-1 gap-6 mt-6">
-              <section>
-                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Atributos Raciais</h4>
-                <div className="flex flex-wrap gap-2">
-                  {bonuses.map((b, i) => (
-                    <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm ${
-                      b.startsWith('+') ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400'
-                      : b.startsWith('-') ? 'bg-red-900/20 border-red-500/30 text-red-400'
-                      : 'bg-gray-800 border-gray-700 text-gray-300'
-                    }`}>
-                      {b}
-                    </div>
-                  ))}
-                </div>
-              </section>
+           <div className="flex-1 overflow-y-auto p-8 space-y-8" style={{ scrollbarWidth: 'thin' }}>
+              <div>
+                <p className="text-slate-400 text-sm leading-relaxed font-medium italic">"{race.descricao}"</p>
+              </div>
 
-              <section className="flex flex-col gap-4">
-                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 ml-1">Poderes de Herança</h4>
-                {race.habilidades?.map((h, i) => (
-                  <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4 group hover:bg-gray-800/60 transition-all">
-                    <p className="text-amber-400 font-bold mb-1 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                      {h.nome}
-                    </p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
-                  </div>
-                ))}
-              </section>
-            </div>
-          </div>
+              {/* Atributos */}
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <span className="w-4 h-px bg-white/10" /> Atributos Raciais
+                 </h4>
+                 <div className="flex flex-wrap gap-2">
+                    {attrBonusDisplay(race).map((b, i) => (
+                      <span key={i} className={`px-4 py-2 rounded-2xl font-black text-xs border ${
+                        b.startsWith('+') ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-400 shadow-xl shadow-emerald-900/10'
+                        : b.startsWith('-') ? 'bg-red-950/30 border-red-500/30 text-red-500'
+                        : 'bg-white/5 border-white/10 text-slate-400'
+                      }`}>
+                        {b}
+                      </span>
+                    ))}
+                 </div>
+              </div>
 
-          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
-            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-              Confirmar {race.nome}
-            </button>
-          </div>
+              {/* Habilidades */}
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <span className="w-4 h-px bg-white/10" /> Capacidades Únicas
+                 </h4>
+                 <div className="grid grid-cols-1 gap-4">
+                    {race.habilidades.map((h, i) => (
+                      <div key={i} className="group p-5 rounded-3xl bg-white/[0.02] border border-white/5 hover:border-amber-500/30 transition-all">
+                        <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                           <span className="w-1.5 h-1.5 bg-amber-500 rounded-full group-hover:scale-125 transition-transform" />
+                           {h.nome}
+                        </p>
+                        <p className="text-slate-400 text-xs leading-relaxed font-medium">{h.descricao}</p>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+
+           {/* Actions */}
+           <div className="p-8 border-t border-white/5 bg-gray-900/40 backdrop-blur-xl">
+              <button
+                onClick={onConfirm}
+                className="w-full py-5 rounded-2xl font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-gray-900 shadow-[0_10px_30px_rgba(245,158,11,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                {isSelected ? 'Confirmar Nova Escolha' : 'Escolher Linhagem'}
+              </button>
+           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -176,234 +190,286 @@ function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
   const roleColor = ROLE_COLORS[role] || 'bg-gray-700 text-gray-200';
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        onClick={onClose}
+        className="absolute inset-0 bg-gray-950/80 backdrop-blur-md" 
+      />
+      
       <motion.div
-        initial={{ scale: 0.9, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
-        onClick={e => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
-        {/* Left: Icon/Visual */}
-        <div className="w-full md:w-1/2 bg-gray-950 flex flex-col items-center justify-center relative p-8">
-          <div className="text-9xl mb-6 relative z-10">{CLASS_ICONS[id] || '⚔️'}</div>
-          <span className={`px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-[0.2em] relative z-10 ${roleColor}`}>{role}</span>
-          <div className="absolute w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full" />
-          <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center border border-white/10">✕</button>
+        {/* Left: Visual/Icon */}
+        <div className="w-full md:w-2/5 relative bg-gray-950 flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
+          <div className="relative z-10 text-[10rem] mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-float">
+             {CLASS_ICONS[id] || '⚔️'}
+          </div>
+          <span className={`relative z-10 px-6 py-2 rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-xl ${roleColor}`}>
+             {role}
+          </span>
+          <div className="absolute w-80 h-80 bg-amber-500/10 blur-[120px] rounded-full" />
+          <button onClick={onClose} className="absolute top-8 left-8 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10">✕</button>
         </div>
 
         {/* Right: Info */}
-        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
-          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-            <div className="border-b border-amber-900/20 pb-4">
-              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                {cls.nome}
-                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
-              </h3>
-              <p className="text-gray-400 text-sm mt-2 leading-relaxed">{cls.descricao}</p>
-            </div>
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-950/50">
+           <div className="p-10 pb-4 flex items-center justify-between border-b border-white/5">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Documentação de Classe</span>
+              {isSelected && <span className="text-[10px] bg-amber-500 text-gray-950 px-3 py-1 rounded-full font-black uppercase">Atual Ativa</span>}
+           </div>
 
-            <div className="grid grid-cols-2 gap-4 mt-6">
-              <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
-                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Vida Inicial</p>
-                <p className="text-xl font-black text-red-500">{cls.vidaInicial} PV</p>
-                <p className="text-[10px] text-gray-400">+{cls.vidaPorNivel} / nível</p>
+           <div className="flex-1 overflow-y-auto p-10 space-y-10" style={{ scrollbarWidth: 'thin' }}>
+              <div>
+                <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">{cls.nome}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed font-medium">{cls.descricao}</p>
               </div>
-              <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
-                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Mana Inicial</p>
-                <p className="text-xl font-black text-blue-500">{cls.pm} PM</p>
-                <p className="text-[10px] text-gray-400">por nível</p>
-              </div>
-            </div>
 
-            <section className="mt-6">
-              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Habilidades de Nível 1</h4>
-              <div className="flex flex-col gap-3">
-                {cls.habilidades?.[1]?.map((h, i) => (
-                  <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4">
-                    <p className="text-amber-400 font-bold text-sm mb-1">✦ {h.nome}</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
-                  </div>
-                ))}
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col">
+                    <span className="text-[10px] uppercase font-black text-slate-500 tracking-widest mb-1">Vitalidade Inicial</span>
+                    <span className="text-2xl font-black text-red-500">{cls.vidaInicial} PV</span>
+                    <span className="text-[10px] text-slate-500 mt-1">+{cls.vidaPorNivel} por nível</span>
+                 </div>
+                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col">
+                    <span className="text-[10px] uppercase font-black text-slate-500 tracking-widest mb-1">Reserva de Mana</span>
+                    <span className="text-2xl font-black text-blue-500">{cls.pm} PM</span>
+                    <span className="text-[10px] text-slate-500 mt-1">Ganhos por nível de classe</span>
+                 </div>
               </div>
-            </section>
-          </div>
 
-          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
-            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-              Tornar-se {cls.nome}
-            </button>
-          </div>
+              {/* Habilidades */}
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <span className="w-4 h-px bg-white/10" /> Habilidades de Nível 1
+                 </h4>
+                 <div className="grid grid-cols-1 gap-4">
+                    {cls.habilidades?.[1]?.map((h, i) => (
+                      <div key={i} className="group p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10 hover:border-amber-500/30 transition-all">
+                        <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-2 flex items-center gap-2">
+                           <span className="w-2 h-2 bg-amber-500 rounded-full group-hover:scale-125 transition-transform" />
+                           {h.nome}
+                        </p>
+                        <p className="text-slate-300 text-xs leading-relaxed font-medium">{h.descricao}</p>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+
+           {/* Confirm Button */}
+           <div className="p-10 border-t border-white/5 bg-gray-900/40 backdrop-blur-xl">
+              <button
+                onClick={onConfirm}
+                className="w-full py-5 rounded-[2rem] font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-gray-950 shadow-[0_15px_40px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Trilha do {cls.nome}
+              </button>
+           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
 function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        onClick={onClose}
+        className="absolute inset-0 bg-gray-950/80 backdrop-blur-md" 
+      />
+      
       <motion.div
-        initial={{ scale: 0.9, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
-        onClick={e => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
-        {/* Left: Icon/Glow */}
-        <div className="w-full md:w-1/2 bg-gray-950 flex flex-col items-center justify-center relative p-8">
-           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent" />
-           <div className="relative z-10 text-9xl mb-4 drop-shadow-2xl">{DEITY_ICONS[id] || '✨'}</div>
-           <p className="text-amber-500/50 text-xs font-mono uppercase tracking-[0.2em] relative z-10">Panteão de Arton</p>
-           <div className="absolute w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full" />
-           <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center border border-white/10">✕</button>
+        {/* Left Visual */}
+        <div className="w-full md:w-2/5 relative bg-gray-950 flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
+          <div className="relative z-10 text-[10rem] mb-6 drop-shadow-[0_0_40px_rgba(245,158,11,0.3)] animate-float">
+             {DEITY_ICONS[id] || '✨'}
+          </div>
+          <span className="relative z-10 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-[0.4em] bg-amber-500/10 text-amber-500 border border-white/5">
+             Panteão de Arton
+          </span>
+          <div className="absolute w-80 h-80 bg-amber-500/5 blur-[120px] rounded-full" />
+          <button onClick={onClose} className="absolute top-8 left-8 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10">✕</button>
         </div>
 
-        {/* Right: Info */}
-        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
-          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-            <div className="border-b border-amber-900/20 pb-4">
-              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                {deus.nome}
-                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Devoto</span>}
-              </h3>
-              <p className="text-amber-400/80 text-sm mt-1 font-bold italic tracking-wide">{deus.titulo}</p>
-            </div>
+        {/* Right Info */}
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-950/50">
+           <div className="p-10 pb-4 flex items-center justify-between border-b border-white/5">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Divindade Registrada</span>
+              {isSelected && <span className="text-[10px] bg-amber-500 text-gray-950 px-3 py-1 rounded-full font-black uppercase">Voto Ativo</span>}
+           </div>
 
-            <div className="flex flex-col gap-5 mt-6">
-              <section className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Portfolio</h4>
-                  <p className="text-xs text-gray-300 font-medium">{deus.portfolio}</p>
-                </div>
-                <div>
-                  <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Arma Sagrada</h4>
-                  <p className="text-xs text-gray-300 font-medium">⚔️ {deus.arma}</p>
-                </div>
-              </section>
+           <div className="flex-1 overflow-y-auto p-10 space-y-10" style={{ scrollbarWidth: 'thin' }}>
+              <div>
+                <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-2">{deus.nome}</h3>
+                <p className="text-amber-400 font-bold italic tracking-wide text-sm">{deus.titulo}</p>
+              </div>
 
-              <section className="bg-gray-800/40 border border-gray-700/50 p-4 rounded-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl">📜</div>
-                <h4 className="text-[10px] uppercase tracking-widest font-black text-amber-500/80 mb-2">Dogma</h4>
-                <p className="text-xs text-gray-300 leading-relaxed italic">"{deus.dogma}"</p>
-              </section>
+              {/* Portfolio & Weapon */}
+              <div className="grid grid-cols-2 gap-4">
+                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col">
+                    <span className="text-[10px] uppercase font-black text-slate-500 tracking-widest mb-1">Portfólio</span>
+                    <span className="text-sm font-bold text-slate-300">{deus.portfolio}</span>
+                 </div>
+                 <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col">
+                    <span className="text-[10px] uppercase font-black text-slate-500 tracking-widest mb-1">Arma Sagrada</span>
+                    <span className="text-sm font-bold text-slate-300">⚔️ {deus.arma}</span>
+                 </div>
+              </div>
 
-              <section className="flex flex-col gap-3">
-                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 ml-1">Bênçãos & Deveres</h4>
-                
-                <div className="p-3 bg-emerald-900/10 border border-emerald-500/30 rounded-2xl">
-                  <p className="text-[10px] text-emerald-400 font-black uppercase mb-1">Poder Concedido (Nível 1)</p>
-                  <p className="text-xs text-emerald-200 font-bold">{deus.devoto.poderes[0].nome}</p>
-                  <p className="text-[11px] text-emerald-100/70 mt-1 leading-relaxed">{deus.devoto.poderes[0].descricao}</p>
-                </div>
+              {/* Dogma */}
+              <div className="p-8 rounded-[2rem] bg-white/[0.02] border border-white/5 relative overflow-hidden">
+                 <div className="absolute top-0 right-0 p-4 opacity-5 text-5xl italic font-black text-white">"</div>
+                 <p className="text-slate-400 text-sm leading-relaxed font-medium italic">"{deus.dogma}"</p>
+              </div>
 
-                <div className="p-3 bg-red-900/10 border border-red-500/30 rounded-2xl">
-                  <p className="text-[10px] text-red-400 font-black uppercase mb-1">Restrições & Obrigações</p>
-                  <p className="text-xs text-red-200 leading-relaxed font-medium">{deus.devoto.restricoes}</p>
-                </div>
-              </section>
-            </div>
-          </div>
+              {/* Powers */}
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <span className="w-4 h-px bg-white/10" /> Vantagens e Restrições
+                 </h4>
+                 
+                 <div className="space-y-4">
+                    <div className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/20 group">
+                       <p className="text-emerald-400 font-black text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full group-hover:scale-125 transition-transform" />
+                          Poder Concedido
+                       </p>
+                       <p className="text-white font-black text-sm mb-1">{deus.devoto.poderes[0].nome}</p>
+                       <p className="text-slate-400 text-xs leading-relaxed">{deus.devoto.poderes[0].descricao}</p>
+                    </div>
 
-          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
-            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-              Devotar-se a {deus.nome}
-            </button>
-          </div>
+                    <div className="p-6 rounded-3xl bg-red-500/5 border border-red-500/20 group">
+                       <p className="text-red-400 font-black text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 bg-red-500 rounded-full group-hover:scale-125 transition-transform" />
+                          Obrigações e Restrições
+                       </p>
+                       <p className="text-slate-400 text-xs leading-relaxed font-medium">{deus.devoto.restricoes}</p>
+                    </div>
+                 </div>
+              </div>
+           </div>
+
+           {/* Confirm Button */}
+           <div className="p-10 border-t border-white/5 bg-gray-900/40 backdrop-blur-xl">
+              <button
+                onClick={onConfirm}
+                className="w-full py-5 rounded-[2.5rem] font-black uppercase tracking-widest text-sm bg-gradient-to-r from-amber-500 to-amber-600 text-gray-950 shadow-[0_15px_40px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Servir a {deus.nome}
+              </button>
+           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
 function OriginModal({ id, origin, onClose, onConfirm, isSelected }) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        onClick={onClose}
+        className="absolute inset-0 bg-gray-950/80 backdrop-blur-md" 
+      />
+      
       <motion.div
-        initial={{ scale: 0.9, y: 20, opacity: 0 }}
-        animate={{ scale: 1, y: 0, opacity: 1 }}
-        exit={{ scale: 0.9, y: 20, opacity: 0 }}
-        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
-        onClick={e => e.stopPropagation()}
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[80vh]"
       >
         {/* Left Visual */}
-        <div className="w-full md:w-1/2 bg-gray-950 flex flex-col items-center justify-center relative p-8">
-          <div className="text-8xl mb-6 grayscale opacity-40">📜</div>
-          <p className="text-amber-500/50 text-xs font-mono uppercase tracking-[0.2em] relative z-10 text-center">Registros de Antecedentes</p>
-          <div className="absolute w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full" />
-          <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center border border-white/10">✕</button>
+        <div className="w-full md:w-2/5 relative bg-gray-950 flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
+          <div className="relative z-10 text-[10rem] mb-6 drop-shadow-[0_0_40px_rgba(30,58,138,0.2)] grayscale opacity-50">
+             📜
+          </div>
+          <span className="relative z-10 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-[0.4em] bg-blue-500/10 text-blue-400 border border-white/5">
+             Antecedentes
+          </span>
+          <div className="absolute w-80 h-80 bg-blue-500/5 blur-[120px] rounded-full" />
+          <button onClick={onClose} className="absolute top-8 left-8 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10">✕</button>
         </div>
 
         {/* Right Info */}
-        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
-          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-            <div className="border-b border-amber-900/20 pb-4">
-              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-                {origin.nome}
-                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
-              </h3>
-              <p className="text-gray-400 text-sm mt-2 leading-relaxed">{origin.descricao}</p>
-            </div>
+        <div className="flex-1 flex flex-col overflow-hidden bg-gray-950/50">
+           <div className="p-10 pb-4 flex items-center justify-between border-b border-white/5">
+              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-500">Histórico de Personagem</span>
+              {isSelected && <span className="text-[10px] bg-blue-500 text-white px-3 py-1 rounded-full font-black uppercase">Atual Ativa</span>}
+           </div>
 
-            <div className="flex flex-col gap-4 mt-6">
-              <section>
-                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Itens Iniciais</h4>
-                <div className="flex flex-wrap gap-2">
-                  {origin.itens?.map((item, i) => (
-                    <span key={i} className="text-xs bg-gray-800 border border-gray-700 px-3 py-1 rounded-full text-gray-300">📦 {item}</span>
-                  ))}
-                </div>
-              </section>
+           <div className="flex-1 overflow-y-auto p-10 space-y-10" style={{ scrollbarWidth: 'thin' }}>
+              <div>
+                <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-4">{origin.nome}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed font-medium italic">"{origin.descricao}"</p>
+              </div>
 
-              <section>
-                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Caminhos Disponíveis</h4>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="p-3 bg-indigo-900/10 border border-indigo-500/30 rounded-2xl">
-                    <p className="text-[10px] text-indigo-400 font-black uppercase mb-1">Perícias</p>
-                    <p className="text-xs text-indigo-200">{origin.pericias?.join(', ')}</p>
-                  </div>
-                  <div className="p-3 bg-amber-900/10 border border-amber-500/30 rounded-2xl">
-                    <p className="text-[10px] text-amber-500 font-black uppercase mb-1">Poderes</p>
-                    <p className="text-xs text-amber-200">{origin.poderes?.join(', ')}</p>
-                  </div>
-                </div>
-              </section>
+              {/* Items Section */}
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <span className="w-4 h-px bg-white/10" /> Itens Iniciais
+                 </h4>
+                 <div className="flex flex-wrap gap-2">
+                    {origin.itens.map((item, i) => (
+                      <span key={i} className="px-4 py-2 rounded-2xl bg-white/[0.03] border border-white/5 text-slate-300 font-bold text-xs flex items-center gap-2">
+                         <span className="w-1.5 h-1.5 bg-blue-500/50 rounded-full" />
+                         {item}
+                      </span>
+                    ))}
+                 </div>
+              </div>
 
-              {origin.poderUnico && (
-                <section className="bg-gradient-to-br from-amber-600/20 to-transparent border border-amber-500/30 p-4 rounded-3xl">
-                  <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1 italic">✨ {origin.poderUnico.nome}</p>
-                  <p className="text-xs text-amber-100/80 leading-relaxed font-medium">{origin.poderUnico.descricao}</p>
-                </section>
-              )}
-            </div>
-          </div>
+              {/* Benefits Section */}
+              <div className="space-y-4">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                    <span className="w-4 h-px bg-white/10" /> Possíveis Benefícios
+                 </h4>
+                 <div className="grid grid-cols-1 gap-2">
+                    {origin.pericias.map(p => (
+                      <div key={p} className="px-5 py-3 rounded-2xl bg-white/[0.01] border border-white/5 text-slate-400 text-[11px] font-bold uppercase tracking-tight flex items-center justify-between">
+                         {p}
+                         <span className="text-blue-500/60 font-black">+2 Bônus</span>
+                      </div>
+                    ))}
+                    {origin.poderes.map(p => (
+                      <div key={p} className="px-5 py-3 rounded-2xl bg-white/[0.01] border border-white/5 text-amber-500/80 text-[11px] font-black uppercase tracking-tight flex items-center gap-2">
+                         <span className="text-amber-500 rotate-45">✦</span> {p}
+                      </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
 
-          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
-            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-              Confirmar Origem
-            </button>
-          </div>
+           {/* Confirm Button */}
+           <div className="p-10 border-t border-white/5 bg-gray-900/40 backdrop-blur-xl">
+              <button
+                onClick={onConfirm}
+                className="w-full py-5 rounded-[2.5rem] font-black uppercase tracking-widest text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-[0_15px_40px_rgba(30,58,138,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
+              >
+                Inicar como {origin.nome}
+              </button>
+           </div>
         </div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -412,12 +478,61 @@ function OriginModal({ id, origin, onClose, onConfirm, isSelected }) {
 const PM_ATTR_MAP = {
   arcanista: 'INT', inventor: 'INT',
   clerigo: 'SAB', druida: 'SAB', cacador: 'SAB',
-  bardo: 'CAR', // bardo soma CAR ao PM total
-  bucaneiro: null, cavaleiro: null, nobre: null, // sem bônus de atributo no PM
-  paladino: null,
-  barbaro: null, guerreiro: null, lutador: null, // PM 3×nível sem bônus
-  ladino: null,
+  bardo: 'CAR',
+  nobre: 'CAR',
+  paladino: 'CAR',
+  barbaro: null, bucaneiro: null, cavaleiro: null, 
+  guerreiro: null, ladino: null, lutador: null,
 };
+
+// HELPER: Validação de Pré-requisitos de Poderes
+function checkPowerEligibility(power, char, stats) {
+  if (!power.prereqs) return { ok: true };
+  
+  const missing = [];
+  const { attr, trained, level } = power.prereqs;
+
+  // 1. Atributos
+  if (attr) {
+    Object.entries(attr).forEach(([k, v]) => {
+      if ((stats.attrs[k] || 0) < v) missing.push(`${k} ${v}`);
+    });
+  }
+
+  // 2. Perícias Treinadas
+  if (trained) {
+    const allSkills = getAllTrainedSkills(char);
+    trained.forEach(s => {
+      if (!allSkills.includes(s)) missing.push(`Treinado em ${s}`);
+    });
+  }
+
+  // 3. Nível
+  if (level && (char.level || 1) < level) {
+    missing.push(`Nível ${level}`);
+  }
+
+  return { 
+    ok: missing.length === 0, 
+    reason: missing.join(", ") 
+  };
+}
+
+function getAllTrainedSkills(char) {
+  const cls = CLASSES[char.classe];
+  if (!cls) return [];
+  
+  const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem]?.pericias.includes(b));
+  
+  const rawObrig = cls.periciasObrigatorias || [];
+  const fixedObrig = rawObrig.filter(s => typeof s === 'string');
+  const chosenObrig = Object.values(char.periciasObrigEscolha || {});
+  
+  const classChoices = char.periciasClasseEscolha || [];
+  const intExtras = char.pericias || [];
+  
+  return [...new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras])];
+}
 
 const SPRITE_MAP = {
   humano_guerreiro: '/assets/sprites/heroes/humano_guerreiro_idle.png',
@@ -529,7 +644,7 @@ function computeStats(char) {
   // T20: atributos base (0 por padrão) + bônus racial + bônus de origem
   const attrs = {};
   ATTR_KEYS.forEach(k => {
-    let val = (char.atributos[k] || 0) + (raceBonus[k] || 0);
+    let val = (char.atributos?.[k] || 0) + (raceBonus?.[k] || 0);
     if (origem?.atributos?.[k]) val += origem.atributos[k];
     attrs[k] = val;
   });
@@ -589,9 +704,12 @@ function computeStats(char) {
   if (hasEsquiva) def += 2;
   if (hasPeleFerro) def += 2; // Assumes keeping unarmored for now
 
-  // ATK = Atributo + Metade do Nível (supomos arma proficiente sem treinos extras)
+  // ATK = Atributo + Metade do Nível + Treinamento (+2 se treinado)
   const isRanged = char.classe === 'cacador';
-  const atk = (isRanged ? DES : FOR) + halfLevel;
+  const hasLuta = char.pericias.includes('Luta');
+  const hasPontaria = char.pericias.includes('Pontaria');
+  
+  const atk = (isRanged ? attrs.DES : attrs.FOR) + halfLevel + ((isRanged ? hasPontaria : hasLuta) ? 2 : 0);
   
   // Saves and other checks
   const ini = DES + halfLevel;
@@ -646,7 +764,7 @@ function getInitialChar() {
     classe: 'guerreiro',
     origem: '',
     deus: '',
-    // T20: todos os atributos começam em 0
+    choices: {}, // Para escolhas de herança racial e especializações
     atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
     pericias: [],
     level: 1,
@@ -876,51 +994,60 @@ function StepRace({ char, onChange }) {
   const hasEscolha = selectedRace?.atributos?.escolha;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1">Escolha sua Raça</h2>
-        <p className="text-gray-400 text-sm">Sua raça define atributos raciais e habilidades inatas permanentes.</p>
+    <div className="flex flex-col gap-8">
+      <div className="relative group overflow-hidden bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl">
+        <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl group-hover:scale-110 transition-transform duration-700">🌍</div>
+        <h2 className="text-3xl font-black text-white tracking-tight">Escolha sua Raça</h2>
+        <p className="text-slate-400 text-sm mt-2 max-w-lg leading-relaxed font-medium">
+          Sua linhagem define seus bônus de atributos inatos e habilidades biológicas que moldarão seu destino em Arton.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {races.map(([id, race]) => {
           const isSelected = char.raca === id;
           const bonuses = attrBonusDisplay(race);
           return (
-            <button
+            <motion.button
               key={id}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onChange({ modalRace: id })}
-              className={`text-left rounded-xl border transition-all duration-300 relative overflow-hidden group h-32 ${
+              className={`text-left rounded-[2rem] border transition-all relative overflow-hidden h-40 shadow-xl group ${
                 isSelected
                   ? 'border-amber-500 ring-2 ring-amber-500/30'
-                  : 'border-gray-800 bg-gray-950/40 hover:border-gray-600'
+                  : 'border-white/5 bg-gray-900/40 hover:border-amber-500/40'
               }`}
             >
               <img 
                 src={RACE_IMAGES[id]} 
                 alt="" 
-                className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
-                  isSelected ? 'scale-110' : 'scale-100 opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60'
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-700 ${
+                  isSelected ? 'scale-110 blur-[1px]' : 'scale-100 opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-70 group-hover:scale-105'
                 }`}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
               
-              <div className="absolute inset-x-0 bottom-0 p-3">
-                <div className="flex items-center gap-2 mb-1">
-                   <p className={`font-black uppercase tracking-tighter text-sm ${isSelected ? 'text-amber-400' : 'text-white'}`}>{race.nome}</p>
-                   <span className="text-xl">{RACE_ICONS[id]}</span>
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <div className="flex items-center justify-between mb-2">
+                   <p className={`font-black uppercase tracking-widest text-sm ${isSelected ? 'text-amber-400' : 'text-white'}`}>{race.nome}</p>
+                   <span className="text-2xl group-hover:rotate-12 transition-transform">{RACE_ICONS[id]}</span>
                 </div>
-                <div className="flex flex-wrap gap-1">
+                <div className="flex flex-wrap gap-1.5">
                   {bonuses.slice(0, 3).map((b, i) => (
-                    <span key={i} className={`text-[8px] px-1 py-0.5 rounded font-black ${
-                      b.startsWith('+') ? 'bg-green-500/20 text-green-400'
-                      : b.startsWith('-') ? 'bg-red-500/20 text-red-400'
-                      : 'bg-gray-800 text-gray-500'
+                    <span key={i} className={`text-[9px] px-2 py-0.5 rounded-full font-black border ${
+                      b.startsWith('+') ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                      : b.startsWith('-') ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                      : 'bg-white/5 border-white/10 text-slate-500'
                     }`}>{b}</span>
                   ))}
                 </div>
               </div>
-            </button>
+
+              {isSelected && (
+                <div className="absolute top-3 right-3 w-3 h-3 bg-amber-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,1)] animate-pulse" />
+              )}
+            </motion.button>
           );
         })}
       </div>
@@ -994,51 +1121,75 @@ function StepClass({ char, onChange }) {
   const classes = Object.entries(CLASSES);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1">Escolha sua Classe</h2>
-        <p className="text-gray-400 text-sm">Sua classe define estilo de jogo, PV, PM e habilidades únicas.</p>
+    <div className="flex flex-col gap-8">
+      <div className="relative group overflow-hidden bg-sky-950/20 p-8 rounded-[2.5rem] border border-sky-500/10 shadow-2xl">
+        <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl group-hover:scale-110 transition-transform duration-700">⚔️</div>
+        <h2 className="text-3xl font-black text-white tracking-tight">Escolha sua Classe</h2>
+        <p className="text-slate-400 text-sm mt-2 max-w-lg leading-relaxed font-medium">
+          Sua classe define sua função no grupo, suas habilidades de combate e como você evoluirá ao longo dos níveis.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {classes.map(([id, cls]) => {
           const isSelected = char.classe === id;
           const role = CLASS_ROLE[id] || 'Aventureiro';
           const roleColor = ROLE_COLORS[role] || 'bg-gray-700 text-gray-200';
           return (
-            <button
+            <motion.button
               key={id}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onChange({ modalClass: id })}
-              className={`text-left p-3 rounded-xl border transition-all duration-200 ${
+              className={`text-left p-5 rounded-[2rem] border transition-all relative overflow-hidden flex flex-col gap-4 shadow-xl group ${
                 isSelected
-                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
-                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500 hover:bg-gray-800'
+                  ? 'border-amber-500 ring-2 ring-amber-500/30 bg-amber-950/20'
+                  : 'border-white/5 bg-gray-900/40 hover:border-amber-500/40'
               }`}
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-2xl">{CLASS_ICONS[id] || '⚔️'}</span>
-                  <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{cls.nome}</p>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl group-hover:scale-110 transition-transform">{CLASS_ICONS[id] || '⚔️'}</span>
+                  <p className={`font-black text-base uppercase tracking-tight ${isSelected ? 'text-amber-400' : 'text-white'}`}>{cls.nome}</p>
                 </div>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 ${roleColor}`}>{role}</span>
+                <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest ${roleColor}`}>{role}</span>
               </div>
 
-              <div className="flex flex-col gap-1 mb-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-red-400 w-4">PV</span>
-                  <div className="flex-1 h-1 bg-gray-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-500/60" style={{ width: `${(cls.vidaInicial / 24) * 100}%` }} />
+              <div className="flex flex-col gap-3">
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-red-500/60">
+                    <span>Vitalidade</span>
+                    <span>{cls.vidaInicial} PV</span>
+                  </div>
+                  <div className="h-1 bg-gray-950 rounded-full overflow-hidden border border-white/5">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(cls.vidaInicial / 24) * 100}%` }}
+                      className="h-full bg-red-500/60" 
+                    />
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] text-blue-400 w-4">PM</span>
-                  <div className="flex-1 h-1 bg-gray-900 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-500/60" style={{ width: `${(cls.pm / 6) * 100}%` }} />
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-blue-500/60">
+                    <span>Mana</span>
+                    <span>{cls.pm} PM</span>
+                  </div>
+                  <div className="h-1 bg-gray-950 rounded-full overflow-hidden border border-white/5">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(cls.pm / 6) * 100}%` }}
+                      className="h-full bg-blue-500/60" 
+                    />
                   </div>
                 </div>
               </div>
-              <p className="text-[9px] text-amber-500/60 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
-            </button>
+              
+              <p className={`text-[9px] font-black uppercase tracking-widest text-right transition-colors ${isSelected ? 'text-amber-400' : 'text-slate-600 group-hover:text-amber-500/60'}`}>Detalhes da Classe →</p>
+
+              {isSelected && (
+                <div className="absolute top-2 right-2 w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)] animate-pulse" />
+              )}
+            </motion.button>
           );
         })}
       </div>
@@ -1070,32 +1221,45 @@ function StepOrigin({ char, onChange }) {
   const origins = Object.entries(ORIGENS);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1">Escolha sua Origem</h2>
-        <p className="text-gray-400 text-sm">Sua origem define o que você fazia antes de se tornar um aventureiro.</p>
+    <div className="flex flex-col gap-8">
+      <div className="relative group overflow-hidden bg-rose-950/20 p-8 rounded-[2.5rem] border border-rose-500/10 shadow-2xl">
+        <div className="absolute top-0 right-0 p-6 opacity-10 text-6xl group-hover:scale-110 transition-transform duration-700">📜</div>
+        <h2 className="text-3xl font-black text-white tracking-tight">Defina sua Origem</h2>
+        <p className="text-slate-400 text-sm mt-2 max-w-lg leading-relaxed font-medium">
+          Seu passado moldou quem você é hoje. Escolha sua origem para ganhar perícias e poderes únicos.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {origins.map(([id, origin]) => {
           const isSelected = char.origem === id;
           return (
-            <button
+            <motion.button
               key={id}
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onChange({ modalOrigin: id })}
-              className={`text-left p-3 rounded-xl border transition-all duration-200 ${
+              className={`text-left p-6 rounded-[2rem] border transition-all relative overflow-hidden flex flex-col gap-3 shadow-xl group ${
                 isSelected
-                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
-                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500 hover:bg-gray-800'
+                  ? 'border-rose-500 ring-2 ring-rose-500/30 bg-rose-950/30'
+                  : 'border-white/5 bg-gray-900/40 hover:border-rose-500/40'
               }`}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">📜</span>
-                <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{origin.nome}</p>
+              <div className="flex items-center gap-3">
+                <span className="text-2xl group-hover:rotate-12 transition-all">📜</span>
+                <p className={`font-black text-sm uppercase tracking-widest ${isSelected ? 'text-rose-400' : 'text-white'}`}>{origin.nome}</p>
               </div>
-              <p className="text-[10px] text-gray-400 line-clamp-1 italic">"{origin.descricao}"</p>
-              <p className="text-[9px] text-amber-500/60 mt-2 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
-            </button>
+              <p className="text-[10px] text-slate-500 leading-relaxed font-medium line-clamp-2 italic">"{origin.descricao}"</p>
+              
+              <div className="mt-2 pt-3 border-t border-white/5 flex justify-between items-center">
+                 <span className="text-[8px] font-black uppercase tracking-widest text-slate-600">Benefícios: 2</span>
+                 <p className={`text-[9px] font-black uppercase tracking-widest ${isSelected ? 'text-rose-400' : 'text-slate-600 group-hover:text-rose-500/60'}`}>Ver mais →</p>
+              </div>
+
+              {isSelected && (
+                <div className="absolute top-3 right-3 w-2 h-2 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,1)] animate-pulse" />
+              )}
+            </motion.button>
           );
         })}
       </div>
@@ -1124,7 +1288,7 @@ function StepOrigin({ char, onChange }) {
 
 function StepOrigemBeneficios({ char, onChange, stats }) {
   const origem = ORIGENS[char.origem];
-  if (!origem) return <div className="text-gray-500 italic p-12 text-center">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;
+  if (!origem) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-3xl border border-white/5">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;
 
   const choices = char.origemBeneficios || [];
   const max = 2;
@@ -1152,85 +1316,96 @@ function StepOrigemBeneficios({ char, onChange, stats }) {
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-indigo-950/20 p-8 rounded-[2.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">📜</div>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-rose-950/20 p-8 rounded-[2.5rem] border border-rose-500/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">📜</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <span className="text-indigo-400">VI.</span> Histórico: {origem.nome}
+            <span className="text-rose-400">V.</span> Benefícios: {origem.nome}
           </h2>
-          <p className="text-gray-400 text-sm mt-2 max-w-md leading-relaxed">
-            Escolha <strong className="text-indigo-400">2 benefícios</strong> entre as competências e talentos do seu passado.
+          <p className="text-slate-400 text-sm mt-2 max-w-md leading-relaxed font-medium">
+            Seu passado concedeu dons específicos. Escolha <strong className="text-rose-400">2 benefícios</strong> para carregar em sua jornada.
           </p>
         </div>
-        <div className={`px-8 py-4 rounded-2xl border-2 font-black transition-all shadow-xl ${
+        <div className={`px-8 py-5 rounded-[2rem] border-2 font-black transition-all shadow-2xl flex flex-col items-center justify-center min-w-[120px] ${
           choices.length === max 
-            ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400 shadow-emerald-900/10' 
-            : 'bg-gray-950 border-gray-800 text-amber-500 shadow-amber-900/5'
+            ? 'bg-emerald-950/40 border-emerald-500/50 text-emerald-400 shadow-emerald-900/20' 
+            : 'bg-gray-950 border-white/5 text-rose-500 shadow-rose-900/5'
         }`}>
-          <span className="text-2xl">{choices.length}</span>
-          <span className="text-xs uppercase ml-2 opacity-60">de {max}</span>
+          <span className="text-3xl leading-none">{choices.length}</span>
+          <span className="text-[10px] uppercase mt-1 opacity-60 tracking-widest">de {max}</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Perícias Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 ml-1">
-            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-            <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Perícias de Origem</p>
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 ml-2">
+            <span className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+            <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Perícias de Origem</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
-             {origem.pericias.map(p => (
-               <button
-                 key={p}
-                 onClick={() => toggle(p)}
-                 className={`p-5 rounded-[1.5rem] border-2 text-left transition-all relative overflow-hidden group ${
-                   choices.includes(p) 
-                     ? 'bg-indigo-600 border-indigo-400 text-white shadow-xl shadow-indigo-900/20' 
-                     : (choices.length >= max ? 'bg-gray-900/30 border-gray-800/50 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/50 border-gray-800 text-gray-400 hover:border-indigo-500/50 hover:bg-gray-900 hover:text-white')
-                 }`}
-               >
-                 <div className="flex items-center justify-between">
-                    <span className="font-black text-lg tracking-tight uppercase">{p}</span>
-                    <span className={`text-xs opacity-40 font-bold ${choices.includes(p) ? 'text-white' : 'text-indigo-400'}`}>+2</span>
-                 </div>
-               </button>
-             ))}
+             {origem.pericias.map(p => {
+               const isSelected = choices.includes(p);
+               const isLocked = choices.length >= max && !isSelected;
+               return (
+                <motion.button
+                  key={p}
+                  whileHover={!isLocked ? { x: 4 } : {}}
+                  whileTap={!isLocked ? { scale: 0.98 } : {}}
+                  onClick={() => toggle(p)}
+                  className={`p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group ${
+                    isSelected 
+                      ? 'bg-blue-600 border-blue-400 text-white shadow-xl shadow-blue-900/30' 
+                      : (isLocked ? 'bg-gray-900/20 border-white/5 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/40 border-white/5 text-slate-400 hover:border-blue-500/50 hover:bg-gray-900')
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                     <span className="font-black text-base tracking-tight uppercase">{p}</span>
+                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border font-black text-xs ${isSelected ? 'bg-white/20 border-white/20' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>+2</div>
+                  </div>
+                </motion.button>
+               );
+             })}
           </div>
         </div>
 
         {/* Poderes Section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 ml-1">
-            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-            <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Poderes de Origem</p>
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 ml-2">
+            <span className="w-2 h-2 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.5)]" />
+            <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Poderes de Origem</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
              {origem.poderes.map(p => {
                const isSpecial = origem.poderUnico?.nome.includes(p);
+               const isSelected = choices.includes(p);
+               const isLocked = choices.length >= max && !isSelected;
                return (
-                 <button
+                 <motion.button
                    key={p}
+                   whileHover={!isLocked ? { x: 4 } : {}}
+                   whileTap={!isLocked ? { scale: 0.98 } : {}}
                    onClick={() => toggle(p)}
-                   className={`p-5 rounded-[1.5rem] border-2 text-left transition-all relative overflow-hidden group ${
-                     choices.includes(p) 
-                       ? 'bg-amber-600 border-amber-400 text-gray-900 shadow-xl shadow-amber-900/20' 
-                       : (choices.length >= max ? 'bg-gray-900/30 border-gray-800/50 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/50 border-gray-800 text-gray-400 hover:border-amber-500/50 hover:bg-gray-900 hover:text-white')
+                   className={`p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group ${
+                     isSelected 
+                       ? 'bg-rose-600 border-rose-400 text-white shadow-xl shadow-rose-900/30' 
+                       : (isLocked ? 'bg-gray-900/20 border-white/5 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/40 border-white/5 text-slate-400 hover:border-rose-500/50 hover:bg-gray-900')
                    }`}
                  >
                    <div className="flex flex-col">
-                     <span className="font-black text-lg tracking-tight uppercase flex items-center gap-2">
+                     <span className="font-black text-base tracking-tight uppercase flex items-center gap-3">
                        {p}
-                       {isSpecial && <span className={`text-[9px] px-2 py-0.5 rounded-full border ${choices.includes(p) ? 'bg-gray-900/20 border-gray-900/30 text-gray-900' : 'bg-amber-900/20 border-amber-500/30 text-amber-500'}`}>ÚNICO</span>}
+                       {isSpecial && <span className={`text-[8px] px-2 py-0.5 rounded-full border-2 font-black ${isSelected ? 'bg-white/20 border-white/40 text-white' : 'bg-rose-950/40 border-rose-500/30 text-rose-400'}`}>ÚNICO</span>}
                      </span>
                      {isSpecial && (
-                       <span className={`text-[10px] mt-2 leading-relaxed font-medium ${choices.includes(p) ? 'text-gray-950 font-bold' : 'text-gray-500'}`}>
-                         {origem.poderUnico.descricao}
-                       </span>
+                       <p className={`text-[11px] mt-2 leading-relaxed font-medium ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>
+                         {origem.poderUnico.description || origem.poderUnico.descricao}
+                       </p>
                      )}
                    </div>
-                 </button>
+                   {isSelected && <div className="absolute top-4 right-4 w-1.5 h-1.5 bg-white rounded-full animate-pulse" />}
+                 </motion.button>
                );
              })}
           </div>
@@ -1254,6 +1429,10 @@ function StepClassePericias({ char, onChange, stats }) {
   const obrigEscolhas = char.periciasObrigEscolha || {};
 
   const originSkills = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
+  
+  // T20: Se já tem perícia da origem, ganha escolha extra da classe
+  const skillOverlaps = fixedObrig.filter(s => originSkills.includes(s)).length;
+  const totalClassePool = (cls.pericias || 0) + skillOverlaps;
 
   function handleOrChoice(index, choice) {
     const nextObrigChoices = { ...obrigEscolhas, [index]: choice };
@@ -1275,18 +1454,18 @@ function StepClassePericias({ char, onChange, stats }) {
   }, [char.classe, char.origemBeneficios, char.periciasClasseEscolha, char.periciasObrigEscolha]);
 
   return (
-    <div className="flex flex-col gap-8">
-       <div className="bg-gray-900/40 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">{CLASS_ICONS[char.classe] || '⚔️'}</div>
-          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <span className="text-amber-500">VII.</span> Treinamento: {cls.nome}
+    <div className="flex flex-col gap-10">
+       <div className="bg-sky-950/20 p-8 rounded-[2.5rem] border border-sky-500/10 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl">{CLASS_ICONS[char.classe] || '⚔️'}</div>
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
+            <span className="text-amber-500">VI.</span> Treinamento: {cls.nome}
           </h2>
-          <p className="text-gray-500 text-sm mt-2 max-w-md leading-relaxed font-medium">
-            Todo {cls.nome} recebe um treinamento rigoroso em certas habilidades fundamentais para sua sobrevivência.
+          <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
+            Todo {cls.nome} recebe um treinamento rigoroso em competências fundamentais para sua sobrevivência e maestria.
           </p>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Mandatory Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
@@ -1324,57 +1503,60 @@ function StepClassePericias({ char, onChange, stats }) {
             </div>
           </div>
 
-          {/* Selection Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between ml-1 pr-4">
-              <div className="flex items-center gap-2">
-                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Lista da Classe</p>
+          {/* Training Choices Section */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-between ml-2 pr-4">
+              <div className="flex items-center gap-3">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Treinamento Adicional</p>
               </div>
-              <div className={`px-4 py-1 rounded-full text-[10px] font-black border ${
-                char.periciasClasseEscolha.length === cls.pericias 
-                ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-400' 
-                : 'bg-amber-900/20 border-amber-500/50 text-amber-500'
+              <div className={`px-4 py-1.5 rounded-full text-[10px] font-black border-2 transition-all ${
+                char.periciasClasseEscolha.length === totalClassePool 
+                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+                : 'bg-amber-950/40 border-amber-500/40 text-amber-500'
               }`}>
-                {char.periciasClasseEscolha.length} / {cls.pericias}
+                {char.periciasClasseEscolha.length} / {totalClassePool} Selecionadas
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                {cls.periciasClasse.filter(p => !fixedObrig.includes(p)).map(p => {
                  const isObrigChoice = Object.values(obrigEscolhas).includes(p);
                  const isOrigin = originSkills.includes(p);
                  const isPicked = char.periciasClasseEscolha.includes(p);
                  
-                 const disabled = isObrigChoice || isOrigin || (!isPicked && char.periciasClasseEscolha.length >= cls.pericias);
+                 const disabled = isObrigChoice || isOrigin || (!isPicked && char.periciasClasseEscolha.length >= totalClassePool);
 
                  function toggle() {
                    if (isObrigChoice || isOrigin) return;
                    if (isPicked) {
                      onChange({ periciasClasseEscolha: char.periciasClasseEscolha.filter(s => s !== p) });
-                   } else if (char.periciasClasseEscolha.length < cls.pericias) {
+                   } else if (char.periciasClasseEscolha.length < totalClassePool) {
                      onChange({ periciasClasseEscolha: [...char.periciasClasseEscolha, p] });
                    }
                  }
 
                  return (
-                   <button
+                   <motion.button
                      key={p}
+                     whileHover={!disabled || isPicked ? { x: 4 } : {}}
+                     whileTap={!disabled || isPicked ? { scale: 0.98 } : {}}
                      onClick={toggle}
                      disabled={disabled && !isPicked}
-                     className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                     className={`p-5 rounded-2xl border-2 text-left transition-all flex items-center justify-between group overflow-hidden relative ${
                        isPicked 
-                       ? 'bg-amber-600 border-amber-400 text-gray-950 font-black shadow-lg shadow-amber-900/20'
+                       ? 'bg-amber-600 border-amber-400 text-gray-950 shadow-xl shadow-amber-900/20'
                        : (isOrigin || isObrigChoice 
-                          ? 'bg-gray-900/40 border-gray-800 text-gray-600 opacity-50 cursor-not-allowed' 
-                          : 'bg-gray-950 border-gray-900 text-gray-400 hover:border-gray-700')
+                          ? 'bg-gray-900/40 border-white/5 text-slate-600 grayscale opacity-50 cursor-not-allowed' 
+                          : 'bg-gray-900/60 border-white/5 text-slate-300 hover:border-amber-500/40 hover:bg-gray-950')
                      }`}
                    >
                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase tracking-tight truncate">{p}</span>
-                        {(isOrigin || isObrigChoice) && <span className="text-[8px] opacity-60">Já Treinado</span>}
+                        <span className="text-xs font-black uppercase tracking-tight truncate">{p}</span>
+                        {(isOrigin || isObrigChoice) && <span className="text-[8px] opacity-60 font-black">Já Adquirido</span>}
                      </div>
-                   </button>
+                     {isPicked && <span className="text-lg">⚔️</span>}
+                   </motion.button>
                  );
                })}
             </div>
@@ -1401,7 +1583,7 @@ function StepIntPericias({ char, onChange, stats }) {
   const mandatoryFromClass = [...fixedObrig, ...chosenObrig];
   const originPericias = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
   
-  const alreadyTrained = [...new Set([...mandatoryFromClass, ...originPericias])];
+  const alreadyTrained = [...new Set([...mandatoryFromClass, ...originPericias, ...(char.periciasClasseEscolha || [])])];
   const currentExtras = char.pericias.filter(p => !alreadyTrained.includes(p));
   const availableExtras = intBonus - currentExtras.length;
 
@@ -1416,18 +1598,18 @@ function StepIntPericias({ char, onChange, stats }) {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-       <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-blue-950/20 p-8 rounded-[2.5rem] border border-blue-500/20 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">🧠</div>
+    <div className="flex flex-col gap-10">
+       <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-blue-950/20 p-8 rounded-[2.5rem] border border-blue-500/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">🧠</div>
         <div className="flex-1">
-          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <span className="text-blue-400">VIII.</span> Especialização (INT)
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
+            <span className="text-blue-400">V.</span> Especialização (INT)
           </h2>
-          <p className="text-gray-500 text-sm mt-2 max-w-md leading-relaxed font-medium">
+          <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             Seu raciocínio rápido permite que você aprenda <strong className="text-blue-400">{intBonus} perícia{intBonus !== 1 ? 's' : ''} extra{intBonus !== 1 ? 's' : ''}</strong> da sua classe.
           </p>
         </div>
-        <div className={`px-8 py-4 rounded-2xl border-2 font-black transition-all shadow-xl ${
+        <div className={`px-8 py-5 rounded-[2rem] border-2 font-black transition-all shadow-2xl flex flex-col items-center justify-center min-w-[120px] ${
           availableExtras === 0 
             ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400 shadow-emerald-900/10' 
             : 'bg-gray-950 border-gray-800 text-blue-400 shadow-blue-900/5'
@@ -1469,7 +1651,7 @@ function StepIntPericias({ char, onChange, stats }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// STEP 3 — DIVINDADE
+// STEP 6 — DIVINDADE
 // ─────────────────────────────────────────────────────────────
 
 function StepDeus({ char, onChange }) {
@@ -1478,58 +1660,75 @@ function StepDeus({ char, onChange }) {
   const isDivine = divineClasses.includes(char.classe);
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1 tracking-tight">
-          <span className="opacity-40 mr-2 text-xl font-black">IV.</span> Divindade
-        </h2>
-        <p className="text-gray-400 text-sm">
-          {isDivine
-            ? 'Como ' + (CLASSES[char.classe]?.nome || '') + ', sua divindade concede poderes especiais.'
-            : 'Opcional. Seguir um deus pode abrir poderes concedidos no futuro.'}
-        </p>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">✨</div>
+        <div className="flex-1">
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
+            <span className="text-amber-500">VI.</span> Divindade
+          </h2>
+          <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
+            {isDivine
+              ? `Como ${CLASSES[char.classe]?.nome || 'escolhido'}, sua conexão com o divino é a fonte de seu poder.`
+              : 'Opcional. Dedicar-se a um deus pode conceder dons únicos, mas exige seguir seus dogmas.'}
+          </p>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {!isDivine && (
-          <button
+          <motion.button
+            whileHover={{ y: -2 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => onChange({ deus: '' })}
-            className={`text-left p-3 rounded-xl border transition-all ${
-              !char.deus ? 'border-amber-500 bg-amber-900/20' : 'border-gray-700 bg-gray-800/60 hover:border-gray-500'
+            className={`text-left p-6 rounded-[2rem] border-2 transition-all relative overflow-hidden flex flex-col justify-between h-full ${
+              !char.deus 
+                ? 'bg-gray-800 border-amber-500/50 shadow-xl shadow-gray-950/50' 
+                : 'bg-gray-900/40 border-white/5 hover:border-white/10'
             }`}
           >
-            <p className={`font-bold text-sm ${!char.deus ? 'text-amber-300' : 'text-gray-400'}`}>🚫 Sem divindade</p>
-            <p className="text-[11px] text-gray-500">Ateu ou agnóstico. Sem restrições nem poderes divinos.</p>
-          </button>
+            <div className="flex items-center gap-3">
+               <span className="text-2xl">🚫</span>
+               <p className={`font-black text-sm uppercase tracking-widest ${!char.deus ? 'text-amber-400' : 'text-slate-400'}`}>Sem divindade</p>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-2 font-medium">Ateu ou agnóstico. Sem restrições nem poderes divinos.</p>
+            {!char.deus && <div className="absolute top-4 right-4 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(245,158,11,1)]" />}
+          </motion.button>
         )}
 
         {deuses.map(([id, deus]) => {
           const isSelected = char.deus === id;
           return (
-            <button
+            <motion.button
               key={id}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => onChange({ modalDeity: id })}
-              className={`text-left p-3 rounded-xl border transition-all duration-200 ${
+              className={`text-left p-6 rounded-[2rem] border-2 transition-all duration-300 relative overflow-hidden flex flex-col justify-between h-full ${
                 isSelected
-                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
-                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500 hover:bg-gray-800'
+                  ? 'bg-amber-950/30 border-amber-500 shadow-2xl shadow-amber-900/20'
+                  : 'bg-gray-900/40 border-white/5 hover:border-amber-500/30'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{DEITY_ICONS[id] || '✨'}</span>
-                    <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{deus.nome}</p>
-                    {deus.alinhamento && (
-                      <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">{deus.alinhamento}</span>
-                    )}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border ${isSelected ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'bg-gray-950 border-white/5'}`}>
+                    {DEITY_ICONS[id] || '✨'}
                   </div>
-                  {deus.portfolio && <p className="text-[11px] text-gray-400 mt-0.5">{deus.portfolio}</p>}
+                  <div>
+                    <p className={`font-black text-sm uppercase tracking-tight ${isSelected ? 'text-amber-400' : 'text-white'}`}>{deus.nome}</p>
+                    <p className="text-[9px] text-slate-500 font-bold tracking-widest uppercase">{deus.portfolio}</p>
+                  </div>
                 </div>
-                {deus.arma && <span className="text-[10px] text-gray-500 shrink-0">⚔ {deus.arma}</span>}
               </div>
-              <p className="text-[9px] text-amber-500/60 mt-2 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
-            </button>
+
+              <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                 <span className="text-[8px] bg-white/5 text-slate-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">{deus.alinhamento}</span>
+                 <span className="text-[9px] font-black text-amber-500/60 uppercase group-hover:text-amber-500 transition-colors">Detalhes →</span>
+              </div>
+
+              {isSelected && <div className="absolute top-4 right-4 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(245,158,11,1)]" />}
+            </motion.button>
           );
         })}
       </div>
@@ -1541,8 +1740,7 @@ function StepDeus({ char, onChange }) {
             deus={DEUSES[char.modalDeity]}
             onClose={() => onChange({ modalDeity: null })}
             onConfirm={() => {
-              const id = char.modalDeity;
-              onChange({ deus: id, modalDeity: null });
+              onChange({ deus: char.modalDeity, modalDeity: null });
             }}
             isSelected={char.deus === char.modalDeity}
           />
@@ -1578,7 +1776,7 @@ function StepAttributes({ char, onChange, stats }) {
     }
     // Artificial delay for "premium" feel
     setTimeout(() => {
-        onChange({ rolagens: newRolls });
+        onChange({ rolagens: newRolls, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 } });
         setRolling(false);
     }, 800);
   }
@@ -1586,48 +1784,52 @@ function StepAttributes({ char, onChange, stats }) {
   function assignRoll(attrKey, rollIdx) {
     const roll = char.rolagens[rollIdx];
     if (!roll) return;
-    
+
     const newAttrs = { ...char.atributos, [attrKey]: roll.modifier };
     const newRolls = [...char.rolagens];
-    newRolls[rollIdx] = { ...roll, assignedTo: attrKey };
-    
-    // If this attribute already had a roll, free it
+
+    // New assignment logic:
+    // 1. If attrKey already has a roll assigned, find that roll and unassign it.
     newRolls.forEach((r, idx) => {
-        if (idx !== rollIdx && r.assignedTo === attrKey) {
+        if (r.assignedTo === attrKey) {
             newRolls[idx] = { ...r, assignedTo: null };
         }
     });
+
+    // 2. Assign the new roll.
+    newRolls[rollIdx] = { ...roll, assignedTo: attrKey };
 
     onChange({ atributos: newAttrs, rolagens: newRolls });
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10">
       {/* Header & Method Toggle */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gray-900/50 p-6 rounded-[2.5rem] border border-gray-800 shadow-2xl">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-gray-900/40 p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden backdrop-blur-sm">
+        <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">📊</div>
         <div className="flex-1">
-          <h2 className="text-3xl font-black text-white tracking-tight mb-2 flex items-center gap-3">
+          <h2 className="text-4xl font-black text-white tracking-tighter mb-3 flex items-center gap-4">
              <span className="text-amber-500">V.</span> Atributos
           </h2>
-          <p className="text-gray-400 text-sm leading-relaxed max-w-md">
-            {isBuy 
-              ? `Distribua seus ${POINT_POOL} pontos. Todos os atributos começam em 0. Custo variável por valor.`
-              : "A sorte está lançada! Role 4d6 (descarta o menor) para cada atributo e atribua os resultados."}
+          <p className="text-slate-400 text-sm leading-relaxed max-w-lg font-medium">
+            {isBuy
+              ? `Distribua seus ${POINT_POOL} pontos. Todos os atributos começam em 0. O custo aumenta conforme o valor sobe.`
+              : "Defina o potencial de seu herói através da sorte. Role 4 dados de 6 faces, descarte o menor e atribua aos atributos."}
           </p>
         </div>
 
-        <div className="flex items-center bg-gray-950 p-1.5 rounded-2xl border border-gray-800">
+        <div className="flex items-center bg-gray-950 p-2 rounded-[2rem] border border-white/5 shadow-inner">
            {['buy', 'roll'].map(m => (
              <button
                key={m}
                onClick={() => onChange({ attrMethod: m, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 }, rolagens: [] })}
-               className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
-                 char.attrMethod === m 
-                   ? 'bg-amber-600 text-gray-900 shadow-xl shadow-amber-900/20' 
-                   : 'text-gray-500 hover:text-gray-300'
+               className={`px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all ${
+                 char.attrMethod === m
+                   ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-gray-950 shadow-xl shadow-amber-900/20'
+                   : 'text-slate-500 hover:text-slate-300'
                }`}
              >
-               {m === 'buy' ? 'Compra de Pontos' : 'Rolagem de Dados'}
+               {m === 'buy' ? 'PONTOS' : 'DADOS'}
              </button>
            ))}
         </div>
@@ -1635,60 +1837,85 @@ function StepAttributes({ char, onChange, stats }) {
 
       {/* Point Buy Pool Display */}
       {isBuy && (
-        <div className="flex justify-center -mt-4">
-           <div className={`px-8 py-3 rounded-full border bg-gray-900 flex items-center gap-4 shadow-2xl ${remaining > 0 ? 'border-amber-600/40' : remaining === 0 ? 'border-emerald-500/40' : 'border-red-500/40'}`}>
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pontos Restantes</span>
-              <div className="h-4 w-px bg-gray-800" />
-              <span className={`text-2xl font-black ${remaining > 0 ? 'text-amber-500' : remaining === 0 ? 'text-emerald-500' : 'text-red-500'}`}>{remaining}</span>
-           </div>
+        <div className="flex justify-center -mt-8 relative z-10">
+           <motion.div
+             initial={{ y: 20, opacity: 0 }}
+             animate={{ y: 0, opacity: 1 }}
+             className={`px-10 py-5 rounded-full border-2 bg-gray-950 flex items-center gap-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${remaining > 0 ? 'border-amber-600/40' : remaining === 0 ? 'border-emerald-500/40' : 'border-red-500/40'}`}
+           >
+              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Reserva de Pontos</span>
+              <div className="h-6 w-px bg-white/10" />
+              <div className="flex items-baseline gap-1">
+                 <span className={`text-4xl font-black tabular-nums ${remaining > 0 ? 'text-amber-500' : remaining === 0 ? 'text-emerald-500' : 'text-red-500'}`}>{remaining}</span>
+                 <span className="text-[10px] font-black text-slate-600 uppercase">pts</span>
+              </div>
+           </motion.div>
         </div>
       )}
 
       {/* Dice Roll Box */}
       {!isBuy && char.rolagens.length === 0 && (
-         <div className="flex flex-col items-center justify-center py-12 bg-gray-900/40 border border-dashed border-gray-800 rounded-[3rem] gap-6">
-            <div className={`text-7xl ${rolling ? 'animate-bounce' : 'opacity-20'}`}>🎲</div>
-            <p className="text-gray-500 font-medium">Você ainda não rolou seus atributos para este herói.</p>
-            <button
-              onClick={handleRoll}
-              disabled={rolling}
-              className="px-12 py-4 rounded-full bg-gradient-to-r from-amber-700 to-amber-500 text-gray-900 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-amber-900/30 disabled:opacity-50"
-            >
-              {rolling ? 'Rolando...' : 'Rolar Atributos!'}
-            </button>
-         </div>
+          <div className="flex flex-col items-center justify-center py-20 bg-gray-950/40 border border-dashed border-white/10 rounded-[3.5rem] gap-8 backdrop-blur-sm">
+             <div className={`text-[8rem] filter drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] ${rolling ? 'animate-bounce' : 'opacity-20 translate-y-2'}`}>🎲</div>
+             <div className="text-center space-y-2">
+                <p className="text-white text-xl font-black uppercase tracking-tight">Destino Indefinido</p>
+                <p className="text-slate-500 font-medium">Role os dados para determinar seu potencial genético.</p>
+             </div>
+             <button
+               onClick={handleRoll}
+               disabled={rolling}
+               className="px-16 py-6 rounded-[2.5rem] bg-gradient-to-r from-amber-500 to-amber-700 text-gray-950 font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(245,158,11,0.2)] disabled:opacity-50"
+             >
+               {rolling ? 'Invocando Sorte...' : 'Rolar Atributos'}
+             </button>
+          </div>
       )}
 
       {/* Dice Selection Area */}
       {!isBuy && char.rolagens.length > 0 && (
-        <div className="bg-gray-900/60 p-6 rounded-[2.5rem] border border-gray-800">
-           <div className="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
-              <h3 className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Seus Resultados (4d6k3)</h3>
-              <button onClick={handleRoll} className="text-[10px] font-bold text-amber-500 uppercase hover:underline">Rolar Novamente</button>
+        <div className="bg-gray-950/40 p-10 rounded-[3rem] border border-white/10 backdrop-blur-sm space-y-8">
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                 <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                 <h3 className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Resultados Disponíveis</h3>
+              </div>
+              <button
+                onClick={handleRoll}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-[10px] font-black text-amber-500 uppercase tracking-widest transition-all border border-white/5"
+              >
+                Refazer Rolagens
+              </button>
            </div>
-           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+
+           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
               {char.rolagens.map((r, idx) => (
-                <div 
-                  key={idx} 
-                  className={`relative group bg-gray-950 border rounded-2xl p-4 flex flex-col items-center transition-all ${
-                    r.assignedTo ? 'opacity-20 grayscale border-gray-800' : 'border-amber-900/30 hover:border-amber-500'
+                <motion.div
+                  key={idx}
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className={`relative group rounded-3xl p-6 flex flex-col items-center transition-all border-2 ${
+                    r.assignedTo
+                    ? 'bg-gray-950/20 border-white/5 opacity-30 grayscale'
+                    : 'bg-gray-900 border-white/5 hover:border-amber-500/50 shadow-xl'
                   }`}
                 >
-                   <span className="text-[9px] text-gray-600 font-bold mb-1">Total: {r.diceTotal}</span>
-                   <span className="text-2xl font-black text-amber-500">{signStr(r.modifier)}</span>
-                   <div className="mt-2 flex gap-0.5">
+                   <span className="text-[10px] text-slate-500 font-black mb-2 uppercase tracking-tighter">Total: {r.diceTotal}</span>
+                   <span className={`text-4xl font-black ${r.assignedTo ? 'text-slate-500' : 'text-amber-500'}`}>{signStr(r.modifier)}</span>
+                   <div className="mt-3 flex gap-1 opacity-40">
                       {r.rolls.map((d, di) => (
-                        <span key={di} className="text-[8px] text-gray-700">{d}</span>
+                        <span key={di} className="text-[9px] font-bold text-slate-400">{d}</span>
                       ))}
                    </div>
-                </div>
+                   {r.assignedTo && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-slate-800 text-[8px] font-black text-white uppercase">{r.assignedTo}</span>}
+                </motion.div>
               ))}
            </div>
         </div>
       )}
 
       {/* Attributes Grid */}
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 gap-4">
         {ATTR_KEYS.map(key => {
           const base = char.atributos[key] || 0;
           const bonus = stats.raceBonus[key] || 0;
@@ -1700,32 +1927,69 @@ function StepAttributes({ char, onChange, stats }) {
           const isAtkAttr = (char.classe === 'cacador' && key === 'DES') || (char.classe !== 'cacador' && key === 'FOR');
 
           return (
-            <div key={key} className={`bg-gray-800/40 backdrop-blur-sm border rounded-[2rem] p-5 transition-all duration-500 ${
-              isAtkAttr ? 'border-orange-500/30 bg-orange-950/10' :
-              isPmAttr ? 'border-blue-500/30 bg-blue-950/10' :
-              'border-gray-800 hover:border-gray-700'
-            }`}>
-              <div className="flex items-center gap-6">
-                <div className="w-40 shrink-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-black text-white text-lg tracking-tight uppercase">{ATTR_LABELS[key]}</p>
-                    {isAtkAttr && <span className="text-[9px] bg-orange-600 text-black px-1.5 py-0.5 rounded-full font-black">ATK</span>}
-                    {isPmAttr && <span className="text-[9px] bg-blue-600 text-black px-1.5 py-0.5 rounded-full font-black">MANA</span>}
-                  </div>
-                  <p className="text-[10px] text-gray-500 leading-tight font-medium opacity-60">{ATTR_EFFECTS[key]}</p>
+            <motion.div
+              key={key}
+              layout
+              className={`relative overflow-hidden group bg-gray-900/60 backdrop-blur-md border-2 rounded-[2.5rem] p-8 transition-all duration-500 ${
+                isAtkAttr ? 'border-orange-500/20 bg-orange-950/5' :
+                isPmAttr ? 'border-blue-500/20 bg-blue-950/5' :
+                'border-white/5 hover:border-white/10'
+              }`}
+            >
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+                {/* Stats Info */}
+                <div className="w-full md:w-64 shrink-0">
+                   <div className="flex items-center gap-3 mb-2">
+                      <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${
+                        isAtkAttr ? 'text-orange-400' : isPmAttr ? 'text-blue-400' : 'text-slate-500'
+                      }`}>{ATTR_TRANSLATION[key]}</span>
+                      {(isAtkAttr || isPmAttr) && (
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
+                          isAtkAttr ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'
+                        }`}>
+                          {isAtkAttr ? 'Ataque' : 'Mana'}
+                        </span>
+                      )}
+                   </div>
+                   <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-1">{key}</h3>
+                   <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                         <span className="text-[10px] font-black text-slate-500 uppercase">Base</span>
+                         <span className="text-xs font-black text-slate-300">{signStr(base)}</span>
+                      </div>
+                      {bonus !== 0 && (
+                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/20">
+                           <span className="text-[10px] font-black text-emerald-500/60 uppercase">Raça</span>
+                           <span className="text-xs font-black text-emerald-400">{signStr(bonus)}</span>
+                        </div>
+                      )}
+                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 flex-1 justify-end">
-                   {isBuy ? (
-                    <div className="flex items-center bg-gray-950 rounded-2xl p-1.5 border border-gray-800 shadow-inner">
+                {/* Main Total Display */}
+                <div className="flex-1 flex items-center justify-center md:justify-start">
+                   <div className="relative group/total">
+                      <div className={`text-7xl md:text-8xl font-black italic tracking-tighter leading-none transition-all ${
+                        total > 0 ? 'text-white' : total < 0 ? 'text-rose-500' : 'text-slate-700'
+                      }`}>
+                        {signStr(total)}
+                      </div>
+                      <div className="absolute -bottom-2 -right-4 w-12 h-px bg-white/10" />
+                   </div>
+                </div>
+
+                {/* Controls Area */}
+                <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-4 min-w-[200px]">
+                  {isBuy ? (
+                    <div className="flex items-center gap-3 bg-gray-950 p-2 rounded-3xl border border-white/5 shadow-inner">
                       <button
                         onClick={() => handleChange(key, -1)}
                         disabled={!canDecrease}
                         className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
-                          canDecrease ? 'bg-gray-900 border border-gray-800 hover:bg-gray-800 text-white shadow-lg' : 'text-gray-800 opacity-20'
+                          canDecrease ? 'bg-gray-900 hover:bg-gray-800 text-white' : 'text-gray-800 opacity-20'
                         }`}
-                      >−</button>
-                      <div className="w-16 text-center">
+                      >-</button>
+                      <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-white/5 flex items-center justify-center shadow-inner">
                         <span className={`text-2xl font-black ${base > 0 ? 'text-amber-500' : base < 0 ? 'text-red-500' : 'text-white'}`}>
                           {signStr(base)}
                         </span>
@@ -1770,7 +2034,7 @@ function StepAttributes({ char, onChange, stats }) {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -1818,17 +2082,19 @@ function StepEquipment({ char, onChange, stats }) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between bg-gray-900/40 p-6 rounded-[2.5rem] border border-gray-800 shadow-xl">
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">
-            <span className="text-amber-500 mr-2">VIII.</span> Equipamento Inicial
+    <div className="flex flex-col gap-10">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-10 rounded-[3rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">💰</div>
+        <div className="flex-1">
+          <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
+            <span className="text-amber-500 mr-2">VIII.</span> Arsenal Inicial
           </h2>
-          <p className="text-gray-400 text-sm">Prepare-se para o perigo. Você tem T$ {char.dinheiro} para gastar.</p>
+          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Prepare seu arsenal para os perigos de Arton. Gerencie seu patrimônio com sabedoria.</p>
         </div>
-        <div className="px-6 py-3 bg-amber-900/20 border border-amber-500/30 rounded-2xl flex items-center gap-3">
-          <span className="text-amber-500 text-xl font-black">T$ {char.dinheiro}</span>
-          <span className="text-[10px] text-amber-500/60 uppercase font-bold tracking-widest">Disponível</span>
+        <div className="px-10 py-6 bg-gray-950 border-2 border-amber-500/40 rounded-[2.5rem] flex flex-col items-center justify-center min-w-[180px] shadow-2xl shadow-amber-900/10 relative group overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+          <span className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1 relative z-10">Patrimônio</span>
+          <span className="text-3xl font-black text-amber-500 tabular-nums relative z-10">T$ {char.dinheiro}</span>
         </div>
       </div>
 
@@ -1940,22 +2206,37 @@ function StepPowers({ char, onChange, stats }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {GENERAL_POWERS[activeTab].map(p => {
           const isOwned = char.poderesGerais.some(owned => owned.nome === p.nome);
+          const eligibility = checkPowerEligibility(p, char, stats);
+          const canSelect = eligibility.ok || isOwned;
+
           return (
             <div 
               key={p.nome}
-              onClick={() => togglePower(p)}
+              onClick={() => canSelect && togglePower(p)}
               className={`group p-5 rounded-3xl border transition-all cursor-pointer flex flex-col gap-2 relative overflow-hidden ${
                 isOwned 
                   ? 'bg-blue-900/10 border-blue-500/50 shadow-lg shadow-blue-900/10' 
-                  : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'
+                  : (canSelect 
+                      ? 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700' 
+                      : 'bg-gray-950/60 border-gray-900/50 opacity-50 cursor-not-allowed grayscale')
               }`}
             >
               <div className="flex items-center justify-between">
-                <p className={`font-black text-sm uppercase tracking-tight ${isOwned ? 'text-blue-400' : 'text-white'}`}>{p.nome}</p>
+                <p className={`font-black text-sm uppercase tracking-tight ${isOwned ? 'text-blue-400' : (canSelect ? 'text-white' : 'text-gray-600')}`}>
+                  {p.nome}
+                </p>
                 {isOwned && <span className="w-2 h-2 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 animate-pulse" />}
               </div>
-              <p className="text-xs text-gray-400 leading-relaxed font-medium">{p.descricao}</p>
-              {p.prereq && (
+              <p className={`text-xs leading-relaxed font-medium ${canSelect ? 'text-gray-400' : 'text-gray-600'}`}>{p.descricao}</p>
+              
+              {!eligibility.ok && !isOwned && (
+                <div className="mt-2 flex items-center gap-2">
+                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                   <span className="text-[10px] text-rose-400 font-black uppercase tracking-widest">Bloqueado: {eligibility.reason}</span>
+                </div>
+              )}
+
+              {p.prereq && !p.prereqs && (
                 <div className="mt-1 px-2 py-0.5 bg-black/20 rounded-md inline-block">
                   <span className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Pré-req: {p.prereq}</span>
                 </div>
@@ -1974,74 +2255,172 @@ function StepPowers({ char, onChange, stats }) {
 
 function StepHeritage({ raca, choices = {}, setChoices, hero }) {
   const race = RACES[raca];
-  if (!race) return <div className="text-gray-500 italic p-12 text-center">Selecione uma raça no passo anterior.</div>;
+  if (!race) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-[2.5rem] border border-dashed border-white/5 backdrop-blur-sm">Selecione uma raça no passo anterior para descobrir sua herança.</div>;
 
   const isSuraggel = raca === 'suraggel';
   const isHumano = raca === 'humano';
-  const currentChoices = choices || {};
+  const isLefou = raca === 'lefou';
+  const isOsteon = raca === 'osteon';
+  const isKliren = raca === 'kliren';
+  const isSereia = raca === 'sereia';
+  const isSilfide = raca === 'silfide';
+  const isQareen = raca === 'qareen';
 
-  // Suraggel: choose Aggelus or Sulfure
+  const currentChoices = choices || {};
+  const selectedSkills = currentChoices.pericias || [];
+
+  const renderSelection = (title, list, max, description) => {
+    return (
+      <div className="bg-blue-950/20 rounded-[2.5rem] border border-blue-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">✨</div>
+        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+          <div>
+            <h3 className="text-sm font-black text-blue-400 uppercase tracking-[0.2em] mb-1">{title}</h3>
+            <p className="text-[11px] text-slate-400 font-medium">{description}</p>
+          </div>
+          <div className={`px-6 py-2 rounded-full text-xs font-black border-2 transition-all shadow-lg ${
+            selectedSkills.length === max 
+              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+              : 'bg-blue-950/40 border-blue-500/40 text-blue-400'
+          }`}>
+            {selectedSkills.length} / {max} Selecionadas
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          {list.map(s => {
+            const isSelected = selectedSkills.includes(s);
+            return (
+              <motion.button
+                key={s}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  let next;
+                  if (isSelected) next = selectedSkills.filter(x => x !== s);
+                  else if (selectedSkills.length < max) next = [...selectedSkills, s];
+                  else return;
+                  setChoices({ ...currentChoices, pericias: next });
+                }}
+                className={`p-4 rounded-2xl border-2 text-xs font-black transition-all ${
+                  isSelected 
+                    ? 'border-blue-400 bg-blue-600 text-white shadow-xl shadow-blue-900/20' 
+                    : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-blue-500/30 hover:text-white'
+                }`}
+              >
+                {s}
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   if (isSuraggel) {
     const variant = currentChoices.suraggel || null;
     return (
-      <div className="flex flex-col gap-6">
-        <div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-1">Herança Suraggel</h2>
-          <p className="text-gray-400 text-sm">Escolha sua herança celestial ou infernal.</p>
+      <div className="flex flex-col gap-8">
+        <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+          <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">😇</div>
+          <h2 className="text-3xl font-black text-white tracking-tight mb-2">Herança Suraggel</h2>
+          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Escolha sua linhagem sagrada ou profana. Esta escolha define seus instintos e poderes latentes.</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {['aggelus', 'sulfure'].map(v => (
-            <button
+            <motion.button
               key={v}
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setChoices({ ...currentChoices, suraggel: v })}
-              className={`p-6 rounded-2xl border-2 transition-all text-left ${
+              className={`p-8 rounded-[2.5rem] border-2 transition-all text-left relative overflow-hidden flex flex-col justify-between group h-full ${
                 variant === v
-                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
-                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500'
+                  ? 'border-amber-500 bg-amber-950/20 shadow-2xl shadow-amber-900/10'
+                  : 'border-white/5 bg-gray-900/40 hover:border-amber-500/30'
               }`}
             >
-              <span className="text-3xl block mb-2">{v === 'aggelus' ? '😇' : '😈'}</span>
-              <p className={`font-black text-lg uppercase tracking-tight ${variant === v ? 'text-amber-400' : 'text-white'}`}>
-                {v === 'aggelus' ? 'Aggelus' : 'Sulfure'}
-              </p>
-              <p className="text-xs text-gray-400 mt-1">
-                {v === 'aggelus'
-                  ? 'Herança celestial. Recebe asas luminosas e bônus em Diplomacia.'
-                  : 'Herança infernal. Recebe resistência a fogo e bônus em Intimidação.'}
-              </p>
-            </button>
+              <div>
+                <span className="text-5xl block mb-6 transition-transform group-hover:scale-110">{v === 'aggelus' ? '😇' : '😈'}</span>
+                <p className={`font-black text-xl uppercase tracking-wider mb-2 ${variant === v ? 'text-amber-400' : 'text-white'}`}>
+                  {v === 'aggelus' ? 'Aggelus' : 'Sulfure'}
+                </p>
+                <div className="h-px w-12 bg-white/10 mb-4" />
+                <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                  {v === 'aggelus'
+                    ? 'Descendente de celestiais. Sab +2, Car +1. Possui o dom da Diplomacia e Intuição, banhando o mundo com Luz.'
+                    : 'Descendente de infernais. Des +2, Int +1. Mestre da Enganação e Furtividade, movendo-se através da Escuridão.'}
+                </p>
+              </div>
+              {variant === v && <div className="absolute top-6 right-6 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_15px_rgba(245,158,11,1)]" />}
+            </motion.button>
           ))}
         </div>
       </div>
     );
   }
 
-  // Generic heritage step for other races
   return (
-    <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1">Herança: {race.nome}</h2>
-        <p className="text-gray-400 text-sm">Características e traços herdados da sua raça.</p>
+    <div className="flex flex-col gap-8">
+      <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
+        <h2 className="text-3xl font-black text-white tracking-tight mb-2">Herança: {race.nome}</h2>
+        <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
       </div>
 
-      <div className="bg-gray-800/60 rounded-2xl border border-gray-700 p-6">
-        <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">Habilidades Raciais</h3>
-        <div className="flex flex-col gap-3">
+      <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl">
+        <div className="flex items-center gap-3 mb-6">
+          <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
+          <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Habilidades Raciais</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {(race.habilidades || []).map((h, i) => (
-            <div key={i} className="bg-gray-900/60 rounded-xl p-4 border border-gray-800">
-              <p className="text-amber-400 font-bold text-sm">{h.nome}</p>
-              <p className="text-gray-400 text-xs mt-1 leading-relaxed">{h.descricao}</p>
+            <div key={i} className="bg-gray-900/60 rounded-3xl p-6 border border-white/5 shadow-inner hover:border-white/10 transition-all group">
+              <p className="text-amber-400 font-black text-xs uppercase tracking-tight mb-2 flex items-center gap-2 group-hover:text-amber-300">
+                <span className="text-[10px]">✦</span> {h.nome}
+              </p>
+              <p className="text-slate-400 text-[11px] leading-relaxed font-medium">{h.descricao}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {isHumano && (
-        <div className="bg-blue-900/20 rounded-2xl border border-blue-700/40 p-6">
-          <h3 className="text-sm font-bold text-blue-300 mb-2 uppercase tracking-widest">Versatilidade Humana</h3>
-          <p className="text-xs text-gray-400">Humanos recebem treinamento em 2 perícias à escolha ou podem trocar por um poder geral. Isso será aplicado nas etapas seguintes.</p>
-        </div>
-      )}
+      <AnimatePresence>
+        {isHumano && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Versatilidade Humana", ALL_PERICIAS, 2, "Seu povo é conhecido pela adaptabilidade única. Escolha duas perícias adicionais.")}
+          </motion.div>
+        )}
+        {isLefou && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Deformidades da Tormenta", ALL_PERICIAS, 2, "A mácula da Tormenta concede um bônus de +2 em duas perícias à sua escolha.")}
+          </motion.div>
+        )}
+        {isKliren && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Híbrido", ALL_PERICIAS, 1, "Sua natureza dual permite treinamento imediato em uma perícia extra.")}
+          </motion.div>
+        )}
+        {isOsteon && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Memória Póstuma", ALL_PERICIAS, 1, "Fragmentos de sua vida passada permitem que você recupere uma competência.")}
+          </motion.div>
+        )}
+        {isQareen && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Tatuagem Mística", ["Armadura Arcana", "Compreender Idiomas", "Dardo Místico", "Escudo Fiel", "Imagem Espelhada", "Luz", "Sono"], 1, "Um símbolo de poder gravado em sua pele. Escolha uma magia de 1º círculo.")}
+          </motion.div>
+        )}
+        {isSereia && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Canção dos Mares", ["Amedrontar", "Comando", "Despedaçar", "Enfeitiçar", "Hipnotismo", "Sono"], 2, "O chamado das profundezas. Escolha duas magias sob seu domínio.")}
+          </motion.div>
+        )}
+        {isSilfide && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            {renderSelection("Magia das Fadas", ["Criar Ilusão", "Enfeitiçar", "Luz", "Sono"], 2, "O encanto feérico é natural para você. Escolha duas magias nativas das fadas.")}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -2182,23 +2561,10 @@ function StepProgression({ char, onChange }) {
   const cls = CLASSES[char.classe];
   const level = char.level || 1;
 
-  if (level === 1) {
-    return (
-      <div className="flex flex-col items-center justify-center p-20 gap-6">
-        <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-4xl">📈</div>
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-black text-white italic uppercase tracking-wider">Apenas Nível 1</h2>
-          <p className="text-gray-400 text-sm mt-2">Você está criando um personagem de nível 1. A escolha de poderes por nível inicia no nível 2. Pode prosseguir!</p>
-        </div>
-      </div>
-    );
-  }
-
-  const allClassPowers = cls?.poderes || [];
-  // Use generalize power database
-  const allGeneralPowers = Object.values(GENERAL_POWERS).flat();
   const levels = Array.from({length: level - 1}, (_, i) => i + 2);
   const selecoes = char.poderesProgressao || {};
+  const allClassPowers = cls?.poderes || [];
+  const allGeneralPowers = Object.values(GENERAL_POWERS).flat();
 
   const handleSelect = (lvl, powerName) => {
     onChange({
@@ -2209,41 +2575,74 @@ function StepProgression({ char, onChange }) {
     });
   };
 
+  if (level === 1) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-8 bg-blue-950/20 rounded-[3rem] border border-blue-500/10 backdrop-blur-md">
+        <div className="w-24 h-24 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-5xl shadow-2xl shadow-blue-900/20 animate-bounce">📈</div>
+        <div className="text-center max-w-md">
+          <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Nível Heroico I</h2>
+          <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
+            Você está forjando um herói de nível inicial. A progressão de poderes começa a partir do nível 2. Siga em frente para a revisão final!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-8 pb-10">
-      <div className="bg-gray-900/40 p-6 rounded-[2.5rem] border border-gray-800 shadow-xl text-center">
-        <h2 className="text-2xl font-black text-white tracking-tight">
-          <span className="text-amber-500 mr-2">XI.</span> Progressão de Nível
-        </h2>
-        <p className="text-gray-400 text-sm">A cada nível, de 2 a {level}, você ganha 1 Poder (Classe ou Geral) além das habilidades inatas.</p>
+    <div className="flex flex-col gap-10 pb-10">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-blue-950/20 p-10 rounded-[3rem] border border-blue-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl rotate-12">📈</div>
+        <div className="flex-1">
+          <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
+            <span className="text-blue-400 mr-2">XI.</span> Senda Evolutiva
+          </h2>
+          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">
+            Sua jornada te tornou mais experiente. A cada nível superado, novas técnicas e dons despertam.
+          </p>
+        </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6">
         {levels.map(lvl => {
           const autoSkills = cls?.habilidades?.[lvl] || [];
           const selectedPower = selecoes[lvl];
 
           return (
-            <div key={lvl} className="bg-gray-900/60 rounded-3xl border border-gray-800 overflow-hidden">
-               <div className="px-6 py-4 bg-gray-950 flex items-center justify-between border-b border-gray-800">
-                  <h3 className="text-lg font-black text-amber-500">Nível {lvl}</h3>
+            <motion.div 
+              key={lvl} 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="bg-gray-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-xl backdrop-blur-sm"
+            >
+               <div className="px-8 py-5 bg-gray-950/60 flex items-center justify-between border-b border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
+                    <h3 className="text-xl font-black text-white italic">Nível {lvl}</h3>
+                  </div>
                   {selectedPower ? (
-                    <span className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-bold">1 Poder Selecionado</span>
+                    <div className="px-4 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-2">
+                       <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Poder Definido</span>
+                       <span className="text-xs">✨</span>
+                    </div>
                   ) : (
-                    <span className="text-xs bg-red-500/10 text-red-400 px-3 py-1 rounded-full font-bold">Pendente: 1 Escolha</span>
+                    <div className="px-4 py-1.5 bg-rose-950/40 border border-rose-500/40 rounded-full flex items-center gap-2 animate-pulse">
+                       <span className="text-[10px] text-rose-400 font-black uppercase tracking-widest">Decisão Pendente</span>
+                    </div>
                   )}
                </div>
 
-               <div className="p-6 space-y-6">
+               <div className="p-8 space-y-8">
                  {/* Automatic Class Features */}
                  {autoSkills.length > 0 && (
-                   <div>
-                     <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-3">Habilidades Automáticas Recebidas</p>
-                     <div className="grid grid-cols-1 gap-2">
+                   <div className="space-y-4">
+                     <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em] ml-1">Inato da Classe</p>
+                     <div className="grid grid-cols-1 gap-3">
                        {autoSkills.map((h, i) => (
-                         <div key={i} className="bg-emerald-900/10 border border-emerald-500/20 p-3 rounded-2xl">
-                           <p className="text-emerald-400 font-bold text-xs">{h.nome}</p>
-                           <p className="text-gray-400 text-[11px] mt-1">{h.descricao}</p>
+                         <div key={i} className="bg-emerald-950/10 border border-emerald-500/10 p-5 rounded-2xl relative overflow-hidden group">
+                           <div className="absolute top-0 right-0 p-4 opacity-5 text-3xl">🛡️</div>
+                           <p className="text-emerald-400 font-black text-sm uppercase tracking-tight mb-2">✦ {h.nome}</p>
+                           <p className="text-slate-400 text-xs leading-relaxed font-medium">{h.descricao}</p>
                          </div>
                        ))}
                      </div>
@@ -2251,50 +2650,103 @@ function StepProgression({ char, onChange }) {
                  )}
 
                  {/* Power Choice */}
-                 <div>
-                   <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-3">Escolha seu Poder do Nível {lvl}</p>
-                   
-                   <details className="group cursor-pointer">
-                     <summary className="bg-gray-800 p-4 rounded-2xl text-sm font-bold text-white flex justify-between items-center outline-none border border-gray-700 hover:bg-gray-700 transition-colors">
-                       {selectedPower ? `Selecionado: ${selectedPower}` : "Ver Poderes Disponíveis..."}
-                       <span className="transition group-open:rotate-180 text-amber-500">▼</span>
-                     </summary>
-                     
-                     <div className="mt-2 pt-4 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 transparent' }}>
-                       {/* Class Powers */}
-                       <div className="col-span-full text-xs font-black text-amber-500 uppercase tracking-widest px-2 py-1 flex items-center gap-2">
-                         <span>⚔️</span>Poderes de {cls?.nome}
-                       </div>
-                       {allClassPowers.map(p => (
-                         <div 
-                           key={p.nome} 
-                           onClick={() => handleSelect(lvl, p.nome)}
-                           className={`p-4 rounded-2xl border transition-all ${selectedPower === p.nome ? 'bg-amber-600/20 border-amber-500' : 'bg-gray-900 border-gray-800 hover:border-gray-600'}`}
-                         >
-                           <p className={`text-xs font-black ${selectedPower === p.nome ? 'text-amber-400' : 'text-white'}`}>{p.nome}</p>
-                           <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">{p.descricao}</p>
-                         </div>
-                       ))}
+                 <div className="space-y-4">
+                    <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em] ml-1">Evolução do Herói</p>
+                    
+                    <details className="group cursor-pointer">
+                      <summary className="bg-gray-950 p-6 rounded-[1.5rem] border-2 border-white/5 hover:border-amber-500/30 transition-all list-none outline-none flex justify-between items-center shadow-inner">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl border ${selectedPower ? 'bg-amber-600 border-amber-400 text-gray-950' : 'bg-gray-900 border-white/5 text-slate-600'}`}>
+                            {selectedPower ? '✨' : '❓'}
+                          </div>
+                          <span className={`text-sm font-black uppercase tracking-tight ${selectedPower ? 'text-amber-400' : 'text-slate-400'}`}>
+                            {selectedPower ? selectedPower : "Escolha seu novo poder..."}
+                          </span>
+                        </div>
+                        <span className="transition-transform group-open:rotate-180 text-amber-500 opacity-60">▼</span>
+                      </summary>
+                      
+                      <div className="mt-4 p-4 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="col-span-full text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] px-2 py-2 mt-2">Poderes de {cls?.nome}</div>
+                        {allClassPowers.map(p => {
+                          const eligibility = checkPowerEligibility(p, { ...char, level: lvl }, stats);
+                          const isPicked = selectedPower === p.nome;
+                          const canSelect = eligibility.ok || isPicked;
 
-                       {/* General Powers */}
-                       <div className="col-span-full text-xs font-black text-blue-500 uppercase tracking-widest px-2 py-1 mt-4 flex items-center gap-2">
-                         <span>🌐</span>Poderes Gerais
-                       </div>
-                       {allGeneralPowers.map(p => (
-                         <div 
-                           key={p.nome} 
-                           onClick={() => handleSelect(lvl, p.nome)}
-                           className={`p-4 rounded-2xl border transition-all ${selectedPower === p.nome ? 'bg-blue-600/20 border-blue-500' : 'bg-gray-900 border-gray-800 hover:border-gray-600'}`}
-                         >
-                           <p className={`text-xs font-black ${selectedPower === p.nome ? 'text-blue-400' : 'text-white'}`}>{p.nome}</p>
-                           <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">{p.descricao}</p>
-                         </div>
-                       ))}
-                     </div>
-                   </details>
+                          return (
+                            <motion.div 
+                              key={p.nome} 
+                              whileHover={canSelect ? { scale: 1.02 } : {}}
+                              whileTap={canSelect ? { scale: 0.98 } : {}}
+                              onClick={() => canSelect && handleSelect(lvl, p.nome)}
+                              className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${
+                                isPicked 
+                                  ? 'bg-amber-950/30 border-amber-500 shadow-xl' 
+                                  : (canSelect 
+                                      ? 'bg-gray-950 border-white/5 hover:border-white/10' 
+                                      : 'bg-gray-950/50 border-gray-900/50 opacity-40 grayscale cursor-not-allowed')
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className={`text-xs font-black uppercase tracking-tight ${isPicked ? 'text-amber-400' : (canSelect ? 'text-white' : 'text-gray-600')}`}>
+                                  {p.nome}
+                                </p>
+                                {isPicked && <span className="text-xs">✅</span>}
+                              </div>
+                              <p className={`text-[10px] font-medium leading-relaxed ${canSelect ? 'text-slate-500' : 'text-gray-700'}`}>
+                                {p.descricao}
+                              </p>
+                              {!eligibility.ok && !isPicked && (
+                                <span className="text-[8px] text-rose-500/80 font-black uppercase tracking-widest mt-1">
+                                  Bloqueado: {eligibility.reason}
+                                </span>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+
+                        <div className="col-span-full text-[10px] font-black text-blue-500/60 uppercase tracking-[0.3em] px-2 py-2 mt-4 border-t border-white/5 pt-6">Poderes Gerais</div>
+                        {allGeneralPowers.map(p => {
+                          const eligibility = checkPowerEligibility(p, { ...char, level: lvl }, stats);
+                          const isPicked = selectedPower === p.nome;
+                          const canSelect = eligibility.ok || isPicked;
+
+                          return (
+                            <motion.div 
+                              key={p.nome} 
+                              whileHover={canSelect ? { scale: 1.02 } : {}}
+                              whileTap={canSelect ? { scale: 0.98 } : {}}
+                              onClick={() => canSelect && handleSelect(lvl, p.nome)}
+                              className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${
+                                isPicked 
+                                  ? 'bg-blue-950/30 border-blue-500 shadow-xl' 
+                                  : (canSelect 
+                                      ? 'bg-gray-950 border-white/5 hover:border-white/10' 
+                                      : 'bg-gray-950/50 border-gray-900/50 opacity-40 grayscale cursor-not-allowed')
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <p className={`text-xs font-black uppercase tracking-tight ${isPicked ? 'text-blue-400' : (canSelect ? 'text-white' : 'text-gray-600')}`}>
+                                  {p.nome}
+                                </p>
+                                {isPicked && <span className="text-xs">✅</span>}
+                              </div>
+                              <p className={`text-[10px] font-medium leading-relaxed ${canSelect ? 'text-slate-500' : 'text-gray-700'}`}>
+                                {p.descricao}
+                              </p>
+                              {!eligibility.ok && !isPicked && (
+                                <span className="text-[8px] text-rose-500/80 font-black uppercase tracking-widest mt-1">
+                                  Bloqueado: {eligibility.reason}
+                                </span>
+                              )}
+                            </motion.div>
+                          );
+                        })}
+                      </div>
+                    </details>
                  </div>
                </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
@@ -2311,15 +2763,11 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
   const race = RACES[char.raca];
   const orig = ORIGENS[char.origem];
   const deus = DEUSES[char.deus];
-  const allPericias = [...new Set([...(ORIGENS[char.origem]?.pericias || []), ...char.pericias])];
+  const allPericias = getAllTrainedSkills(char);
   const [rollTest, setRollTest] = useState(null);
 
-  // Helper to determine the attribute key for a given skill. 
-  // Normally this requires a mapping dictionary, but we will guess common ones if available.
   const getSkillModifier = (skillName) => {
-    // T20 Jogo do Ano Trained Skill = Half Level + Attribute + 2 (Training)
     const halfLevel = Math.floor((char.level || 1) / 2);
-    // Minimal mapping proxy (In a full app we'd map every single skill to its stat)
     let attrKey = 'INT';
     if (['Acrobacia', 'Furtividade', 'Iniciativa', 'Ladinagem', 'Pilote', 'Pontaria', 'Reflexos'].includes(skillName)) attrKey = 'DES';
     if (['Atletismo', 'Luta'].includes(skillName)) attrKey = 'FOR';
@@ -2327,7 +2775,8 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
     if (['Adestramento', 'Cura', 'Intuição', 'Percepção', 'Sobrevivência', 'Vontade'].includes(skillName)) attrKey = 'SAB';
     if (['Atuação', 'Diplomacia', 'Enganação', 'Intimidação'].includes(skillName)) attrKey = 'CAR';
     
-    return halfLevel + (stats.attrs[attrKey] || 0) + 2; 
+    const isTrained = char.pericias.includes(skillName);
+    return halfLevel + (stats.attrs[attrKey] || 0) + (isTrained ? 2 : 0); 
   };
 
   const startTest = (name, modifier) => {
@@ -2335,7 +2784,7 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-10 pb-16">
       {rollTest && (
         <DiceRollerBG3 
           skillName={rollTest.name} 
@@ -2344,151 +2793,169 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
         />
       )}
       
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-amber-900/20 border border-amber-500/30 flex items-center justify-center text-4xl shadow-lg shadow-amber-900/10">
-          {CLASS_ICONS[char.classe] || '⚔️'}
-        </div>
-        <div>
-          <h2 className="text-2xl font-black text-white tracking-tight">
-             <span className="text-amber-500 mr-2">XI.</span> Revisão Final
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-10 rounded-[3rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl rotate-12">{CLASS_ICONS[char.classe] || '⚔️'}</div>
+        <div className="flex flex-col items-center md:items-start text-center md:text-left">
+          <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
+             <span className="text-amber-500 mr-2">XIII.</span> Revisão Final
           </h2>
-          <p className="text-amber-500/60 text-sm font-medium">O nascimento de uma lenda...</p>
+          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">
+            Sua lenda em Arton começa agora. Revise seus detalhes e prepare-se para a glória.
+          </p>
+        </div>
+        <div className="w-24 h-24 rounded-[2rem] bg-gray-950 border-2 border-amber-500/40 flex items-center justify-center text-5xl shadow-2xl relative group">
+           <div className="absolute inset-0 bg-amber-500/10 animate-pulse rounded-[2rem]" />
+           <span className="relative z-10">{CLASS_ICONS[char.classe] || '⚔️'}</span>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <div className="relative group">
-          <label className="block text-[10px] uppercase tracking-[0.2em] font-black text-gray-500 mb-2 ml-1">Nome do Personagem</label>
+      <div className="space-y-6">
+        <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative group">
+          <span className="text-[10px] uppercase tracking-[0.3em] font-black text-slate-500 mb-2 ml-4 block">Identidade do Herói</span>
           <input
-            className="w-full bg-gray-900 border-2 border-gray-800 rounded-3xl px-6 py-4 text-white text-xl font-black focus:outline-none focus:border-amber-500 focus:bg-gray-950 transition-all shadow-inner"
-            placeholder="Ex: Valerius Thorne"
+            className="w-full bg-gray-950/40 border-2 border-white/5 rounded-[2rem] px-8 py-6 text-white text-3xl font-black focus:outline-none focus:border-amber-500/50 backdrop-blur-sm transition-all shadow-inner tracking-tight"
+            placeholder="Nome seu personagem..."
             value={char.nome}
             onChange={e => onChange({ nome: e.target.value })}
-            autoFocus
           />
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity">✏️</div>
-        </div>
+          <div className="absolute right-8 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none group-focus-within:opacity-100 transition-opacity">✏️</div>
+        </motion.div>
 
-        <div className="bg-gray-900 rounded-[2rem] border border-gray-800 overflow-hidden shadow-2xl">
-          <div className="p-6 grid grid-cols-2 gap-6 bg-gradient-to-br from-gray-900 to-gray-950">
-            <div className="space-y-4">
-               {[
-                 { label: 'Raça', val: race?.nome, sub: RACE_ICONS[char.raca] },
-                 { label: 'Classe', val: cls?.nome, sub: CLASS_ICONS[char.classe] },
-               ].map(item => (
-                 <div key={item.label} className="group">
-                   <span className="text-[10px] uppercase tracking-widest font-black text-gray-500 block mb-1">{item.label}</span>
-                   <div className="flex items-center gap-2">
-                     <span className="text-xl">{item.sub}</span>
-                     <span className="text-base font-black text-white">{item.val}</span>
-                   </div>
-                 </div>
-               ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Card: Essência */}
+          <div className="lg:col-span-2 bg-gray-900/40 rounded-[3rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl flex flex-col gap-8">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
+              <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Essência</p>
             </div>
-            <div className="space-y-4">
-               {[
-                 { label: 'Origem', val: orig?.nome, sub: '📜' },
-                 { label: 'Divindade', val: deus?.nome || 'Ateu', sub: DEITY_ICONS[char.deus] || '🚫' },
-               ].map(item => (
-                 <div key={item.label}>
-                   <span className="text-[10px] uppercase tracking-widest font-black text-gray-500 block mb-1">{item.label}</span>
-                   <div className="flex items-center gap-2">
-                     <span className="text-xl">{item.sub}</span>
-                     <span className="text-base font-black text-white truncate">{item.val}</span>
-                   </div>
-                 </div>
-               ))}
-            </div>
-          </div>
-
-          <div className="px-6 py-6 bg-gray-800/20 border-t border-gray-800">
-             <div className="grid grid-cols-4 gap-3">
+            
+            <div className="grid grid-cols-2 gap-8">
+              <div className="space-y-6">
                 {[
-                  { l: 'Vida', v: stats.pv, color: 'from-red-600 to-red-900', icon: '❤️' },
-                  { l: 'Mana', v: stats.pm, color: 'from-blue-600 to-blue-900', icon: '💧' },
-                  { l: 'Defesa', v: stats.def, color: 'from-sky-600 to-sky-900', icon: '🛡️', canRoll: true, baseName: 'Defesa' },
-                  { l: 'Ataque', v: (stats.atk >= 0 ? '+' : '') + stats.atk, color: 'from-orange-600 to-orange-900', icon: '⚔️', canRoll: true, baseName: 'Ataque Base' },
-                ].map(stat => (
-                  <div key={stat.l} className="relative flex flex-col items-center gap-1.5 p-3 bg-gray-950 rounded-2xl border border-gray-800 shadow-lg group">
-                    <span className="text-xs">{stat.icon}</span>
-                    <span className="text-xl font-black text-white leading-none">{stat.v}</span>
-                    <span className="text-[9px] uppercase tracking-tighter font-black text-gray-500">{stat.l}</span>
-                    {stat.canRoll && (
-                      <button 
-                        onClick={() => startTest(stat.baseName, parseInt(stat.v, 10))}
-                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl text-2xl backdrop-blur-sm"
-                        title={`Testar ${stat.baseName}`}
-                      >
-                        🎲
-                      </button>
-                    )}
+                  { label: 'Raça', val: race?.nome, sub: RACE_ICONS[char.raca] },
+                  { label: 'Classe', val: cls?.nome, sub: CLASS_ICONS[char.classe] },
+                ].map(item => (
+                  <div key={item.label} className="group flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-950 border border-white/5 flex items-center justify-center text-2xl shadow-inner group-hover:border-amber-500/30 transition-colors">
+                      {item.sub}
+                    </div>
+                    <div>
+                      <span className="text-[9px] uppercase tracking-widest font-black text-slate-600 block mb-0.5">{item.label}</span>
+                      <span className="text-lg font-black text-white truncate">{item.val}</span>
+                    </div>
                   </div>
                 ))}
-             </div>
+              </div>
+              <div className="space-y-6">
+                {[
+                  { label: 'Origem', val: orig?.nome, sub: '📜' },
+                  { label: 'Divindade', val: deus?.nome || 'Ateu', sub: DEITY_ICONS[char.deus] || '🚫' },
+                ].map(item => (
+                  <div key={item.label} className="group flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gray-950 border border-white/5 flex items-center justify-center text-2xl shadow-inner group-hover:border-amber-500/30 transition-colors">
+                      {item.sub}
+                    </div>
+                    <div>
+                      <span className="text-[9px] uppercase tracking-widest font-black text-slate-600 block mb-0.5">{item.label}</span>
+                      <span className="text-lg font-black text-white truncate">{item.val}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { l: 'Vida', v: stats.pv, bg: 'bg-rose-500', t: 'PV' },
+                { l: 'Mana', v: stats.pm, bg: 'bg-blue-500', t: 'PM' },
+                { l: 'Defesa', v: stats.def, bg: 'bg-sky-500', t: 'DEF' },
+                { l: 'Ataque', v: (stats.atk >= 0 ? '+' : '') + stats.atk, bg: 'bg-orange-500', t: 'ATK' },
+              ].map(st => (
+                <div key={st.l} className="bg-gray-950 p-4 rounded-3xl border border-white/5 flex flex-col items-center justify-center shadow-inner relative group/stat">
+                   <div className={`absolute top-0 inset-x-0 h-1 ${st.bg} opacity-20 rounded-t-3xl`} />
+                   <span className="text-2xl font-black text-white">{st.v}</span>
+                   <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">{st.t}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="p-6 border-t border-gray-800 bg-gray-950/40">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Treinamentos Adquiridos (Testes)</span>
-            <div className="flex flex-wrap justify-center gap-1.5">
+          {/* Card: Perícias */}
+          <div className="bg-gray-900/40 rounded-[3rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <span className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,1)]" />
+              <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Competências</p>
+            </div>
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-2 max-h-[400px]">
               {allPericias.map(p => {
                 const mod = getSkillModifier(p);
                 return (
-                  <button 
+                  <motion.button 
                     key={p} 
+                    whileHover={{ x: 4 }}
                     onClick={() => startTest(p, mod)}
-                    className="group relative flex items-center gap-2 text-[10px] bg-amber-900/10 hover:bg-amber-500/20 transition-colors text-amber-500/80 hover:text-amber-400 border border-amber-900/20 hover:border-amber-500/50 px-3 py-1.5 rounded-xl font-black uppercase tracking-tighter"
+                    className="w-full flex items-center justify-between p-3 rounded-2xl bg-gray-950 border border-white/5 hover:border-blue-500/30 transition-all group shadow-inner"
                   >
-                    <span>{p}</span>
-                    <span className="bg-amber-900/40 px-1.5 py-0.5 rounded-sm">{(mod >= 0 ? '+' : '') + mod}</span>
-                    <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end pr-1 text-sm rounded-r-xl">🎲</span>
-                  </button>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tight group-hover:text-blue-400 transition-colors">{p}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-white">{(mod >= 0 ? '+' : '') + mod}</span>
+                      <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">🎲</span>
+                    </div>
+                  </motion.button>
                 );
               })}
             </div>
           </div>
+        </div>
 
-          <div className="p-6 border-t border-gray-800 flex flex-col md:flex-row gap-6">
-            <div className="flex-1">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Inventário Inicial</span>
-              <div className="flex flex-wrap justify-center gap-1.5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           {/* Card: Poderes */}
+           <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl flex flex-col gap-4">
+              <p className="text-[10px] uppercase font-black text-slate-600 tracking-[0.3em] mb-2">Dons Especiais</p>
+              <div className="flex flex-wrap gap-2">
+                {[...(char.poderesGerais || []), ...Object.values(char.poderesProgressao || {}).filter(Boolean)].map((p, idx) => (
+                  <span key={idx} className="px-4 py-2 bg-blue-900/10 border border-blue-500/20 rounded-xl text-[10px] font-black text-blue-400 uppercase tracking-tight flex items-center gap-2">
+                    <span className="text-xs">✦</span> {typeof p === 'string' ? p : p.nome}
+                  </span>
+                ))}
+                {(char.poderesGerais?.length === 0 && Object.keys(char.poderesProgressao || {}).length === 0) && <span className="text-[10px] text-slate-700 italic font-medium">Nenhum poder especial adquirido.</span>}
+              </div>
+           </div>
+
+           {/* Card: Equipamento */}
+           <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl flex flex-col gap-4">
+              <p className="text-[10px] uppercase font-black text-slate-600 tracking-[0.3em] mb-2">Arsenal</p>
+              <div className="flex flex-wrap gap-2">
                 {char.equipamento.map(id => (
-                  <span key={id} className="px-2.5 py-1 bg-gray-800 border border-gray-700 rounded-lg text-[10px] font-bold text-gray-400">
-                    📦 {ITENS[id]?.nome}
+                  <span key={id} className="px-4 py-2 bg-amber-900/10 border border-amber-500/20 rounded-xl text-[10px] font-black text-amber-500 uppercase tracking-tight flex items-center gap-2">
+                    <span className="text-xs">📦</span> {ITENS[id]?.nome}
                   </span>
                 ))}
-                {char.equipamento.length === 0 && <span className="text-[10px] text-gray-700 italic">Vazio</span>}
+                {char.equipamento.length === 0 && <span className="text-[10px] text-slate-700 italic font-medium">Você inicia sem posses materiais.</span>}
               </div>
-            </div>
-            <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-800 pt-6 md:pt-0 md:pl-6">
-              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Poderes Selecionados</span>
-              <div className="flex flex-wrap justify-center gap-1.5">
-                {char.poderesGerais.map(p => (
-                  <span key={p.nome} className="px-2.5 py-1 bg-blue-900/20 border border-blue-500/20 rounded-lg text-[10px] font-bold text-blue-300">
-                    ✨ {p.nome}
-                  </span>
-                ))}
-                {char.poderesGerais.length === 0 && <span className="text-[10px] text-gray-700 italic">Nenhum</span>}
-              </div>
-            </div>
-          </div>
+           </div>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 pt-4">
-        <button
+      <div className="flex flex-col sm:flex-row gap-4 pt-6">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={onPlay}
           disabled={!char.nome.trim()}
-          className="w-full py-5 rounded-[2rem] bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-base uppercase tracking-widest transition-all shadow-2xl shadow-amber-900/40 disabled:opacity-30 disabled:grayscale active:scale-95"
+          className="flex-1 py-6 rounded-[2rem] bg-gradient-to-r from-amber-600 to-amber-500 text-gray-950 font-black text-lg uppercase tracking-[0.2em] shadow-2xl shadow-amber-900/40 disabled:opacity-30 disabled:grayscale transition-all"
         >
-          ⚔️ Iniciar Aventura!
-        </button>
-        <button
+          ⚔️ Começar Crônica
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={onSave}
           disabled={!char.nome.trim()}
-          className="w-full py-4 rounded-2xl border border-gray-800 bg-gray-900/50 text-gray-400 font-bold text-xs uppercase tracking-[0.2em] hover:bg-gray-800 hover:text-white transition-all disabled:opacity-30"
+          className="py-6 px-10 rounded-[2rem] border-2 border-white/5 bg-gray-950/60 text-slate-400 font-black text-sm uppercase tracking-[0.2em] shadow-xl hover:text-white hover:border-white/10 transition-all disabled:opacity-30"
         >
-          💾 Salvar para depois
-        </button>
+          💾 Salvar
+        </motion.button>
       </div>
     </div>
   );
@@ -2498,7 +2965,7 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
 // LIBRARY
 // ─────────────────────────────────────────────────────────────
 
-function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
+function CharacterLibrary({ characters, onPlay, onDelete, onNew, loading }) {
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Decorative Elements */}
@@ -2517,7 +2984,12 @@ function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
       </div>
 
       <div className="w-full max-w-6xl relative z-10">
-        {characters.length === 0 ? (
+        {loading ? (
+          <div className="text-center py-20 flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+            <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-xs">Convocando heróis...</p>
+          </div>
+        ) : characters.length === 0 ? (
           <div className="text-center py-20 bg-gray-900/20 border border-dashed border-gray-800 rounded-[3rem]">
             <div className="text-7xl mb-6 opacity-30 grayscale saturate-0 backdrop-blur-sm bg-amber-500 w-24 h-24 mx-auto rounded-full flex items-center justify-center">⚔️</div>
             <p className="text-white text-xl font-black uppercase tracking-widest">A taverna está vazia</p>
@@ -2528,13 +3000,14 @@ function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {characters.map((char, idx) => {
+            {characters.map((item, idx) => {
+              const char = item.data || item;
               const cls = CLASSES[char.classe];
               const race = RACES[char.raca];
               const s = char.stats || {};
               return (
                 <div 
-                  key={idx} 
+                  key={item.id || idx} 
                   className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative"
                 >
                   <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl group-hover:opacity-10 transition-opacity">
@@ -2568,7 +3041,7 @@ function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
                   </div>
 
                   <div className="flex gap-3 mt-auto">
-                    <button onClick={() => onPlay(char)} className="flex-[3] py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-900/20 active:scale-95">
+                    <button onClick={() => onPlay(item)} className="flex-[3] py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-900/20 active:scale-95">
                       Jogar
                     </button>
                     <button onClick={() => onDelete(idx)} className="flex-1 py-4 rounded-2xl bg-gray-950/80 border border-gray-800 hover:border-red-600 hover:text-red-500 text-gray-700 transition-all active:scale-90">
@@ -2602,10 +3075,8 @@ export function CharacterCreation({ onComplete }) {
   const [step, setStep] = useState(0);
   const [char, setChar] = useState(getInitialChar);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [savedChars, setSavedChars] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('lenda_personagens') || '[]'); }
-    catch { return []; }
-  });
+  const [savedChars, setSavedChars] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const stats = useMemo(() => computeStats(char), [char]);
 
@@ -2613,14 +3084,65 @@ export function CharacterCreation({ onComplete }) {
     setChar(prev => ({ ...prev, ...patch }));
   }, []);
 
-  function handleSave() {
+  useEffect(() => {
+    fetchCharacters();
+  }, []);
+
+  async function fetchCharacters() {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('characters')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSavedChars(data || []);
+    } catch (err) {
+      console.error('Error fetching characters:', err.message);
+      // Fallback to local storage if supabase fails
+      const local = JSON.parse(localStorage.getItem('lenda_personagens') || '[]');
+      setSavedChars(local);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSave() {
     if (!char.nome.trim()) return;
     const s = { pv: stats.pv, pm: stats.pm, def: stats.def, atk: stats.atk };
     const heroData = buildHeroData(char, stats);
     const entry = { ...char, heroData, stats: s };
-    const next = [...savedChars, entry];
-    setSavedChars(next);
-    try { localStorage.setItem('lenda_personagens', JSON.stringify(next)); } catch {}
+    
+    try {
+      const { data, error } = await supabase
+        .from('characters')
+        .upsert({ 
+          id: char.id || undefined, // Use existing id if editing
+          name: char.nome,
+          data: entry
+        }, { onConflict: 'id' })
+        .select();
+
+      if (error) throw error;
+      
+      // Update local state
+      if (char.id) {
+        setSavedChars(prev => prev.map(c => c.id === char.id ? data[0] : c));
+      } else {
+        setSavedChars(prev => [data[0], ...prev]);
+        updateChar({ id: data[0].id }); // Set the id for the current character
+      }
+      
+      // Also sync to local storage for backup
+      localStorage.setItem('lenda_personagens', JSON.stringify([data[0], ...savedChars.filter(c => c.id !== data[0].id)]));
+    } catch (err) {
+      console.error('Error saving character:', err.message);
+      // Fallback local save
+      const next = [...savedChars, entry];
+      setSavedChars(next);
+      localStorage.setItem('lenda_personagens', JSON.stringify(next));
+    }
   }
 
   function handleSaveAndPlay() {
@@ -2630,14 +3152,29 @@ export function CharacterCreation({ onComplete }) {
   }
 
   function handlePlayFromLibrary(savedChar) {
-    const heroData = savedChar.heroData || buildHeroData(savedChar, computeStats(savedChar));
+    // Supabase data is in the 'data' column
+    const charData = savedChar.data || savedChar;
+    const heroData = charData.heroData || buildHeroData(charData, computeStats(charData));
     onComplete(heroData);
   }
 
-  function handleDelete(idx) {
+  async function handleDelete(idx) {
+    const target = savedChars[idx];
+    if (target.id) {
+      try {
+        const { error } = await supabase
+          .from('characters')
+          .delete()
+          .eq('id', target.id);
+        if (error) throw error;
+      } catch (err) {
+        console.error('Error deleting character:', err.message);
+      }
+    }
+    
     const next = savedChars.filter((_, i) => i !== idx);
     setSavedChars(next);
-    try { localStorage.setItem('lenda_personagens', JSON.stringify(next)); } catch {}
+    localStorage.setItem('lenda_personagens', JSON.stringify(next));
   }
 
   function handleNewCharacter() {
@@ -2656,10 +3193,14 @@ export function CharacterCreation({ onComplete }) {
       case 0: return !!char.raca;
       case 1: {
         const r = char.raca?.toLowerCase();
-        if (r === 'suraggel') return !!char.choices?.variante;
-        if (['humano', 'lefou'].includes(r)) return (char.choices?.pericias?.length || 0) === 2;
-        if (['sereia', 'silfide'].includes(r)) return (char.choices?.pericias?.length || 0) === 2;
-        if (['kliren', 'osteon', 'qareen'].includes(r)) return (char.choices?.pericias?.length || 0) === 1;
+        if (r === 'suraggel') return !!char.choices?.suraggel;
+        if (['humano', 'lefou', 'sereia', 'silfide', 'kliren', 'osteon', 'qareen'].includes(r)) {
+          // Temporarily relax until skill selection is implemented in StepHeritage
+          // or check if skill selection is present
+          const required = (r === 'humano' || r === 'lefou' || r === 'sereia' || r === 'silfide') ? 2 : 1;
+          const selected = char.choices?.pericias?.length || 0;
+          return selected === required;
+        }
         return true;
       }
       case 2: return !!char.classe;
@@ -2708,28 +3249,66 @@ export function CharacterCreation({ onComplete }) {
         onPlay={handlePlayFromLibrary}
         onDelete={handleDelete}
         onNew={handleNewCharacter}
+        loading={loading}
       />
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col">
+    <div className="min-h-screen bg-[#020617] flex flex-col relative overflow-hidden text-slate-200">
+      {/* Ambient Background Glows */}
+      <div className="fixed pointer-events-none inset-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-600/10 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/5 blur-[150px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30%] h-[30%] bg-purple-600/5 blur-[100px] rounded-full" />
+      </div>
+
       {/* Header */}
-      <div className="border-b border-gray-800 bg-gray-900/60 px-4 lg:px-6 py-3 flex items-center justify-between gap-2">
-        <button onClick={() => setView('library')} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors shrink-0">
-          ← <span className="hidden sm:inline">Biblioteca</span>
-        </button>
-        
-        <div className="flex items-center gap-3">
-          <h1 className="text-xs sm:text-sm font-bold text-amber-400 tracking-wider uppercase truncate">
-            <span className="hidden sm:inline">Criação de Personagem </span>
-          </h1>
-          <div className="flex items-center gap-2 bg-gray-950 px-2 py-1 rounded-lg border border-gray-800">
-            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Nível</span>
+      <header className="relative z-50 border-b border-white/5 bg-gray-950/40 backdrop-blur-xl px-4 lg:px-8 py-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={() => setView('library')} 
+            className="group flex items-center gap-2 text-xs font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all"
+          >
+            <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span>
+            <span className="hidden sm:inline">Biblioteca</span>
+          </button>
+          
+          <div className="h-4 w-px bg-white/10 hidden sm:block" />
+          
+          <div className="flex flex-col">
+            <h1 className="text-[10px] font-black text-amber-500 uppercase tracking-[0.3em] leading-none mb-1">
+              Criador de Lendas — Arton
+            </h1>
+            <div className="flex items-center gap-3">
+               <span className="text-white font-black text-sm uppercase tracking-tight">{STEP_LABELS[step]}</span>
+               <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-slate-400 font-bold">
+                 {step + 1} de {STEP_LABELS.length}
+               </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-1">
+            {STEP_LABELS.map((_, i) => (
+              <div 
+                key={i} 
+                className={`h-1 transition-all duration-500 rounded-full ${
+                  i < step ? 'w-4 bg-emerald-500/50' : 
+                  i === step ? 'w-8 bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 
+                  'w-2 bg-white/10'
+                }`} 
+              />
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+            <span className="text-[9px] text-slate-500 uppercase font-black tracking-widest">Nível</span>
             <select 
               value={char.level || 1}
               onChange={(e) => updateChar({ level: parseInt(e.target.value, 10) })}
-              className="bg-transparent text-white text-sm font-black outline-none cursor-pointer"
+              className="bg-transparent text-white text-xs font-black outline-none cursor-pointer appearance-none hover:text-amber-400 transition-colors"
             >
               {Array.from({ length: 20 }, (_, i) => i + 1).map(l => (
                 <option key={l} value={l} className="bg-gray-900 text-white">Lvl {l}</option>
@@ -2737,50 +3316,112 @@ export function CharacterCreation({ onComplete }) {
             </select>
           </div>
         </div>
+      </header>
 
-        <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {STEP_LABELS.map((label, i) => (
-            <button key={i} onClick={() => i < step && setStep(i)} title={label} className="flex flex-col items-center gap-0.5 shrink-0 px-0.5">
-              <div className={`w-2 h-2 rounded-full transition-all ${i < step ? 'bg-green-500' : i === step ? 'bg-amber-400 scale-125' : 'bg-gray-700'}`} />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Step label */}
-      <div className="px-6 pt-3 pb-0 flex items-center gap-2">
-        <span className="text-xs text-gray-600">{step + 1}/{STEP_LABELS.length}</span>
-        <span className="text-xs text-amber-600 font-semibold uppercase tracking-widest">{STEP_LABELS[step]}</span>
-      </div>
-
-      {/* Main content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left: Step content */}
-        <div className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
-          {step === 0 && <StepRace char={char} onChange={updateChar} />}
-          {step === 1 && <StepHeritage raca={char.raca} choices={char.choices} setChoices={(c) => updateChar({ choices: c })} hero={char} />}
-          {step === 2 && <StepClass char={char} onChange={updateChar} />}
-          {step === 3 && <StepClassSpecialization classe={char.classe} choices={char.choices} setChoices={(c) => updateChar({ choices: c })} />}
-          {step === 4 && <StepOrigin char={char} onChange={updateChar} />}
-          {step === 5 && <StepOrigemBeneficios char={char} onChange={updateChar} stats={stats} />}
-          {step === 6 && <StepDeus char={char} onChange={updateChar} />}
-          {step === 7 && <StepAttributes char={char} onChange={updateChar} stats={stats} />}
-          {step === 8 && <StepClassePericias char={char} onChange={updateChar} stats={stats} />}
-          {step === 9 && <StepIntPericias char={char} onChange={updateChar} stats={stats} />}
-          {step === 10 && <StepEquipment char={char} onChange={updateChar} stats={stats} />}
-          {step === 11 && <StepPowers char={char} onChange={updateChar} stats={stats} />}
-          {step === 12 && <StepProgression char={char} onChange={updateChar} />}
-          {step === 13 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
-        </div>
+      {/* Main content Area */}
+      <main className="relative z-10 flex flex-1 overflow-hidden">
+        {/* Left: Step content with transitions */}
+        <section className="flex-1 overflow-y-auto relative scroll-smooth p-4 lg:p-10" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ x: 20, opacity: 0, filter: 'blur(10px)' }}
+              animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }}
+              exit={{ x: -20, opacity: 0, filter: 'blur(10px)' }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-4xl mx-auto"
+            >
+              {step === 0 && <StepRace char={char} onChange={updateChar} />}
+              {step === 1 && (
+                <StepHeritage 
+                  raca={char.raca} 
+                  choices={char.choices} 
+                  setChoices={(c) => updateChar({ choices: c, racaVariante: c.suraggel || char.racaVariante })} 
+                  hero={char} 
+                />
+              )}
+              {step === 2 && <StepClass char={char} onChange={updateChar} />}
+              {step === 3 && <StepClassSpecialization classe={char.classe} choices={char.choices} setChoices={(c) => updateChar({ choices: c })} />}
+              {step === 4 && <StepOrigin char={char} onChange={updateChar} />}
+              {step === 5 && <StepOrigemBeneficios char={char} onChange={updateChar} stats={stats} />}
+              {step === 6 && <StepDeus char={char} onChange={updateChar} />}
+              {step === 7 && <StepAttributes char={char} onChange={updateChar} stats={stats} />}
+              {step === 8 && <StepClassePericias char={char} onChange={updateChar} stats={stats} />}
+              {step === 9 && <StepIntPericias char={char} onChange={updateChar} stats={stats} />}
+              {step === 10 && <StepEquipment char={char} onChange={updateChar} stats={stats} />}
+              {step === 11 && <StepPowers char={char} onChange={updateChar} stats={stats} />}
+              {step === 12 && <StepProgression char={char} onChange={updateChar} />}
+              {step === 13 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
+            </motion.div>
+          </AnimatePresence>
+          
+          {/* Bottom Spacer for Mobile */}
+          <div className="h-32 lg:hidden" />
+        </section>
 
         {/* Right: Live preview — desktop only */}
-        <div className="hidden lg:flex w-72 shrink-0 border-l border-gray-800 bg-gray-900/40 p-4 overflow-hidden flex-col">
-          <p className="text-[11px] text-gray-600 uppercase tracking-widest mb-3 font-semibold shrink-0">Personagem</p>
-          <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
+        <aside className="hidden xl:flex w-80 shrink-0 border-l border-white/5 bg-gray-950/20 backdrop-blur-3xl p-6 overflow-hidden flex-col shadow-2xl relative z-20">
+          <div className="flex items-center justify-between mb-6 shrink-0">
+             <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">Ficha Rápida</p>
+             <div className="h-1 flex-1 mx-4 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-full bg-amber-500" style={{ width: `${((step + 1) / STEP_LABELS.length) * 100}%` }} />
+             </div>
+          </div>
+          <div className="flex-1 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#334155 transparent' }}>
             <CharacterPreview char={char} stats={stats} />
           </div>
-        </div>
-      </div>
+        </aside>
+      </main>
+
+      {/* Footer Navigation */}
+      <footer className="relative z-50 border-t border-white/5 bg-gray-950/60 backdrop-blur-2xl px-6 py-4 flex items-center justify-between">
+         <button
+           onClick={handlePrev}
+           disabled={step === 0}
+           className="px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all disabled:opacity-20 flex items-center gap-2 hover:bg-white/5 text-slate-400 hover:text-white"
+         >
+           <span className="text-lg">←</span> Anterior
+         </button>
+
+         <div className="flex-1 flex flex-col items-center justify-center">
+            <div className="hidden sm:flex items-center gap-2 mb-1">
+               <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Progresso</span>
+               <div className="flex gap-1">
+                  {STEP_LABELS.map((_, i) => (
+                    <div key={i} className={`w-1.5 h-1.5 rounded-full ${i <= step ? 'bg-amber-500' : 'bg-white/10'}`} />
+                  ))}
+               </div>
+            </div>
+            {/* Real-time Validation Message */}
+            <div className="text-[10px] font-bold h-4 text-center">
+               {step === 7 && stats.pontosDisponiveis > 0 && (
+                 <span className="text-amber-500 animate-pulse">{stats.pontosDisponiveis} pontos para distribuir</span>
+               )}
+               {step === 5 && char.origemBeneficios?.length < 2 && (
+                 <span className="text-indigo-400">Selecione 2 benefícios de {ORIGENS[char.origem]?.nome}</span>
+               )}
+               {step === 9 && (() => {
+                 const intBonus = Math.max(0, stats.attrs.INT || 0);
+                 const extraCount = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
+                 const rem = intBonus - extraCount;
+                 return rem > 0 ? <span className="text-blue-400">{rem} perícia{rem > 1 ? 's' : ''} extra{rem > 1 ? 's' : ''} para escolher</span> : null;
+               })()}
+            </div>
+         </div>
+
+         <button
+           onClick={handleNext}
+           disabled={!canGoNext || step === STEP_LABELS.length - 1}
+           className={`px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 shadow-2xl ${
+             canGoNext 
+               ? 'bg-amber-500 text-gray-900 hover:bg-amber-400 hover:scale-[1.02] active:scale-95 shadow-amber-900/40' 
+               : 'bg-white/5 text-slate-600 cursor-not-allowed opacity-40'
+           }`}
+         >
+           {step === STEP_LABELS.length - 1 ? 'Finalizar' : 'Próximo'} <span className="text-lg">→</span>
+         </button>
+      </footer>
+
 
       {/* Mobile: floating preview button */}
       <button
@@ -2815,43 +3456,6 @@ export function CharacterCreation({ onComplete }) {
           </div>
         </div>
       )}
-
-      {/* Footer navigation */}
-      <div className="border-t border-gray-800 bg-gray-900/60 px-4 lg:px-6 py-3 flex items-center justify-between">
-        <button
-          onClick={handleBack}
-          className="px-5 py-2.5 rounded-xl border border-gray-700 text-gray-300 hover:text-white hover:border-gray-500 text-sm font-semibold transition-all"
-        >
-          ← {step === 0 ? 'Biblioteca' : 'Anterior'}
-        </button>
-
-        <div className="text-xs text-gray-600">
-          {step === 7 && stats.pontosDisponiveis > 0 && (
-            <span className="text-amber-500">{stats.pontosDisponiveis} pontos para distribuir</span>
-          )}
-          {step === 5 && char.origemBeneficios?.length < 2 && (
-            <span className="text-indigo-400">Selecione 2 benefícios de {ORIGENS[char.origem]?.nome}</span>
-          )}
-          {step === 9 && (() => {
-            const intBonus = Math.max(0, stats.attrs.INT || 0);
-            const extraCount = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
-            const rem = intBonus - extraCount;
-            return rem > 0 ? <span className="text-blue-400">{rem} perícia{rem > 1 ? 's' : ''} extra{rem > 1 ? 's' : ''} para escolher</span> : null;
-          })()}
-        </div>
-
-        {step < STEP_LABELS.length - 1 ? (
-          <button
-            onClick={() => setStep(s => s + 1)}
-            disabled={!canGoNext}
-            className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 font-bold text-sm transition-all shadow-xl shadow-amber-900/20 active:scale-95"
-          >
-            Próximo →
-          </button>
-        ) : (
-          <div />
-        )}
-      </div>
     </div>
   );
 }
