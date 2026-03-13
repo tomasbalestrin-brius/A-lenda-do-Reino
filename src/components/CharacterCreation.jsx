@@ -7,6 +7,7 @@ import { divindades as DEUSES } from '../data/gods';
 import { rollDice, rollAttribute } from '../utils/diceSystem';
 import ITENS from '../data/items';
 import GENERAL_POWERS from '../data/powers';
+import DiceRollerBG3 from './DiceRollerBG3';
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -118,48 +119,52 @@ function RaceModal({ id, race, onClose, onConfirm, isSelected }) {
         </div>
 
         {/* Right: Info */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-          <div className="border-b border-amber-900/20 pb-4">
-            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              {race.nome}
-              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativo</span>}
-            </h3>
-            <p className="text-amber-400/80 text-sm mt-1 font-medium leading-relaxed italic">"{race.descricao}"</p>
-          </div>
+        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
+          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+            <div className="border-b border-amber-900/20 pb-4">
+              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                {race.nome}
+                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativo</span>}
+              </h3>
+              <p className="text-amber-400/80 text-sm mt-1 font-medium leading-relaxed italic">"{race.descricao}"</p>
+            </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            <section>
-              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Atributos Raciais</h4>
-              <div className="flex flex-wrap gap-2">
-                {bonuses.map((b, i) => (
-                  <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm ${
-                    b.startsWith('+') ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400'
-                    : b.startsWith('-') ? 'bg-red-900/20 border-red-500/30 text-red-400'
-                    : 'bg-gray-800 border-gray-700 text-gray-300'
-                  }`}>
-                    {b}
+            <div className="grid grid-cols-1 gap-6 mt-6">
+              <section>
+                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Atributos Raciais</h4>
+                <div className="flex flex-wrap gap-2">
+                  {bonuses.map((b, i) => (
+                    <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm ${
+                      b.startsWith('+') ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400'
+                      : b.startsWith('-') ? 'bg-red-900/20 border-red-500/30 text-red-400'
+                      : 'bg-gray-800 border-gray-700 text-gray-300'
+                    }`}>
+                      {b}
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="flex flex-col gap-4">
+                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 ml-1">Poderes de Herança</h4>
+                {race.habilidades?.map((h, i) => (
+                  <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4 group hover:bg-gray-800/60 transition-all">
+                    <p className="text-amber-400 font-bold mb-1 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
+                      {h.nome}
+                    </p>
+                    <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
                   </div>
                 ))}
-              </div>
-            </section>
-
-            <section className="flex flex-col gap-4">
-              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 ml-1">Poderes de Herança</h4>
-              {race.habilidades?.map((h, i) => (
-                <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4 group hover:bg-gray-800/60 transition-all">
-                  <p className="text-amber-400 font-bold mb-1 flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
-                    {h.nome}
-                  </p>
-                  <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
-                </div>
-              ))}
-            </section>
+              </section>
+            </div>
           </div>
 
-          <button onClick={onConfirm} className="mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-            Confirmar {race.nome}
-          </button>
+          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
+            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+              Confirmar {race.nome}
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -194,43 +199,47 @@ function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
         </div>
 
         {/* Right: Info */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-          <div className="border-b border-amber-900/20 pb-4">
-            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              {cls.nome}
-              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
-            </h3>
-            <p className="text-gray-400 text-sm mt-2 leading-relaxed">{cls.descricao}</p>
+        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
+          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+            <div className="border-b border-amber-900/20 pb-4">
+              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                {cls.nome}
+                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
+              </h3>
+              <p className="text-gray-400 text-sm mt-2 leading-relaxed">{cls.descricao}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
+                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Vida Inicial</p>
+                <p className="text-xl font-black text-red-500">{cls.vidaInicial} PV</p>
+                <p className="text-[10px] text-gray-400">+{cls.vidaPorNivel} / nível</p>
+              </div>
+              <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
+                <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Mana Inicial</p>
+                <p className="text-xl font-black text-blue-500">{cls.pm} PM</p>
+                <p className="text-[10px] text-gray-400">por nível</p>
+              </div>
+            </div>
+
+            <section className="mt-6">
+              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Habilidades de Nível 1</h4>
+              <div className="flex flex-col gap-3">
+                {cls.habilidades?.[1]?.map((h, i) => (
+                  <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4">
+                    <p className="text-amber-400 font-bold text-sm mb-1">✦ {h.nome}</p>
+                    <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
-              <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Vida Inicial</p>
-              <p className="text-xl font-black text-red-500">{cls.vidaInicial} PV</p>
-              <p className="text-[10px] text-gray-400">+{cls.vidaPorNivel} / nível</p>
-            </div>
-            <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
-              <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Mana Inicial</p>
-              <p className="text-xl font-black text-blue-500">{cls.pm} PM</p>
-              <p className="text-[10px] text-gray-400">por nível</p>
-            </div>
+          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
+            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+              Tornar-se {cls.nome}
+            </button>
           </div>
-
-          <section>
-            <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Habilidades de Nível 1</h4>
-            <div className="flex flex-col gap-3">
-              {cls.habilidades?.[1]?.map((h, i) => (
-                <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4">
-                  <p className="text-amber-400 font-bold text-sm mb-1">✦ {h.nome}</p>
-                  <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <button onClick={onConfirm} className="mt-2 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-            Tornar-se {cls.nome}
-          </button>
         </div>
       </motion.div>
     </motion.div>
@@ -263,52 +272,56 @@ function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
         </div>
 
         {/* Right: Info */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-          <div className="border-b border-amber-900/20 pb-4">
-            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              {deus.nome}
-              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Devoto</span>}
-            </h3>
-            <p className="text-amber-400/80 text-sm mt-1 font-bold italic tracking-wide">{deus.titulo}</p>
+        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
+          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+            <div className="border-b border-amber-900/20 pb-4">
+              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                {deus.nome}
+                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Devoto</span>}
+              </h3>
+              <p className="text-amber-400/80 text-sm mt-1 font-bold italic tracking-wide">{deus.titulo}</p>
+            </div>
+
+            <div className="flex flex-col gap-5 mt-6">
+              <section className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Portfolio</h4>
+                  <p className="text-xs text-gray-300 font-medium">{deus.portfolio}</p>
+                </div>
+                <div>
+                  <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Arma Sagrada</h4>
+                  <p className="text-xs text-gray-300 font-medium">⚔️ {deus.arma}</p>
+                </div>
+              </section>
+
+              <section className="bg-gray-800/40 border border-gray-700/50 p-4 rounded-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl">📜</div>
+                <h4 className="text-[10px] uppercase tracking-widest font-black text-amber-500/80 mb-2">Dogma</h4>
+                <p className="text-xs text-gray-300 leading-relaxed italic">"{deus.dogma}"</p>
+              </section>
+
+              <section className="flex flex-col gap-3">
+                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 ml-1">Bênçãos & Deveres</h4>
+                
+                <div className="p-3 bg-emerald-900/10 border border-emerald-500/30 rounded-2xl">
+                  <p className="text-[10px] text-emerald-400 font-black uppercase mb-1">Poder Concedido (Nível 1)</p>
+                  <p className="text-xs text-emerald-200 font-bold">{deus.devoto.poderes[0].nome}</p>
+                  <p className="text-[11px] text-emerald-100/70 mt-1 leading-relaxed">{deus.devoto.poderes[0].descricao}</p>
+                </div>
+
+                <div className="p-3 bg-red-900/10 border border-red-500/30 rounded-2xl">
+                  <p className="text-[10px] text-red-400 font-black uppercase mb-1">Restrições & Obrigações</p>
+                  <p className="text-xs text-red-200 leading-relaxed font-medium">{deus.devoto.restricoes}</p>
+                </div>
+              </section>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-5">
-            <section className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Portfolio</h4>
-                <p className="text-xs text-gray-300 font-medium">{deus.portfolio}</p>
-              </div>
-              <div>
-                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Arma Sagrada</h4>
-                <p className="text-xs text-gray-300 font-medium">⚔️ {deus.arma}</p>
-              </div>
-            </section>
-
-            <section className="bg-gray-800/40 border border-gray-700/50 p-4 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl">📜</div>
-              <h4 className="text-[10px] uppercase tracking-widest font-black text-amber-500/80 mb-2">Dogma</h4>
-              <p className="text-xs text-gray-300 leading-relaxed italic">"{deus.dogma}"</p>
-            </section>
-
-            <section className="flex flex-col gap-3">
-              <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 ml-1">Bênçãos & Deveres</h4>
-              
-              <div className="p-3 bg-emerald-900/10 border border-emerald-500/30 rounded-2xl">
-                <p className="text-[10px] text-emerald-400 font-black uppercase mb-1">Poder Concedido (Nível 1)</p>
-                <p className="text-xs text-emerald-200 font-bold">{deus.devoto.poderes[0].nome}</p>
-                <p className="text-[11px] text-emerald-100/70 mt-1 leading-relaxed">{deus.devoto.poderes[0].descricao}</p>
-              </div>
-
-              <div className="p-3 bg-red-900/10 border border-red-500/30 rounded-2xl">
-                <p className="text-[10px] text-red-400 font-black uppercase mb-1">Restrições & Obrigações</p>
-                <p className="text-xs text-red-200 leading-relaxed font-medium">{deus.devoto.restricoes}</p>
-              </div>
-            </section>
+          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
+            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+              Devotar-se a {deus.nome}
+            </button>
           </div>
-
-          <button onClick={onConfirm} className="mt-2 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-            Devotar-se a {deus.nome}
-          </button>
         </div>
       </motion.div>
     </motion.div>
@@ -340,52 +353,54 @@ function OriginModal({ id, origin, onClose, onConfirm, isSelected }) {
         </div>
 
         {/* Right Info */}
-        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
-          <div className="border-b border-amber-900/20 pb-4">
-            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-              {origin.nome}
-              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
-            </h3>
-            <p className="text-gray-400 text-sm mt-2 leading-relaxed">{origin.descricao}</p>
-          </div>
+        <div className="w-full md:w-1/2 flex flex-col h-full overflow-hidden">
+          <div className="flex-1 p-6 md:p-10 overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+            <div className="border-b border-amber-900/20 pb-4">
+              <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                {origin.nome}
+                {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
+              </h3>
+              <p className="text-gray-400 text-sm mt-2 leading-relaxed">{origin.descricao}</p>
+            </div>
 
-          <div className="flex flex-col gap-4">
-            <section>
-              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Itens Iniciais</h4>
-              <div className="flex flex-wrap gap-2">
-                {origin.itens?.map((item, i) => (
-                  <span key={i} className="text-xs bg-gray-800 border border-gray-700 px-3 py-1 rounded-full text-gray-300">📦 {item}</span>
-                ))}
-              </div>
-            </section>
-
-            <section>
-              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Caminhos Disponíveis</h4>
-              <div className="grid grid-cols-1 gap-2">
-                <div className="p-3 bg-indigo-900/10 border border-indigo-500/30 rounded-2xl">
-                  <p className="text-[10px] text-indigo-400 font-black uppercase mb-1">Perícias</p>
-                  <p className="text-xs text-indigo-200">{origin.pericias?.join(', ')}</p>
+            <div className="flex flex-col gap-4 mt-6">
+              <section>
+                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Itens Iniciais</h4>
+                <div className="flex flex-wrap gap-2">
+                  {origin.itens?.map((item, i) => (
+                    <span key={i} className="text-xs bg-gray-800 border border-gray-700 px-3 py-1 rounded-full text-gray-300">📦 {item}</span>
+                  ))}
                 </div>
-                <div className="p-3 bg-amber-900/10 border border-amber-500/30 rounded-2xl">
-                  <p className="text-[10px] text-amber-500 font-black uppercase mb-1">Poderes</p>
-                  <p className="text-xs text-amber-200">{origin.poderes?.join(', ')}</p>
-                </div>
-              </div>
-            </section>
-
-            {origin.poderUnico && (
-              <section className="bg-gradient-to-br from-amber-600/20 to-transparent border border-amber-500/30 p-4 rounded-3xl">
-                <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1 italic">✨ {origin.poderUnico.nome}</p>
-                <p className="text-xs text-amber-100/80 leading-relaxed font-medium">{origin.poderUnico.descricao}</p>
               </section>
-            )}
+
+              <section>
+                <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Caminhos Disponíveis</h4>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="p-3 bg-indigo-900/10 border border-indigo-500/30 rounded-2xl">
+                    <p className="text-[10px] text-indigo-400 font-black uppercase mb-1">Perícias</p>
+                    <p className="text-xs text-indigo-200">{origin.pericias?.join(', ')}</p>
+                  </div>
+                  <div className="p-3 bg-amber-900/10 border border-amber-500/30 rounded-2xl">
+                    <p className="text-[10px] text-amber-500 font-black uppercase mb-1">Poderes</p>
+                    <p className="text-xs text-amber-200">{origin.poderes?.join(', ')}</p>
+                  </div>
+                </div>
+              </section>
+
+              {origin.poderUnico && (
+                <section className="bg-gradient-to-br from-amber-600/20 to-transparent border border-amber-500/30 p-4 rounded-3xl">
+                  <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1 italic">✨ {origin.poderUnico.nome}</p>
+                  <p className="text-xs text-amber-100/80 leading-relaxed font-medium">{origin.poderUnico.descricao}</p>
+                </section>
+              )}
+            </div>
           </div>
 
-          <p className="text-[9px] text-gray-500 italic text-center">* Após confirmar, você precisará escolher 2 benefícios deste passado.</p>
-
-          <button onClick={onConfirm} className="mt-2 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
-            Confirmar Origem
-          </button>
+          <div className="p-6 md:p-8 bg-gray-950/80 border-t border-amber-900/20 backdrop-blur-md">
+            <button onClick={onConfirm} className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+              Confirmar Origem
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -410,7 +425,25 @@ const SPRITE_MAP = {
   humano_arcanista: '/assets/sprites/heroes/humano_arcanista_idle.png',
 };
 
-const STEP_LABELS = ['Raça', 'Classe', 'Origem', 'Divindade', 'Atributos', 'Histórico', 'Treinamento', 'Especialização', 'Equipamento', 'Poderes', 'Revisão'];
+const STEP_LABELS = [
+  "Raça",             // 0
+  "Herança",          // 1
+  "Classe",           // 2
+  "Esp. de Classe",   // 3 
+  "Origem",           // 4
+  "Benefícios",       // 5
+  "Divindade",        // 6
+  "Atributos",        // 7
+  "Perícias (Classe)",// 8
+  "Perícias (Int)",   // 9
+  "Equipamento",      // 10
+  "Poderes Iniciais", // 11
+  "Evolução",         // 12 (New)
+  "Revisão"           // 13
+];
+const MAX_STEPS = STEP_LABELS.length;
+
+const MAGIAS_ESCOLAS = ["Abjuração", "Adivinhação", "Convocação", "Encantamento", "Evocação", "Ilusão", "Necromancia", "Transmutação"];
 
 const RACE_IMAGES = {
   humano: '/assets/images/races/humano.jpg',
@@ -430,6 +463,14 @@ const RACE_IMAGES = {
   aggelus: '/assets/images/races/aggelus.jpg',
   sulfure: '/assets/images/races/sulfure.jpg',
 };
+
+const ALL_PERICIAS = [
+  "Acrobacia", "Adestramento", "Atletismo", "Atuação", "Cavalgar", "Conhecimento",
+  "Cura", "Diplomacia", "Enganação", "Fortitude", "Furtividade", "Guerra",
+  "Iniciativa", "Intimidação", "Intuição", "Investigação", "Jogatina", "Ladinagem",
+  "Luta", "Misticismo", "Nobreza", "Ofício", "Percepção", "Pilotagem",
+  "Pontaria", "Reflexos", "Religião", "Sobrevivência", "Vontade"
+];
 
 // T20: atributos começam em 0, o valor JÁ É o modificador
 // Custo total por valor: -2→+2pts, -1→+1pt, 0→0, 1→1pt, 2→2pts, 3→4pts, 4→7pts
@@ -498,32 +539,70 @@ function computeStats(char) {
   const DES = attrs.DES;
   const FOR = attrs.FOR;
 
-  // PV = vidaInicial(classe) + CON (+ bônus raciais passivos)
+  // T20: Level scaling
+  const level = char.level || 1;
+  const halfLevel = Math.floor(level / 2);
+
+  // Gather all named powers the character has selected
+  const allPowers = [
+    ...(char.poderesGerais || []).map(p => p.nome),
+    ...Object.values(char.poderesProgressao || {}).filter(Boolean)
+  ];
+
+  const hasVitalidade = allPowers.includes("Vitalidade");
+  const hasVontadeFerro = allPowers.includes("Vontade de Ferro");
+  const hasEsquiva = allPowers.includes("Esquiva");
+  const hasPeleFerro = allPowers.includes("Pele de Ferro") && char.classe === 'barbaro'; // Barbaro specific
+
+  // PV = vidaInicial + CON (nível 1) + (vidaPorNivel + CON)*(nível - 1)
   let pv = (cls?.vidaInicial || 10) + CON;
-  // Anão: Duro como Pedra → +3 PV no 1º nível
-  if (raceData?.habilidades?.some(h => h.nome === 'Duro como Pedra')) pv += 3;
-  if (origem?.beneficio?.includes('+2 PV')) pv += 2;
+  if (level > 1) {
+    pv += ((cls?.vidaPorNivel || 3) + CON) * (level - 1);
+  }
+  // Anão: Duro como Pedra → +3 PV no 1º nível, +1 por nível extra
+  if (raceData?.habilidades?.some(h => h.nome === 'Duro como Pedra')) {
+    pv += 3 + (level - 1); 
+  }
+  if (origem?.beneficio?.includes('+2 PV')) pv += 2; // flat +2
+  if (hasVitalidade) pv += level; // Vitality adds 1 PV per level
 
-  // PM = pm(classe) + atributo mental (se houver)
-  const pmKey = PM_ATTR_MAP[char.classe];
-  let pm = (cls?.pm || 3) + (pmKey ? (attrs[pmKey] || 0) : 0);
-  // Elfo: Sangue Mágico → +1 PM por nível (nível 1 = +1)
-  if (raceData?.habilidades?.some(h => h.nome === 'Sangue Mágico')) pm += 1;
+  // PM = (pmClasse + atributo mental)*nível
+  let pmKey = PM_ATTR_MAP[char.classe] || null;
+  if (char.classe === 'arcanista' && char.choices?.caminhoArcanista === 'feiticeiro') {
+    pmKey = 'CAR';
+  }
+  
+  const pmBase = cls?.pm || 3;
+  const pmBonus = pmKey ? (attrs[pmKey] || 0) : 0;
+  let pm = (pmBase + pmBonus) * level;
 
-  // DEF = 10 + DES + bônus passivos raciais (apenas os que não custam ação/PM)
-  let def = 10 + DES;
+  // Elfo: Sangue Mágico → +1 PM por nível
+  if (raceData?.habilidades?.some(h => h.nome === 'Sangue Mágico')) pm += level;
+  if (hasVontadeFerro) pm += level; // Iron Will adds 1 PM per level
+
+  // DEF = 10 + Metade do Nível + DES + bônus passivos raciais
+  let def = 10 + halfLevel + DES;
   // Minotauro: Couro Rígido +1, Golem: Chassi +2, Trog: Reptiliano +1
   raceData?.habilidades?.forEach(h => {
-    if (h.bonus?.def) def += h.bonus.def;
+    if (h.bonus?.def) def += h.bonus.def; 
   });
+  if (hasEsquiva) def += 2;
+  if (hasPeleFerro) def += 2; // Assumes keeping unarmored for now
 
-  // ATK = FOR (ou DES para caçador) + bônus de proficiência nível 1 (+2)
+  // ATK = Atributo + Metade do Nível (supomos arma proficiente sem treinos extras)
   const isRanged = char.classe === 'cacador';
-  const atk = (isRanged ? DES : FOR) + 2;
-  const ini = DES;
-  const fort = CON;
-  const ref = DES;
-  const von = attrs.SAB;
+  const atk = (isRanged ? DES : FOR) + halfLevel;
+  
+  // Saves and other checks
+  const ini = DES + halfLevel;
+  let fort = CON + halfLevel;
+  if (hasVitalidade) fort += 2;
+  
+  let ref = DES + halfLevel;
+  if (hasEsquiva) ref += 2;
+  
+  let von = attrs.SAB + halfLevel;
+  if (hasVontadeFerro) von += 2;
 
   // Pontos disponíveis: POINT_POOL menos o custo total de todos os atributos base
   const pontosGastos = ATTR_KEYS.reduce((sum, k) => sum + attrPointCost(char.atributos[k] || 0), 0);
@@ -546,7 +625,7 @@ function buildHeroData(char, stats) {
     maxHp: stats.pv,
     mp: stats.pm,
     maxMp: stats.pm,
-    level: 1,
+    level: char.level || 1,
     xp: 0,
     stats: { attack: stats.atk, defense: stats.def, speed: 5 },
     cooldowns: {},
@@ -570,6 +649,8 @@ function getInitialChar() {
     // T20: todos os atributos começam em 0
     atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
     pericias: [],
+    level: 1,
+    poderesProgressao: {},              // Escolhas de poderes feitos a cada nível > 1
     racaEscolha: ['FOR', 'DES', 'CON'], // para raças com "escolha"
     racaVariante: 'aggelus',             // para suraggel
     attrMethod: 'buy',                  // 'buy' ou 'roll'
@@ -1888,7 +1969,135 @@ function StepPowers({ char, onChange, stats }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// STEP 10 — REVISÃO
+// STEP 12 — PROGRESSÃO DE NÍVEL
+// ─────────────────────────────────────────────────────────────
+
+function StepProgression({ char, onChange }) {
+  const cls = CLASSES[char.classe];
+  const level = char.level || 1;
+
+  if (level === 1) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-6">
+        <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-4xl">📈</div>
+        <div className="text-center max-w-md">
+          <h2 className="text-2xl font-black text-white italic uppercase tracking-wider">Apenas Nível 1</h2>
+          <p className="text-gray-400 text-sm mt-2">Você está criando um personagem de nível 1. A escolha de poderes por nível inicia no nível 2. Pode prosseguir!</p>
+        </div>
+      </div>
+    );
+  }
+
+  const allClassPowers = cls?.poderes || [];
+  // Use generalize power database
+  const allGeneralPowers = Object.values(GENERAL_POWERS).flat();
+  const levels = Array.from({length: level - 1}, (_, i) => i + 2);
+  const selecoes = char.poderesProgressao || {};
+
+  const handleSelect = (lvl, powerName) => {
+    onChange({
+      poderesProgressao: {
+        ...selecoes,
+        [lvl]: selecoes[lvl] === powerName ? null : powerName
+      }
+    });
+  };
+
+  return (
+    <div className="flex flex-col gap-8 pb-10">
+      <div className="bg-gray-900/40 p-6 rounded-[2.5rem] border border-gray-800 shadow-xl text-center">
+        <h2 className="text-2xl font-black text-white tracking-tight">
+          <span className="text-amber-500 mr-2">XI.</span> Progressão de Nível
+        </h2>
+        <p className="text-gray-400 text-sm">A cada nível, de 2 a {level}, você ganha 1 Poder (Classe ou Geral) além das habilidades inatas.</p>
+      </div>
+
+      <div className="space-y-6">
+        {levels.map(lvl => {
+          const autoSkills = cls?.habilidades?.[lvl] || [];
+          const selectedPower = selecoes[lvl];
+
+          return (
+            <div key={lvl} className="bg-gray-900/60 rounded-3xl border border-gray-800 overflow-hidden">
+               <div className="px-6 py-4 bg-gray-950 flex items-center justify-between border-b border-gray-800">
+                  <h3 className="text-lg font-black text-amber-500">Nível {lvl}</h3>
+                  {selectedPower ? (
+                    <span className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1 rounded-full font-bold">1 Poder Selecionado</span>
+                  ) : (
+                    <span className="text-xs bg-red-500/10 text-red-400 px-3 py-1 rounded-full font-bold">Pendente: 1 Escolha</span>
+                  )}
+               </div>
+
+               <div className="p-6 space-y-6">
+                 {/* Automatic Class Features */}
+                 {autoSkills.length > 0 && (
+                   <div>
+                     <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-3">Habilidades Automáticas Recebidas</p>
+                     <div className="grid grid-cols-1 gap-2">
+                       {autoSkills.map((h, i) => (
+                         <div key={i} className="bg-emerald-900/10 border border-emerald-500/20 p-3 rounded-2xl">
+                           <p className="text-emerald-400 font-bold text-xs">{h.nome}</p>
+                           <p className="text-gray-400 text-[11px] mt-1">{h.descricao}</p>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* Power Choice */}
+                 <div>
+                   <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mb-3">Escolha seu Poder do Nível {lvl}</p>
+                   
+                   <details className="group cursor-pointer">
+                     <summary className="bg-gray-800 p-4 rounded-2xl text-sm font-bold text-white flex justify-between items-center outline-none border border-gray-700 hover:bg-gray-700 transition-colors">
+                       {selectedPower ? `Selecionado: ${selectedPower}` : "Ver Poderes Disponíveis..."}
+                       <span className="transition group-open:rotate-180 text-amber-500">▼</span>
+                     </summary>
+                     
+                     <div className="mt-2 pt-4 grid grid-cols-1 md:grid-cols-2 gap-2 max-h-96 overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#4b5563 transparent' }}>
+                       {/* Class Powers */}
+                       <div className="col-span-full text-xs font-black text-amber-500 uppercase tracking-widest px-2 py-1 flex items-center gap-2">
+                         <span>⚔️</span>Poderes de {cls?.nome}
+                       </div>
+                       {allClassPowers.map(p => (
+                         <div 
+                           key={p.nome} 
+                           onClick={() => handleSelect(lvl, p.nome)}
+                           className={`p-4 rounded-2xl border transition-all ${selectedPower === p.nome ? 'bg-amber-600/20 border-amber-500' : 'bg-gray-900 border-gray-800 hover:border-gray-600'}`}
+                         >
+                           <p className={`text-xs font-black ${selectedPower === p.nome ? 'text-amber-400' : 'text-white'}`}>{p.nome}</p>
+                           <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">{p.descricao}</p>
+                         </div>
+                       ))}
+
+                       {/* General Powers */}
+                       <div className="col-span-full text-xs font-black text-blue-500 uppercase tracking-widest px-2 py-1 mt-4 flex items-center gap-2">
+                         <span>🌐</span>Poderes Gerais
+                       </div>
+                       {allGeneralPowers.map(p => (
+                         <div 
+                           key={p.nome} 
+                           onClick={() => handleSelect(lvl, p.nome)}
+                           className={`p-4 rounded-2xl border transition-all ${selectedPower === p.nome ? 'bg-blue-600/20 border-blue-500' : 'bg-gray-900 border-gray-800 hover:border-gray-600'}`}
+                         >
+                           <p className={`text-xs font-black ${selectedPower === p.nome ? 'text-blue-400' : 'text-white'}`}>{p.nome}</p>
+                           <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">{p.descricao}</p>
+                         </div>
+                       ))}
+                     </div>
+                   </details>
+                 </div>
+               </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// STEP 13 — REVISÃO
 // ─────────────────────────────────────────────────────────────
 
 function StepReview({ char, onChange, stats, onSave, onPlay }) {
@@ -1897,9 +2106,38 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
   const orig = ORIGENS[char.origem];
   const deus = DEUSES[char.deus];
   const allPericias = [...new Set([...(ORIGENS[char.origem]?.pericias || []), ...char.pericias])];
+  const [rollTest, setRollTest] = useState(null);
+
+  // Helper to determine the attribute key for a given skill. 
+  // Normally this requires a mapping dictionary, but we will guess common ones if available.
+  const getSkillModifier = (skillName) => {
+    // T20 Jogo do Ano Trained Skill = Half Level + Attribute + 2 (Training)
+    const halfLevel = Math.floor((char.level || 1) / 2);
+    // Minimal mapping proxy (In a full app we'd map every single skill to its stat)
+    let attrKey = 'INT';
+    if (['Acrobacia', 'Furtividade', 'Iniciativa', 'Ladinagem', 'Pilote', 'Pontaria', 'Reflexos'].includes(skillName)) attrKey = 'DES';
+    if (['Atletismo', 'Luta'].includes(skillName)) attrKey = 'FOR';
+    if (['Fortitude'].includes(skillName)) attrKey = 'CON';
+    if (['Adestramento', 'Cura', 'Intuição', 'Percepção', 'Sobrevivência', 'Vontade'].includes(skillName)) attrKey = 'SAB';
+    if (['Atuação', 'Diplomacia', 'Enganação', 'Intimidação'].includes(skillName)) attrKey = 'CAR';
+    
+    return halfLevel + (stats.attrs[attrKey] || 0) + 2; 
+  };
+
+  const startTest = (name, modifier) => {
+    setRollTest({ name, modifier });
+  };
 
   return (
     <div className="flex flex-col gap-6">
+      {rollTest && (
+        <DiceRollerBG3 
+          skillName={rollTest.name} 
+          modifier={rollTest.modifier} 
+          onClose={() => setRollTest(null)} 
+        />
+      )}
+      
       <div className="flex items-center gap-4">
         <div className="w-16 h-16 rounded-2xl bg-amber-900/20 border border-amber-500/30 flex items-center justify-center text-4xl shadow-lg shadow-amber-900/10">
           {CLASS_ICONS[char.classe] || '⚔️'}
@@ -1962,26 +2200,44 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
                 {[
                   { l: 'Vida', v: stats.pv, color: 'from-red-600 to-red-900', icon: '❤️' },
                   { l: 'Mana', v: stats.pm, color: 'from-blue-600 to-blue-900', icon: '💧' },
-                  { l: 'Defesa', v: stats.def, color: 'from-sky-600 to-sky-900', icon: '🛡️' },
-                  { l: 'Ataque', v: (stats.atk >= 0 ? '+' : '') + stats.atk, color: 'from-orange-600 to-orange-900', icon: '⚔️' },
+                  { l: 'Defesa', v: stats.def, color: 'from-sky-600 to-sky-900', icon: '🛡️', canRoll: true, baseName: 'Defesa' },
+                  { l: 'Ataque', v: (stats.atk >= 0 ? '+' : '') + stats.atk, color: 'from-orange-600 to-orange-900', icon: '⚔️', canRoll: true, baseName: 'Ataque Base' },
                 ].map(stat => (
-                  <div key={stat.l} className="flex flex-col items-center gap-1.5 p-3 bg-gray-950 rounded-2xl border border-gray-800 shadow-lg">
+                  <div key={stat.l} className="relative flex flex-col items-center gap-1.5 p-3 bg-gray-950 rounded-2xl border border-gray-800 shadow-lg group">
                     <span className="text-xs">{stat.icon}</span>
                     <span className="text-xl font-black text-white leading-none">{stat.v}</span>
                     <span className="text-[9px] uppercase tracking-tighter font-black text-gray-500">{stat.l}</span>
+                    {stat.canRoll && (
+                      <button 
+                        onClick={() => startTest(stat.baseName, parseInt(stat.v, 10))}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded-2xl text-2xl backdrop-blur-sm"
+                        title={`Testar ${stat.baseName}`}
+                      >
+                        🎲
+                      </button>
+                    )}
                   </div>
                 ))}
              </div>
           </div>
 
           <div className="p-6 border-t border-gray-800 bg-gray-950/40">
-            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Treinamentos Adquiridos</span>
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Treinamentos Adquiridos (Testes)</span>
             <div className="flex flex-wrap justify-center gap-1.5">
-              {allPericias.map(p => (
-                <span key={p} className="text-[10px] bg-amber-900/10 text-amber-500/80 border border-amber-900/20 px-3 py-1 rounded-full font-black uppercase tracking-tighter">
-                  {p}
-                </span>
-              ))}
+              {allPericias.map(p => {
+                const mod = getSkillModifier(p);
+                return (
+                  <button 
+                    key={p} 
+                    onClick={() => startTest(p, mod)}
+                    className="group relative flex items-center gap-2 text-[10px] bg-amber-900/10 hover:bg-amber-500/20 transition-colors text-amber-500/80 hover:text-amber-400 border border-amber-900/20 hover:border-amber-500/50 px-3 py-1.5 rounded-xl font-black uppercase tracking-tighter"
+                  >
+                    <span>{p}</span>
+                    <span className="bg-amber-900/40 px-1.5 py-0.5 rounded-sm">{(mod >= 0 ? '+' : '') + mod}</span>
+                    <span className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-end pr-1 text-sm rounded-r-xl">🎲</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -2190,26 +2446,53 @@ export function CharacterCreation({ onComplete }) {
   }
 
   const canGoNext = useMemo(() => {
-    if (step === 2) return !!char.origem;
-    if (step === 4) {
+    switch (step) {
+      case 0: return !!char.raca;
+      case 1: {
+        const r = char.raca?.toLowerCase();
+        if (r === 'suraggel') return !!char.choices?.variante;
+        if (['humano', 'lefou'].includes(r)) return (char.choices?.pericias?.length || 0) === 2;
+        if (['sereia', 'silfide'].includes(r)) return (char.choices?.pericias?.length || 0) === 2;
+        if (['kliren', 'osteon', 'qareen'].includes(r)) return (char.choices?.pericias?.length || 0) === 1;
+        return true;
+      }
+      case 2: return !!char.classe;
+      case 3: { // Class Specialization
+        const cls = char.classe?.toLowerCase();
+        if (cls === 'bardo' || cls === 'druida') return (char.choices?.escolasMagia?.length || 0) === 3;
+        if (cls === 'arcanista') return !!char.choices?.caminhoArcanista;
+        return true;
+      }
+      case 4: return !!char.origem;
+      case 5: return char.origemBeneficios?.length === 2; // OrigemBeneficios
+      case 6: return true; // Deus é opcional/pode pular
+      case 7: { // Atributos
         if (char.attrMethod === 'buy') return stats.pontosDisponiveis >= 0;
         return char.rolagens.length === 6 && char.rolagens.every(r => r.assignedTo);
+      }
+      case 8: { // Classe Pericias
+        const cls = CLASSES[char.classe?.toLowerCase()];
+        if (!cls) return false;
+        const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
+        const chosen = Object.keys(char.periciasObrigEscolha || {}).length;
+        return chosen === orChoices.length && char.periciasClasseEscolha.length === cls.pericias;
+      }
+      case 9: { // Int Pericias
+        const intBonus = Math.max(0, stats.attrs.INT || 0);
+        const currentExtras = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.periciasClasseEscolha, ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
+        return currentExtras === intBonus;
+      }
+      case 10: return char.dinheiro >= 0; // Equipamento
+      case 11: return char.poderesGerais.length >= 1; // Poderes Initiais
+      case 12: { // Evolução de Nível
+        const lvl = char.level || 1;
+        if (lvl === 1) return true;
+        const requiredAnswers = lvl - 1;
+        const answered = Object.values(char.poderesProgressao || {}).filter(Boolean).length;
+        return answered === requiredAnswers;
+      }
+      default: return true;
     }
-    if (step === 5) return char.origemBeneficios?.length === 2;
-    if (step === 6) {
-      const cls = CLASSES[char.classe];
-      const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
-      const chosen = Object.keys(char.periciasObrigEscolha || {}).length;
-      return chosen === orChoices.length && char.periciasClasseEscolha.length === cls.pericias;
-    }
-    if (step === 7) {
-      const intBonus = Math.max(0, stats.attrs.INT || 0);
-      const currentExtras = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.periciasClasseEscolha, ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
-      return currentExtras === intBonus;
-    }
-    if (step === 8) return char.dinheiro >= 0;
-    if (step === 9) return char.poderesGerais.length >= 1;
-    return true;
   }, [step, char, stats]);
 
   if (view === 'library') {
@@ -2230,12 +2513,28 @@ export function CharacterCreation({ onComplete }) {
         <button onClick={() => setView('library')} className="text-gray-400 hover:text-white text-sm flex items-center gap-1 transition-colors shrink-0">
           ← <span className="hidden sm:inline">Biblioteca</span>
         </button>
-        <h1 className="text-xs sm:text-sm font-bold text-amber-400 tracking-wider uppercase truncate">
-          <span className="hidden sm:inline">Criação de Personagem — </span>T20
-        </h1>
-        <div className="flex items-center gap-1.5 shrink-0">
+        
+        <div className="flex items-center gap-3">
+          <h1 className="text-xs sm:text-sm font-bold text-amber-400 tracking-wider uppercase truncate">
+            <span className="hidden sm:inline">Criação de Personagem </span>
+          </h1>
+          <div className="flex items-center gap-2 bg-gray-950 px-2 py-1 rounded-lg border border-gray-800">
+            <span className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Nível</span>
+            <select 
+              value={char.level || 1}
+              onChange={(e) => updateChar({ level: parseInt(e.target.value, 10) })}
+              className="bg-transparent text-white text-sm font-black outline-none cursor-pointer"
+            >
+              {Array.from({ length: 20 }, (_, i) => i + 1).map(l => (
+                <option key={l} value={l} className="bg-gray-900 text-white">Lvl {l}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {STEP_LABELS.map((label, i) => (
-            <button key={i} onClick={() => i < step && setStep(i)} title={label} className="flex flex-col items-center gap-0.5">
+            <button key={i} onClick={() => i < step && setStep(i)} title={label} className="flex flex-col items-center gap-0.5 shrink-0 px-0.5">
               <div className={`w-2 h-2 rounded-full transition-all ${i < step ? 'bg-green-500' : i === step ? 'bg-amber-400 scale-125' : 'bg-gray-700'}`} />
             </button>
           ))}
@@ -2253,16 +2552,19 @@ export function CharacterCreation({ onComplete }) {
         {/* Left: Step content */}
         <div className="flex-1 overflow-y-auto p-4 lg:p-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#374151 transparent' }}>
           {step === 0 && <StepRace char={char} onChange={updateChar} />}
-          {step === 1 && <StepClass char={char} onChange={updateChar} />}
-          {step === 2 && <StepOrigin char={char} onChange={updateChar} />}
-          {step === 3 && <StepDeus char={char} onChange={updateChar} />}
-          {step === 4 && <StepAttributes char={char} onChange={updateChar} stats={stats} />}
+          {step === 1 && <StepHeritage raca={char.raca} choices={char.choices} setChoices={(c) => updateChar({ choices: c })} hero={char} />}
+          {step === 2 && <StepClass char={char} onChange={updateChar} />}
+          {step === 3 && <StepClassSpecialization classe={char.classe} choices={char.choices} setChoices={(c) => updateChar({ choices: c })} />}
+          {step === 4 && <StepOrigin char={char} onChange={updateChar} />}
           {step === 5 && <StepOrigemBeneficios char={char} onChange={updateChar} stats={stats} />}
-          {step === 6 && <StepClassePericias char={char} onChange={updateChar} stats={stats} />}
-          {step === 7 && <StepIntPericias char={char} onChange={updateChar} stats={stats} />}
-          {step === 8 && <StepEquipment char={char} onChange={updateChar} stats={stats} />}
-          {step === 9 && <StepPowers char={char} onChange={updateChar} stats={stats} />}
-          {step === 10 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
+          {step === 6 && <StepDeus char={char} onChange={updateChar} />}
+          {step === 7 && <StepAttributes char={char} onChange={updateChar} stats={stats} />}
+          {step === 8 && <StepClassePericias char={char} onChange={updateChar} stats={stats} />}
+          {step === 9 && <StepIntPericias char={char} onChange={updateChar} stats={stats} />}
+          {step === 10 && <StepEquipment char={char} onChange={updateChar} stats={stats} />}
+          {step === 11 && <StepPowers char={char} onChange={updateChar} stats={stats} />}
+          {step === 12 && <StepProgression char={char} onChange={updateChar} />}
+          {step === 13 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
         </div>
 
         {/* Right: Live preview — desktop only */}
@@ -2318,13 +2620,13 @@ export function CharacterCreation({ onComplete }) {
         </button>
 
         <div className="text-xs text-gray-600">
-          {step === 4 && stats.pontosDisponiveis > 0 && (
+          {step === 7 && stats.pontosDisponiveis > 0 && (
             <span className="text-amber-500">{stats.pontosDisponiveis} pontos para distribuir</span>
           )}
           {step === 5 && char.origemBeneficios?.length < 2 && (
             <span className="text-indigo-400">Selecione 2 benefícios de {ORIGENS[char.origem]?.nome}</span>
           )}
-          {step === 7 && (() => {
+          {step === 9 && (() => {
             const intBonus = Math.max(0, stats.attrs.INT || 0);
             const extraCount = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
             const rem = intBonus - extraCount;
@@ -2336,7 +2638,7 @@ export function CharacterCreation({ onComplete }) {
           <button
             onClick={() => setStep(s => s + 1)}
             disabled={!canGoNext}
-            className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 font-bold text-sm transition-all"
+            className="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 font-bold text-sm transition-all shadow-xl shadow-amber-900/20 active:scale-95"
           >
             Próximo →
           </button>
