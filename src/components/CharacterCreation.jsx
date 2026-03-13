@@ -443,7 +443,7 @@ const STEP_LABELS = [
 ];
 const MAX_STEPS = STEP_LABELS.length;
 
-const MAGIAS_ESCOLAS = ["Abjuração", "Adivinhação", "Convocação", "Encantamento", "Evocação", "Ilusão", "Necromancia", "Transmutação"];
+
 
 const RACE_IMAGES = {
   humano: '/assets/images/races/humano.jpg',
@@ -1961,6 +1961,212 @@ function StepPowers({ char, onChange, stats }) {
                 </div>
               )}
             </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// STEP 1 — HERANÇA RACIAL
+// ─────────────────────────────────────────────────────────────
+
+function StepHeritage({ raca, choices = {}, setChoices, hero }) {
+  const race = RACES[raca];
+  if (!race) return <div className="text-gray-500 italic p-12 text-center">Selecione uma raça no passo anterior.</div>;
+
+  const isSuraggel = raca === 'suraggel';
+  const isHumano = raca === 'humano';
+  const currentChoices = choices || {};
+
+  // Suraggel: choose Aggelus or Sulfure
+  if (isSuraggel) {
+    const variant = currentChoices.suraggel || null;
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h2 className="text-2xl font-bold text-amber-400 mb-1">Herança Suraggel</h2>
+          <p className="text-gray-400 text-sm">Escolha sua herança celestial ou infernal.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {['aggelus', 'sulfure'].map(v => (
+            <button
+              key={v}
+              onClick={() => setChoices({ ...currentChoices, suraggel: v })}
+              className={`p-6 rounded-2xl border-2 transition-all text-left ${
+                variant === v
+                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
+                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500'
+              }`}
+            >
+              <span className="text-3xl block mb-2">{v === 'aggelus' ? '😇' : '😈'}</span>
+              <p className={`font-black text-lg uppercase tracking-tight ${variant === v ? 'text-amber-400' : 'text-white'}`}>
+                {v === 'aggelus' ? 'Aggelus' : 'Sulfure'}
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                {v === 'aggelus'
+                  ? 'Herança celestial. Recebe asas luminosas e bônus em Diplomacia.'
+                  : 'Herança infernal. Recebe resistência a fogo e bônus em Intimidação.'}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Generic heritage step for other races
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-2xl font-bold text-amber-400 mb-1">Herança: {race.nome}</h2>
+        <p className="text-gray-400 text-sm">Características e traços herdados da sua raça.</p>
+      </div>
+
+      <div className="bg-gray-800/60 rounded-2xl border border-gray-700 p-6">
+        <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">Habilidades Raciais</h3>
+        <div className="flex flex-col gap-3">
+          {(race.habilidades || []).map((h, i) => (
+            <div key={i} className="bg-gray-900/60 rounded-xl p-4 border border-gray-800">
+              <p className="text-amber-400 font-bold text-sm">{h.nome}</p>
+              <p className="text-gray-400 text-xs mt-1 leading-relaxed">{h.descricao}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {isHumano && (
+        <div className="bg-blue-900/20 rounded-2xl border border-blue-700/40 p-6">
+          <h3 className="text-sm font-bold text-blue-300 mb-2 uppercase tracking-widest">Versatilidade Humana</h3>
+          <p className="text-xs text-gray-400">Humanos recebem treinamento em 2 perícias à escolha ou podem trocar por um poder geral. Isso será aplicado nas etapas seguintes.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// STEP 3 — ESPECIALIZAÇÃO DE CLASSE
+// ─────────────────────────────────────────────────────────────
+
+const MAGIAS_ESCOLAS = [
+  'Abjuração', 'Adivinhação', 'Convocação', 'Encantamento',
+  'Evocação', 'Ilusão', 'Necromancia', 'Transmutação'
+];
+
+function StepClassSpecialization({ classe, choices = {}, setChoices }) {
+  const cls = CLASSES[classe];
+  if (!cls) return <div className="text-gray-500 italic p-12 text-center">Selecione uma classe no passo anterior.</div>;
+
+  const isArcanista = classe === 'arcanista';
+  const isBardo = classe === 'bardo';
+  const isDruida = classe === 'druida';
+  const needsSpecialization = isArcanista || isBardo || isDruida;
+
+  if (!needsSpecialization) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h2 className="text-2xl font-bold text-amber-400 mb-1">Especialização: {cls.nome}</h2>
+          <p className="text-gray-400 text-sm">Esta classe não possui opções de especialização obrigatórias no 1º nível.</p>
+        </div>
+        <div className="bg-gray-800/60 rounded-2xl border border-gray-700 p-6 text-center">
+          <span className="text-5xl block mb-3">{CLASS_ICONS[classe] || '⚔️'}</span>
+          <p className="text-gray-300 text-sm">Avance para o próximo passo.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const currentChoices = choices || {};
+
+  // Arcanista: choose path (Bruxo, Feiticeiro, Mago)
+  if (isArcanista) {
+    const path = currentChoices.caminhoArcanista || null;
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h2 className="text-2xl font-bold text-amber-400 mb-1">Caminho do Arcanista</h2>
+          <p className="text-gray-400 text-sm">Escolha o caminho que define como você canaliza sua magia.</p>
+        </div>
+        <div className="grid grid-cols-1 gap-3">
+          {[
+            { id: 'bruxo', nome: 'Bruxo', icon: '🔮', desc: 'Seus poderes vêm de um patrono. Atributo-chave: Inteligência. Você lança magias arcanas usando INT.', attr: 'INT' },
+            { id: 'feiticeiro', nome: 'Feiticeiro', icon: '✨', desc: 'A magia corre em seu sangue. Atributo-chave: Carisma. Você lança magias arcanas usando CAR.', attr: 'CAR' },
+            { id: 'mago', nome: 'Mago', icon: '📖', desc: 'Você estuda a magia como ciência. Atributo-chave: Inteligência. Você lança magias arcanas usando INT.', attr: 'INT' },
+          ].map(p => (
+            <button
+              key={p.id}
+              onClick={() => setChoices({ ...currentChoices, caminhoArcanista: p.id })}
+              className={`p-5 rounded-2xl border-2 text-left transition-all ${
+                path === p.id
+                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
+                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500'
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <span className="text-2xl">{p.icon}</span>
+                <p className={`font-black text-lg ${path === p.id ? 'text-amber-400' : 'text-white'}`}>{p.nome}</p>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                  path === p.id ? 'bg-amber-600/20 border-amber-500/50 text-amber-400' : 'bg-gray-900 border-gray-700 text-gray-500'
+                }`}>{p.attr}</span>
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed">{p.desc}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Bardo / Druida: choose 3 schools
+  const selectedSchools = currentChoices.escolasMagia || [];
+  const maxSchools = 3;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <h2 className="text-2xl font-bold text-amber-400 mb-1">Escolas de Magia: {cls.nome}</h2>
+        <p className="text-gray-400 text-sm">Escolha {maxSchools} escolas de magia para se especializar.</p>
+      </div>
+      <div className="flex items-center justify-center">
+        <div className={`px-6 py-2 rounded-full text-sm font-black border ${
+          selectedSchools.length === maxSchools
+            ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-400'
+            : 'bg-amber-900/20 border-amber-500/50 text-amber-500'
+        }`}>
+          {selectedSchools.length} / {maxSchools}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        {MAGIAS_ESCOLAS.map(school => {
+          const isSelected = selectedSchools.includes(school);
+          const canAdd = selectedSchools.length < maxSchools;
+          return (
+            <button
+              key={school}
+              onClick={() => {
+                let next;
+                if (isSelected) {
+                  next = selectedSchools.filter(s => s !== school);
+                } else if (canAdd) {
+                  next = [...selectedSchools, school];
+                } else {
+                  return;
+                }
+                setChoices({ ...currentChoices, escolasMagia: next });
+              }}
+              className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                isSelected
+                  ? 'border-amber-500 bg-amber-900/20 text-amber-400 font-bold shadow-lg'
+                  : canAdd
+                    ? 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-gray-500'
+                    : 'border-gray-800 bg-gray-900/40 text-gray-600 cursor-not-allowed'
+              }`}
+            >
+              <span className="text-sm font-black uppercase tracking-tight">{school}</span>
+            </button>
           );
         })}
       </div>
