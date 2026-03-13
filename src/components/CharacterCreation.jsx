@@ -5,6 +5,8 @@ import RACES from '../data/races';
 import ORIGENS from '../data/origins';
 import { divindades as DEUSES } from '../data/gods';
 import { rollDice, rollAttribute } from '../utils/diceSystem';
+import ITENS from '../data/items';
+import GENERAL_POWERS from '../data/powers';
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -408,14 +410,25 @@ const SPRITE_MAP = {
   humano_arcanista: '/assets/sprites/heroes/humano_arcanista_idle.png',
 };
 
-const STEP_LABELS = ['Raça', 'Classe', 'Origem', 'Divindade', 'Atributos', 'Histórico', 'Treinamento', 'Especialização', 'Revisão'];
+const STEP_LABELS = ['Raça', 'Classe', 'Origem', 'Divindade', 'Atributos', 'Histórico', 'Treinamento', 'Especialização', 'Equipamento', 'Poderes', 'Revisão'];
 
 const RACE_IMAGES = {
-  humano: 'https://i.imgur.com/8Q8XQ8X.png', // Placeholder for the provided image
-  anao: 'https://i.imgur.com/X8X8X8X.png',
-  dahllan: 'https://i.imgur.com/Y8Y8Y8Y.png',
-  elfo: 'https://i.imgur.com/Z8Z8Z8Z.png',
-  goblin: 'https://i.imgur.com/W8W8W8W.png',
+  humano: '/assets/images/races/humano.jpg',
+  anao: '/assets/images/races/anao.jpg',
+  dahllan: '/assets/images/races/dahllan.jpg',
+  elfo: '/assets/images/races/elfo.jpg',
+  goblin: '/assets/images/races/goblin.jpg',
+  lefou: '/assets/images/races/lefou.jpg',
+  qareen: '/assets/images/races/qareen.jpg',
+  minotauro: '/assets/images/races/minotauro.jpg',
+  osteon: '/assets/images/races/osteon.jpg',
+  hynne: '/assets/images/races/hynne.jpg',
+  kliren: '/assets/images/races/kliren.jpg',
+  trog: '/assets/images/races/trog.jpg',
+  medusa: '/assets/images/races/medusa.jpg',
+  sereia: '/assets/images/races/sereia.jpg',
+  aggelus: '/assets/images/races/aggelus.jpg',
+  sulfure: '/assets/images/races/sulfure.jpg',
 };
 
 // T20: atributos começam em 0, o valor JÁ É o modificador
@@ -562,6 +575,10 @@ function getInitialChar() {
     attrMethod: 'buy',                  // 'buy' ou 'roll'
     rolagens: [],                       // para armazenar resultados de 4d6k3
     origemBeneficios: [],               // Perícias ou poderes da origem
+    periciasClasseEscolha: [],          // Perícias escolhidas da lista da classe
+    equipamento: [],                    // IDs dos itens comprados
+    poderesGerais: [],                  // Poderes gerais selecionados
+    dinheiro: 100,                      // T$ iniciais
   };
 }
 
@@ -598,7 +615,9 @@ function CharacterPreview({ char, stats }) {
       <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl border border-gray-700 p-4 flex flex-col items-center gap-3">
         <div className="relative">
           <div className="w-24 h-24 rounded-xl bg-gray-900 border-2 border-amber-600/60 flex items-center justify-center overflow-hidden shadow-lg shadow-amber-900/20">
-            {sprite ? (
+            {RACE_IMAGES[char.raca] ? (
+              <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
+            ) : sprite ? (
               <img src={sprite} alt="" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
             ) : (
               <span className="text-4xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
@@ -692,6 +711,34 @@ function CharacterPreview({ char, stats }) {
         </div>
       )}
 
+      {/* Equipamento */}
+      {char.equipamento.length > 0 && (
+        <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
+          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Equipamento</p>
+          <div className="flex flex-wrap gap-1">
+            {char.equipamento.map(id => (
+              <span key={id} className="text-[9px] bg-gray-900 text-gray-400 border border-gray-700 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                📦 {ITENS[id]?.nome}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Poderes */}
+      {char.poderesGerais.length > 0 && (
+        <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
+          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Poderes Gerais</p>
+          <div className="flex flex-wrap gap-1">
+            {char.poderesGerais.map(p => (
+              <span key={p.nome} className="text-[9px] bg-blue-900/40 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                ✨ {p.nome}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Class abilities lv1 */}
       {cls?.habilidades?.[1]?.length > 0 && (
         <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
@@ -762,29 +809,36 @@ function StepRace({ char, onChange }) {
             <button
               key={id}
               onClick={() => onChange({ modalRace: id })}
-              className={`text-left p-3 rounded-xl border transition-all duration-200 ${
+              className={`text-left rounded-xl border transition-all duration-300 relative overflow-hidden group h-32 ${
                 isSelected
-                  ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
-                  : 'border-gray-700 bg-gray-800/60 hover:border-gray-500 hover:bg-gray-800'
+                  ? 'border-amber-500 ring-2 ring-amber-500/30'
+                  : 'border-gray-800 bg-gray-950/40 hover:border-gray-600'
               }`}
             >
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl">{RACE_ICONS[id] || '🧑'}</span>
-                <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{race.nome}</p>
+              <img 
+                src={RACE_IMAGES[id]} 
+                alt="" 
+                className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
+                  isSelected ? 'scale-110' : 'scale-100 opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-60'
+                }`}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+              
+              <div className="absolute inset-x-0 bottom-0 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                   <p className={`font-black uppercase tracking-tighter text-sm ${isSelected ? 'text-amber-400' : 'text-white'}`}>{race.nome}</p>
+                   <span className="text-xl">{RACE_ICONS[id]}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {bonuses.slice(0, 3).map((b, i) => (
+                    <span key={i} className={`text-[8px] px-1 py-0.5 rounded font-black ${
+                      b.startsWith('+') ? 'bg-green-500/20 text-green-400'
+                      : b.startsWith('-') ? 'bg-red-500/20 text-red-400'
+                      : 'bg-gray-800 text-gray-500'
+                    }`}>{b}</span>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                {bonuses.map((b, i) => (
-                  <span key={i} className={`text-[10px] px-1.5 py-0.5 rounded ${
-                    b.startsWith('+') ? 'bg-green-900/60 text-green-300'
-                    : b.startsWith('-') ? 'bg-red-900/60 text-red-300'
-                    : 'bg-gray-700 text-gray-300'
-                  }`}>{b}</span>
-                ))}
-              </div>
-              {race.habilidades?.slice(0, 2).map((h, i) => (
-                <p key={i} className="text-[10px] text-gray-400 truncate">• {h.nome}</p>
-              ))}
-              <p className="text-[9px] text-amber-500/60 mt-2 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
             </button>
           );
         })}
@@ -1131,13 +1185,13 @@ function StepClassePericias({ char, onChange, stats }) {
 
   useEffect(() => {
     const currentChosen = Object.values(obrigEscolhas);
-    const allMandatory = [...fixedObrig, ...currentChosen];
-    const nextPericias = [...new Set([...originSkills, ...allMandatory])];
-    // Sync pericias with selected origin skills + class mandatory
+    const allClassSkills = [...fixedObrig, ...currentChosen, ...(char.periciasClasseEscolha || [])];
+    const nextPericias = [...new Set([...originSkills, ...allClassSkills])];
+    
     if (JSON.stringify(char.pericias) !== JSON.stringify(nextPericias)) {
         onChange({ pericias: nextPericias });
     }
-  }, [char.classe, char.origemBeneficios]);
+  }, [char.classe, char.origemBeneficios, char.periciasClasseEscolha, char.periciasObrigEscolha]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -1152,6 +1206,7 @@ function StepClassePericias({ char, onChange, stats }) {
        </div>
 
        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Mandatory Section */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 ml-1">
               <span className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
@@ -1164,19 +1219,10 @@ function StepClassePericias({ char, onChange, stats }) {
                     <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-[10px]">🔒</div>
                  </div>
                ))}
-            </div>
-          </div>
-
-          {orChoices.length > 0 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 ml-1">
-                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                <p className="text-[10px] uppercase font-black text-amber-500/60 tracking-[0.2em]">Especialização de Classe</p>
-              </div>
-              <div className="space-y-4">
-                {orChoices.map((opts, i) => (
+               
+               {orChoices.map((opts, i) => (
                   <div key={i} className="flex flex-col gap-3 p-6 bg-amber-950/10 border border-amber-950/20 rounded-[2rem]">
-                     <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest text-center px-4">Escolha uma das opções abaixo:</p>
+                     <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest text-center px-4">Escolha uma especialização:</p>
                      <div className="flex gap-2">
                         {opts.map(opt => (
                           <button
@@ -1194,9 +1240,64 @@ function StepClassePericias({ char, onChange, stats }) {
                      </div>
                   </div>
                 ))}
+            </div>
+          </div>
+
+          {/* Selection Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between ml-1 pr-4">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Lista da Classe</p>
+              </div>
+              <div className={`px-4 py-1 rounded-full text-[10px] font-black border ${
+                char.periciasClasseEscolha.length === cls.pericias 
+                ? 'bg-emerald-900/20 border-emerald-500/50 text-emerald-400' 
+                : 'bg-amber-900/20 border-amber-500/50 text-amber-500'
+              }`}>
+                {char.periciasClasseEscolha.length} / {cls.pericias}
               </div>
             </div>
-          )}
+
+            <div className="grid grid-cols-2 gap-2">
+               {cls.periciasClasse.filter(p => !fixedObrig.includes(p)).map(p => {
+                 const isObrigChoice = Object.values(obrigEscolhas).includes(p);
+                 const isOrigin = originSkills.includes(p);
+                 const isPicked = char.periciasClasseEscolha.includes(p);
+                 
+                 const disabled = isObrigChoice || isOrigin || (!isPicked && char.periciasClasseEscolha.length >= cls.pericias);
+
+                 function toggle() {
+                   if (isObrigChoice || isOrigin) return;
+                   if (isPicked) {
+                     onChange({ periciasClasseEscolha: char.periciasClasseEscolha.filter(s => s !== p) });
+                   } else if (char.periciasClasseEscolha.length < cls.pericias) {
+                     onChange({ periciasClasseEscolha: [...char.periciasClasseEscolha, p] });
+                   }
+                 }
+
+                 return (
+                   <button
+                     key={p}
+                     onClick={toggle}
+                     disabled={disabled && !isPicked}
+                     className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                       isPicked 
+                       ? 'bg-amber-600 border-amber-400 text-gray-950 font-black shadow-lg shadow-amber-900/20'
+                       : (isOrigin || isObrigChoice 
+                          ? 'bg-gray-900/40 border-gray-800 text-gray-600 opacity-50 cursor-not-allowed' 
+                          : 'bg-gray-950 border-gray-900 text-gray-400 hover:border-gray-700')
+                     }`}
+                   >
+                     <div className="flex flex-col">
+                        <span className="text-[10px] font-black uppercase tracking-tight truncate">{p}</span>
+                        {(isOrigin || isObrigChoice) && <span className="text-[8px] opacity-60">Já Treinado</span>}
+                     </div>
+                   </button>
+                 );
+               })}
+            </div>
+          </div>
        </div>
     </div>
   );
@@ -1597,13 +1698,197 @@ function StepAttributes({ char, onChange, stats }) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// STEP 5 — PERÍCIAS
+// STEP 8 — EQUIPAMENTO
 // ─────────────────────────────────────────────────────────────
 
-// StepPericias was removed and replaced by Phase 1, 2 and 3 components above.
+function StepEquipment({ char, onChange, stats }) {
+  const [category, setCategory] = useState('arma');
+  
+  const categories = [
+    { id: 'arma', label: 'Armas', icon: '⚔️' },
+    { id: 'armadura', label: 'Armaduras', icon: '🛡️' },
+    { id: 'escudo', label: 'Escudos', icon: '🛡️' },
+    { id: 'acessorio', label: 'Acessórios', icon: '💍' },
+    { id: 'consumivel', label: 'Poções', icon: '🧪' },
+    { id: 'aventura', label: 'Aventura', icon: '🎒' },
+  ];
+
+  const filteredItems = Object.values(ITENS).filter(item => {
+    if (category === 'armadura') return item.tipo === 'armadura' && !item.slot;
+    if (category === 'escudo') return item.tipo === 'escudo';
+    return item.tipo === category;
+  });
+
+  const toggleItem = (item) => {
+    const isOwned = char.equipamento.includes(item.id);
+    if (isOwned) {
+      onChange({ 
+        equipamento: char.equipamento.filter(id => id !== item.id),
+        dinheiro: char.dinheiro + (item.preco || 0)
+      });
+    } else {
+      if (char.dinheiro >= item.preco) {
+        onChange({ 
+          equipamento: [...char.equipamento, item.id],
+          dinheiro: char.dinheiro - (item.preco || 0)
+        });
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between bg-gray-900/40 p-6 rounded-[2.5rem] border border-gray-800 shadow-xl">
+        <div>
+          <h2 className="text-2xl font-black text-white tracking-tight">
+            <span className="text-amber-500 mr-2">VIII.</span> Equipamento Inicial
+          </h2>
+          <p className="text-gray-400 text-sm">Prepare-se para o perigo. Você tem T$ {char.dinheiro} para gastar.</p>
+        </div>
+        <div className="px-6 py-3 bg-amber-900/20 border border-amber-500/30 rounded-2xl flex items-center gap-3">
+          <span className="text-amber-500 text-xl font-black">T$ {char.dinheiro}</span>
+          <span className="text-[10px] text-amber-500/60 uppercase font-bold tracking-widest">Disponível</span>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {categories.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => setCategory(cat.id)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border ${
+              category === cat.id 
+                ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg shadow-amber-900/20' 
+                : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:border-gray-600'
+            }`}
+          >
+            <span>{cat.icon}</span>
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredItems.map(item => {
+          const isOwned = char.equipamento.includes(item.id);
+          const canAfford = char.dinheiro >= item.preco;
+          return (
+            <div 
+              key={item.id}
+              onClick={() => toggleItem(item)}
+              className={`group p-4 rounded-3xl border transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden ${
+                isOwned 
+                  ? 'bg-amber-900/10 border-amber-500/50 shadow-lg shadow-amber-900/10' 
+                  : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'
+              } ${!isOwned && !canAfford ? 'opacity-50 grayscale' : ''}`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-2xl">{category === 'arma' ? '⚔️' : category === 'armadura' ? '🛡️' : '📦'}</span>
+                <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase ${isOwned ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-500'}`}>
+                  {isOwned ? 'Comprado' : `T$ ${item.preco}`}
+                </span>
+              </div>
+              <div>
+                <p className="font-bold text-white text-sm">{item.nome}</p>
+                <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
+                  {item.dano && `Dano: ${item.dano} `}
+                  {item.def && `Defesa: +${item.def} `}
+                  {item.peso && `Peso: ${item.peso}kg`}
+                </p>
+              </div>
+              {item.efeito && (
+                <p className="text-[9px] text-amber-500/80 italic font-medium">✦ {item.efeito}</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────
-// STEP 6 — REVISÃO
+// STEP 9 — PODERES
+// ─────────────────────────────────────────────────────────────
+
+function StepPowers({ char, onChange, stats }) {
+  const [activeTab, setActiveTab] = useState('combate');
+  
+  const types = [
+    { id: 'combate', label: 'Combate', icon: '⚔️' },
+    { id: 'magia', label: 'Magia', icon: '✨' },
+    { id: 'pericia', label: 'Perícias', icon: '📚' },
+    { id: 'concedidos', label: 'Concedidos', icon: '🙏' },
+  ];
+
+  const togglePower = (power) => {
+    const isOwned = char.poderesGerais.some(p => p.nome === power.nome);
+    if (isOwned) {
+      onChange({ poderesGerais: char.poderesGerais.filter(p => p.nome !== power.nome) });
+    } else {
+      onChange({ poderesGerais: [...char.poderesGerais, power] });
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="bg-gray-900/40 p-6 rounded-[2.5rem] border border-gray-800 shadow-xl">
+        <h2 className="text-2xl font-black text-white tracking-tight">
+          <span className="text-amber-500 mr-2">X.</span> Poderes Gerais
+        </h2>
+        <p className="text-gray-400 text-sm">Habilidades especiais que definem seu estilo de aventura.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {types.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setActiveTab(t.id)}
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border ${
+              activeTab === t.id 
+                ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-900/20' 
+                : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:border-gray-600'
+            }`}
+          >
+            <span>{t.icon}</span>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {GENERAL_POWERS[activeTab].map(p => {
+          const isOwned = char.poderesGerais.some(owned => owned.nome === p.nome);
+          return (
+            <div 
+              key={p.nome}
+              onClick={() => togglePower(p)}
+              className={`group p-5 rounded-3xl border transition-all cursor-pointer flex flex-col gap-2 relative overflow-hidden ${
+                isOwned 
+                  ? 'bg-blue-900/10 border-blue-500/50 shadow-lg shadow-blue-900/10' 
+                  : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <p className={`font-black text-sm uppercase tracking-tight ${isOwned ? 'text-blue-400' : 'text-white'}`}>{p.nome}</p>
+                {isOwned && <span className="w-2 h-2 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 animate-pulse" />}
+              </div>
+              <p className="text-xs text-gray-400 leading-relaxed font-medium">{p.descricao}</p>
+              {p.prereq && (
+                <div className="mt-1 px-2 py-0.5 bg-black/20 rounded-md inline-block">
+                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Pré-req: {p.prereq}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// STEP 10 — REVISÃO
 // ─────────────────────────────────────────────────────────────
 
 function StepReview({ char, onChange, stats, onSave, onPlay }) {
@@ -1621,7 +1906,7 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
         </div>
         <div>
           <h2 className="text-2xl font-black text-white tracking-tight">
-             <span className="text-amber-500 mr-2">IX.</span> Revisão Final
+             <span className="text-amber-500 mr-2">XI.</span> Revisão Final
           </h2>
           <p className="text-amber-500/60 text-sm font-medium">O nascimento de uma lenda...</p>
         </div>
@@ -1697,6 +1982,31 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
                   {p}
                 </span>
               ))}
+            </div>
+          </div>
+
+          <div className="p-6 border-t border-gray-800 flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Inventário Inicial</span>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {char.equipamento.map(id => (
+                  <span key={id} className="px-2.5 py-1 bg-gray-800 border border-gray-700 rounded-lg text-[10px] font-bold text-gray-400">
+                    📦 {ITENS[id]?.nome}
+                  </span>
+                ))}
+                {char.equipamento.length === 0 && <span className="text-[10px] text-gray-700 italic">Vazio</span>}
+              </div>
+            </div>
+            <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-800 pt-6 md:pt-0 md:pl-6">
+              <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Poderes Selecionados</span>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {char.poderesGerais.map(p => (
+                  <span key={p.nome} className="px-2.5 py-1 bg-blue-900/20 border border-blue-500/20 rounded-lg text-[10px] font-bold text-blue-300">
+                    ✨ {p.nome}
+                  </span>
+                ))}
+                {char.poderesGerais.length === 0 && <span className="text-[10px] text-gray-700 italic">Nenhum</span>}
+              </div>
             </div>
           </div>
         </div>
@@ -1890,18 +2200,15 @@ export function CharacterCreation({ onComplete }) {
       const cls = CLASSES[char.classe];
       const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
       const chosen = Object.keys(char.periciasObrigEscolha || {}).length;
-      return chosen === orChoices.length;
+      return chosen === orChoices.length && char.periciasClasseEscolha.length === cls.pericias;
     }
     if (step === 7) {
       const intBonus = Math.max(0, stats.attrs.INT || 0);
-      const cls = CLASSES[char.classe];
-      const fixed = cls?.periciasObrigatorias?.filter(s => typeof s === 'string') || [];
-      const chosenObrig = Object.values(char.periciasObrigEscolha || {});
-      const originP = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
-      const alreadyTrained = [...new Set([...fixed, ...chosenObrig, ...originP])];
-      const currentExtras = char.pericias.filter(p => !alreadyTrained.includes(p));
-      return currentExtras.length === intBonus;
+      const currentExtras = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.periciasClasseEscolha, ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
+      return currentExtras === intBonus;
     }
+    if (step === 8) return char.dinheiro >= 0;
+    if (step === 9) return char.poderesGerais.length >= 1;
     return true;
   }, [step, char, stats]);
 
@@ -1953,7 +2260,9 @@ export function CharacterCreation({ onComplete }) {
           {step === 5 && <StepOrigemBeneficios char={char} onChange={updateChar} stats={stats} />}
           {step === 6 && <StepClassePericias char={char} onChange={updateChar} stats={stats} />}
           {step === 7 && <StepIntPericias char={char} onChange={updateChar} stats={stats} />}
-          {step === 8 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
+          {step === 8 && <StepEquipment char={char} onChange={updateChar} stats={stats} />}
+          {step === 9 && <StepPowers char={char} onChange={updateChar} stats={stats} />}
+          {step === 10 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
         </div>
 
         {/* Right: Live preview — desktop only */}

@@ -14,7 +14,8 @@
       "Bash(cmd /c start http://localhost:5174)",
       "Bash(timeout:*)",
       "Bash(nul)",
-      "Bash(start \"\" \"http://localhost:5175\")"
+      "Bash(start \"\" \"http://localhost:5175\")",
+      "Bash(git -C c:/Users/tomas/a-lenda-do-reino remote -v)"
     ],
     "deny": [],
     "ask": []
