@@ -12,6 +12,9 @@ import { CLASSES } from './compendium/classes';
 import { ORIGINS } from './compendium/origins';
 import { SKILLS } from './compendium/skills';
 import { POWERS } from './compendium/powers';
+console.log("Raças carregadas:", RACES);
+console.log("Classes carregadas:", CLASSES);
+
 
 const CharacterCreatorPWA = () => {
   const [step, setStep] = useState(1);

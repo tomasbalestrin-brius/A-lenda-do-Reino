@@ -32,7 +32,7 @@ export function calcDef(equipamento, des) {
   if (maxDes != null) {
     try {
       modDes = Math.min(modDes, Number(maxDes));
-    } catch {}
+    } catch { }
   }
   const bonusArmadura = arm ? (arm.def != null ? arm.def : arm.defesa || 0) : 0;
   const bonusEscudo = esc ? 2 : 0;
@@ -42,4 +42,15 @@ export function calcDef(equipamento, des) {
     (esc?.bonusDef || 0);
   const total = 10 + modDes + bonusArmadura + bonusEscudo + outros;
   return total;
+}
+
+export function getModificadores(atributos, equipamento = {}) {
+  return {
+    forca: calcMod(atributos?.FOR || 10),
+    destreza: calcMod(atributos?.DES || 10) - (equipamento?.armadura?.penalidade || 0),
+    constituicao: calcMod(atributos?.CON || 10),
+    inteligencia: calcMod(atributos?.INT || 10),
+    sabedoria: calcMod(atributos?.SAB || 10),
+    carisma: calcMod(atributos?.CAR || 10),
+  };
 }

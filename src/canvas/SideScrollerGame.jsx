@@ -26,7 +26,9 @@ export function SideScrollerGame() {
       speed: 5, jumpForce: -13, gravity: 0.7,
       isGrounded: false, facing: 'right',
       attackCooldown: 0, invulFrames: 0,
-      anim: animationSystem.createState('player_idle')
+      coyoteTime: 0, // Frames extras para pular
+      dashCooldown: 0, isDashing: 0, // Duração do dash em ms
+      anim: animationSystem.createState('guerreiro_idle')
     },
     camera: { x: 0, y: 0, shake: 0 },
     parallax: [
@@ -45,7 +47,7 @@ export function SideScrollerGame() {
     const loop = (now) => {
       const dt = Math.min(32, now - stateRef.current.lastTime);
       stateRef.current.lastTime = now;
-      
+
       // Se estiver em Hit Stop, apenas desenha o frame atual (congelado)
       if (actionCombat.hitStopDuration > 0) {
         actionCombat.update(dt); // Apenas para reduzir o timer
@@ -57,79 +59,164 @@ export function SideScrollerGame() {
       const s = stateRef.current;
       const p = s.player;
 
+      // Determinar raça e classe
+      const heroRace = (activeHero.race || 'humano').toLowerCase();
+      const heroClass = (activeHero.class || 'guerreiro').toLowerCase();
+      const animPrefix = heroRace === 'humano' ? heroClass : `${heroRace}_${heroClass}`;
+
+      // --- AJUSTES RACIAIS (Física T20) ---
+      if (heroRace === 'anão' || heroRace === 'anao') {
+        p.speed = 4; // Anões são mais lentos
+        p.height = 40;
+        p.width = 38;
+      } else if (heroRace === 'elfo') {
+        p.speed = 6.5; // Elfos são mais rápidos
+        p.height = 52; // Elfos são mais altos
+        p.width = 28;  // Elfos são mais esguios
+        // Herança Arcana: Elfos recuperam um pouco de MP passivamente ou têm bônus
+        if (Math.random() < 0.01) { // 1% de chance por frame de recuperar 1 MP
+          useGameStore.setState(state => ({
+            heroes: state.heroes.map((h, i) => i === activeHeroId ? { ...h, mp: Math.min(h.maxMp, h.mp + 1) } : h)
+          }));
+        }
+      } else {
+        p.speed = 5;
+        p.height = 48;
+        p.width = 32;
+      }
+
       // --- LÓGICA DE TEMPO & EFEITOS ---
       if (p.attackCooldown > 0) p.attackCooldown -= dt;
       if (p.invulFrames > 0) p.invulFrames -= dt;
+      if (p.dashCooldown > 0) p.dashCooldown -= dt;
+      if (p.isDashing > 0) p.isDashing -= dt;
       if (s.camera.shake > 0) s.camera.shake -= dt * 0.05;
+      if (!p.isGrounded && p.coyoteTime > 0) p.coyoteTime -= dt;
 
       // --- INPUT & MOVIMENTO ---
       p.vx = 0;
       let moving = false;
-      if (inputManager.isPressed('left')) {
-        p.vx = -p.speed;
-        p.facing = 'left';
-        moving = true;
-      }
-      if (inputManager.isPressed('right')) {
-        p.vx = p.speed;
-        p.facing = 'right';
-        moving = true;
-      }
 
-      // Pulo
-      if ((inputManager.isPressed('jump') || inputManager.isPressed('up')) && p.isGrounded) {
-        p.vy = p.jumpForce;
-        p.isGrounded = false;
-        s.camera.shake = 2; // Pequeno tremor ao pular
+      // Dash Logic (Consome MP ou apenas cooldown)
+      if (inputManager.isPressed('dash') && p.dashCooldown <= 0 && p.isDashing <= 0) {
+        p.isDashing = 200; // 200ms de dash
+        p.dashCooldown = 800;
+        s.camera.shake = 3;
       }
 
       // Ataque
-      if (inputManager.isPressed('interact') && p.attackCooldown <= 0) {
-        actionCombat.createAttack({ ...p, stats: activeHero.stats });
-        p.attackCooldown = 350;
-        animationSystem.play(p.anim, 'player_attack');
-        s.camera.shake = 5; // Tremor no ataque
+      const isInteract = inputManager.isPressed('interact');
+      const isSpecialPressed = inputManager.isPressed('special');
+
+      if ((isInteract || isSpecialPressed) && p.attackCooldown <= 0) {
+        const mpCost = isSpecialPressed ? 2 : (heroClass === 'arcanista' ? 1 : 0);
+        const canAttack = activeHero.mp >= mpCost;
+
+        if (canAttack) {
+          if (mpCost > 0) {
+            useGameStore.setState(state => ({
+              heroes: state.heroes.map((h, i) => i === activeHeroId ? { ...h, mp: h.mp - mpCost } : h)
+            }));
+          }
+
+          if (heroClass === 'arcanista') {
+            // Arcanista ataca à distância
+            actionCombat.createProjectile({ ...p, stats: activeHero.stats, class: heroClass }, isSpecialPressed);
+          } else if (heroClass === 'clerigo' && isSpecialPressed) {
+            // Clérigo Especial: Cura + Luz Sagrada
+            actionCombat.createAttack({ ...p, stats: activeHero.stats, class: heroClass }, 'melee', true);
+            useGameStore.setState(state => ({
+              heroes: state.heroes.map((h, i) => i === activeHeroId ? { ...h, hp: Math.min(h.maxHp, h.hp + 20) } : h)
+            }));
+            if (useGameStore.getState().addMessage) {
+              useGameStore.getState().addMessage("Luz Sagrada: +20 HP", "#fbbf24");
+            }
+          } else {
+            // Outros (Guerreiro/Bárbaro/Clérigo normal) atacam corpo-a-corpo
+            actionCombat.createAttack({ ...p, stats: activeHero.stats, class: heroClass }, 'melee', isSpecialPressed);
+          }
+
+          p.attackCooldown = isSpecialPressed ? (heroClass === 'barbaro' ? 700 : 500) : 350;
+          animationSystem.play(p.anim, `${animPrefix}_attack`);
+
+          let shakeAmount = isSpecialPressed ? (heroClass === 'barbaro' ? 20 : 10) : 5;
+          s.camera.shake = shakeAmount;
+        }
+      }
+      if (p.isDashing > 0) {
+        p.vx = p.facing === 'right' ? p.speed * 3 : -p.speed * 3;
+        p.vy = 0; // Dash horizontal puro ignorando gravidade temporariamente
+        animationSystem.play(p.anim, `${animPrefix}_dash`);
+      } else {
+        if (inputManager.isPressed('left')) {
+          p.vx = -p.speed;
+          p.facing = 'left';
+          moving = true;
+        }
+        if (inputManager.isPressed('right')) {
+          p.vx = p.speed;
+          p.facing = 'right';
+          moving = true;
+        }
+
+        // Pulo (com Coyote Time)
+        if ((inputManager.isPressed('jump') || inputManager.isPressed('up')) && (p.isGrounded || p.coyoteTime > 0)) {
+          p.vy = p.jumpForce;
+          p.isGrounded = false;
+          p.coyoteTime = 0;
+          s.camera.shake = 2; // Pequeno tremor ao pular
+        }
+
+        // Gravidade
+        p.vy += p.gravity;
       }
 
-      // Gravidade
-      p.vy += p.gravity;
-
       // --- ANIMAÇÃO ---
-      if (p.anim.current !== 'player_attack' || p.anim.finished) {
+      if ((p.anim.current !== `${animPrefix}_attack` && p.anim.current !== `${animPrefix}_dash`) || p.anim.finished) {
         if (!p.isGrounded) {
-          animationSystem.play(p.anim, 'player_jump');
+          animationSystem.play(p.anim, `${animPrefix}_jump`);
         } else if (moving) {
-          animationSystem.play(p.anim, 'player_run');
+          animationSystem.play(p.anim, `${animPrefix}_run`);
         } else {
-          animationSystem.play(p.anim, 'player_idle');
+          animationSystem.play(p.anim, `${animPrefix}_idle`);
         }
       }
       animationSystem.update(p.anim, dt);
 
       // --- COLISÃO ---
-      const isWallAt = (px, py) => {
+      const isWallAt = (px, py, checkSemiSolid = true) => {
         const tx = Math.floor(px / TILE_SIZE);
         const ty = Math.floor(py / TILE_SIZE);
         if (ty < 0 || tx < 0 || ty >= room.height || tx >= room.width) return true;
-        return room.tiles[ty][tx] === 1;
+        const tile = room.tiles[ty][tx];
+        if (tile === 1) return true;
+        // Tipo 3 é plataforma semi-sólida (atravessável por baixo)
+        if (tile === 3 && checkSemiSolid) return true;
+        return false;
       };
 
       // X
       let nextX = p.x + p.vx;
-      if (!isWallAt(nextX, p.y) && !isWallAt(nextX + p.width, p.y) && 
-          !isWallAt(nextX, p.y + p.height - 5) && !isWallAt(nextX + p.width, p.y + p.height - 5)) {
+      if (!isWallAt(nextX, p.y, false) && !isWallAt(nextX + p.width, p.y, false) &&
+        !isWallAt(nextX, p.y + p.height - 5, false) && !isWallAt(nextX + p.width, p.y + p.height - 5, false)) {
         p.x = nextX;
       }
 
       // Y
       let nextY = p.y + p.vy;
-      if (!isWallAt(p.x + 5, nextY) && !isWallAt(p.x + p.width - 5, nextY) && 
-          !isWallAt(p.x + 5, nextY + p.height) && !isWallAt(p.x + p.width - 5, nextY + p.height)) {
+      // Para subir através de plataformas tipo 3, checamos sem o flag semi-sólido
+      const headHit = isWallAt(p.x + 5, nextY, false) || isWallAt(p.x + p.width - 5, nextY, false);
+
+      // Para descer/pousar, checamos APENAS se estiver caindo (vy > 0)
+      const feetHit = isWallAt(p.x + 5, nextY + p.height, p.vy > 0) || isWallAt(p.x + p.width - 5, nextY + p.height, p.vy > 0);
+
+      if (!headHit && !feetHit) {
         p.y = nextY;
         p.isGrounded = false;
       } else {
         if (p.vy > 0) {
           p.isGrounded = true;
+          p.coyoteTime = 150;
           p.y = Math.floor((p.y + p.height) / TILE_SIZE) * TILE_SIZE - p.height;
         }
         p.vy = 0;
@@ -144,50 +231,183 @@ export function SideScrollerGame() {
         layer.x = -s.camera.x * layer.speed;
       });
 
-      // --- COMBATE ---
+      // --- COMBATE & IA DOS INIMIGOS ---
       const currentEnemies = useGameStore.getState().enemies;
-      actionCombat.update(dt, currentEnemies, (enemy, damage) => {
+
+      // Atualizar IA dos Inimigos
+      const updatedEnemies = currentEnemies.map(enemy => {
+        if (enemy.defeated) return enemy;
+
+        const newEnemy = { ...enemy };
+        const distToPlayer = Math.sqrt(Math.pow(p.x - enemy.x, 2) + Math.pow(p.y - enemy.y, 2));
+
+        // Máquina de Estados (Simplificada no loop)
+        if (!newEnemy.state) newEnemy.state = 'PATROL';
+        if (!newEnemy.stateTimer) newEnemy.stateTimer = 0;
+        newEnemy.stateTimer -= dt;
+
+        if (newEnemy.state === 'PATROL') {
+          // Patrulha básica com suporte a vôo
+          const isFlying = enemy.sprite === 'morcego_gigante';
+          if (isFlying) {
+            newEnemy.originalY = newEnemy.originalY || enemy.y;
+            newEnemy.y = newEnemy.originalY + Math.sin(Date.now() / 500) * 30;
+          }
+          newEnemy.x += (newEnemy.dir || 1) * (newEnemy.speed || 1);
+          if (newEnemy.stateTimer <= 0) {
+            newEnemy.dir = (newEnemy.dir || 1) * -1;
+            newEnemy.stateTimer = 2000 + Math.random() * 2000;
+          }
+          if (distToPlayer < 250) newEnemy.state = 'CHASE';
+        }
+        else if (newEnemy.state === 'CHASE') {
+          const isArcher = enemy.sprite === 'goblin_arqueiro' || enemy.sprite === 'cultista_tormenta' || enemy.sprite === 'aderbal_arauto';
+          const isFlying = enemy.sprite === 'morcego_gigante';
+          const isLefeu = enemy.sprite.startsWith('lefeu');
+          const dirX = p.x > newEnemy.x ? 1 : -1;
+
+          if (isLefeu) {
+            // IA Lefeu: Errada, rápida e com jitter
+            newEnemy.x += dirX * (newEnemy.speed || 3.5);
+            newEnemy.x += (Math.random() - 0.5) * 6; // Jitter alienígena
+            if (distToPlayer < 40) {
+              newEnemy.state = 'WINDUP';
+              newEnemy.stateTimer = 350;
+            }
+          } else if (isFlying) {
+            newEnemy.x += dirX * (newEnemy.speed || 3);
+            newEnemy.y += (p.y - 40 > newEnemy.y ? 1 : -1) * 2;
+            if (distToPlayer < 80) {
+              newEnemy.state = 'WINDUP';
+              newEnemy.stateTimer = 400;
+            }
+          } else if (isArcher) {
+            const isBoss = enemy.sprite === 'aderbal_arauto';
+            if (distToPlayer < (isBoss ? 120 : 180)) {
+              if (enemy.sprite === 'cultista_tormenta' && Math.random() < 0.05) {
+                newEnemy.x += (Math.random() - 0.5) * 400; // Teleporte
+                if (Math.abs(newEnemy.x - p.x) < 100) newEnemy.x += 200;
+              } else {
+                newEnemy.x -= dirX * (newEnemy.speed || 2);
+              }
+            } else if (distToPlayer > 350) {
+              newEnemy.x += dirX * (newEnemy.speed || 2.5);
+            } else {
+              newEnemy.state = 'WINDUP';
+              newEnemy.stateTimer = (enemy.sprite === 'cultista_tormenta' || isBoss) ? 500 : 800;
+            }
+          } else {
+            newEnemy.x += dirX * (newEnemy.speed || 2);
+            if (distToPlayer < 60) {
+              newEnemy.state = 'WINDUP';
+              newEnemy.stateTimer = enemy.sprite === 'golem_pedra' ? 1000 : 600;
+            }
+          }
+          if (distToPlayer > 500) newEnemy.state = 'PATROL';
+        }
+        else if (newEnemy.state === 'WINDUP') {
+          newEnemy.flash = true;
+          if (newEnemy.stateTimer <= 0) {
+            newEnemy.state = 'ATTACK';
+            newEnemy.stateTimer = enemy.sprite === 'golem_pedra' ? 500 : 300;
+
+            const isRanged = enemy.sprite === 'goblin_arqueiro' || enemy.sprite === 'cultista_tormenta' || enemy.sprite === 'aderbal_arauto';
+            if (isRanged) {
+              const isHero = enemy.sprite === 'aderbal_arauto';
+              actionCombat.addProjectile({
+                x: newEnemy.x,
+                y: newEnemy.y,
+                vx: (p.x > newEnemy.x ? 1 : -1) * (isHero ? 12 : 10),
+                vy: (isHero ? (Math.random() - 0.5) * 4 : 0),
+                owner: 'enemy',
+                damage: isHero ? 30 : 20,
+                color: '#ef4444'
+              });
+            }
+            if (enemy.sprite === 'chest') {
+              // Lógica de baú: explode em cura/xp ao ser 'atacado'
+              newEnemy.hp = 0;
+              useGameStore.getState().gainXP(500);
+              useGameStore.getState().addMessage("BAÚ ABERTO! +500 XP", "success");
+            }
+            if (enemy.sprite === 'golem_pedra') {
+              s.camera.shake = 15;
+            }
+            if (enemy.sprite === 'morcego_gigante') {
+              // Impulso do mergulho
+              newEnemy.x += (p.x > newEnemy.x ? 12 : -12);
+              newEnemy.y += 10;
+            }
+          }
+        }
+        else if (newEnemy.state === 'ATTACK') {
+          newEnemy.flash = false;
+          // Se colidir no ataque, causa dano
+          if (distToPlayer < 40 && p.invulFrames <= 0) {
+            takeDamage(15);
+            p.invulFrames = 1000;
+            p.vx = p.x < newEnemy.x ? -10 : 10;
+            p.vy = -5;
+          }
+          if (newEnemy.stateTimer <= 0) {
+            newEnemy.state = 'CHASE';
+          }
+        }
+
+        return newEnemy;
+      });
+
+      // Atualizar no Store (opcional a cada frame se performance permitir, ou manter localmente no ref)
+      useGameStore.setState({ enemies: updatedEnemies });
+
+      actionCombat.update(dt, updatedEnemies, (enemy, damage) => {
         const state = useGameStore.getState();
         const newHp = (enemy.hp || 50) - damage;
         const isDefeated = newHp <= 0;
+
         useGameStore.setState(s => ({
           enemies: s.enemies.map(e => e.id === enemy.id ? { ...e, hp: newHp, defeated: isDefeated } : e)
         }));
+
         if (isDefeated) {
           state.gainXP(200);
           state.addMessage(`Inimigo abatido! +200 XP`, 'success');
-          s.camera.shake = 15; // Tremor forte na morte
+          s.camera.shake = 15;
+          // Contribuição para a Missão Ativa
+          const quest = useGameStore.getState().activeQuest;
+          if (quest && quest.status === 'active') {
+            useGameStore.getState().updateQuestProgress(1);
+          }
         } else {
-          s.camera.shake = 8; // Tremor médio no acerto
+          s.camera.shake = 8;
         }
       });
 
-      // Dano no Player
-      if (p.invulFrames <= 0) {
-        const hitBy = currentEnemies.find(e => !e.defeated && Math.abs(e.x - (p.x + p.width/2)) < 25 && Math.abs(e.y - (p.y + p.height/2)) < 25);
-        if (hitBy) {
-          takeDamage(10);
-          p.invulFrames = 1200;
-          p.vy = -8;
-          p.vx = p.x < hitBy.x ? -15 : 15;
-          s.camera.shake = 20; // Tremor violento ao levar dano
+      // --- GATILHOS DE MISSÃO (Quests) ---
+      const qState = useGameStore.getState();
+      const currentQ = qState.activeQuest;
+      if (currentQ && currentQ.status === 'active') {
+        // Chegou no topo da torre (Ato II)
+        if (currentQ.id === 'act2_fragment' && currentRoomId === 'tower' && p.y < 100) {
+          qState.updateQuestProgress(1);
+        }
+        // Derrotou Boss Final (Ato III)
+        if (currentQ.id === 'act3_final_boss' && currentRoomId === 'heart' && updatedEnemies.every(e => e.sprite !== 'aderbal_arauto' || e.defeated)) {
+          qState.updateQuestProgress(1);
         }
       }
-
-      // --- RENDERIZAÇÃO ---
       ctx.save();
-      
+
       // Aplicar Shake
       if (s.camera.shake > 0) {
         ctx.translate((Math.random() - 0.5) * s.camera.shake, (Math.random() - 0.5) * s.camera.shake);
       }
-
       // Fundo Parallax
       ctx.fillStyle = '#020617';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       s.parallax.forEach(layer => {
         ctx.fillStyle = layer.color;
-        for(let i = 0; i < 3; i++) { // Repetir para cobrir a tela
+        for (let i = 0; i < 3; i++) { // Repetir para cobrir a tela
           ctx.fillRect(layer.x % canvas.width + (i * canvas.width), 100, canvas.width, canvas.height);
         }
       });
@@ -195,49 +415,60 @@ export function SideScrollerGame() {
       ctx.translate(-s.camera.x, -s.camera.y);
 
       // Tiles (Cenário)
+      // --- RENDERIZAÇÃO DE TILES ---
       for (let y = 0; y < room.height; y++) {
         for (let x = 0; x < room.width; x++) {
           const t = room.tiles[y][x];
-          if (t === 1) {
-            const px = x * TILE_SIZE;
-            const py = y * TILE_SIZE;
-            // Gradiente para as paredes
-            const grad = ctx.createLinearGradient(px, py, px, py + TILE_SIZE);
-            grad.addColorStop(0, '#475569');
-            grad.addColorStop(1, '#1e293b');
-            ctx.fillStyle = grad;
-            ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-            ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
+          if (t === 0) continue;
+
+          const px = x * TILE_SIZE;
+          const py = y * TILE_SIZE;
+
+          if (t === 1) { // Sólido
+            ctx.fillStyle = currentRoomId === 'cave' ? '#1e293b' : (currentRoomId === 'forest' ? '#064e3b' : '#334155');
+          } else if (t === 2) { // Porta
+            ctx.fillStyle = '#f59e0b';
+          } else if (t === 3) { // Semi-sólido
+            ctx.fillStyle = currentRoomId === 'forest' ? '#14532d' : '#475569';
           }
+
+          ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
+          ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+          ctx.strokeRect(px, py, TILE_SIZE, TILE_SIZE);
         }
       }
 
-      // Inimigos
-      currentEnemies.forEach(e => {
+      // --- RENDERIZAÇÃO DE INIMIGOS ---
+      updatedEnemies.forEach(e => {
         if (e.defeated) return;
+
+        // Visual do Inimigo baseado no estado (Windup faz ele piscar em vermelho)
+        ctx.fillStyle = e.flash ? '#ef4444' : (e.sprite === 'slime' ? '#10b981' : '#f87171');
+
         // Sombra
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.beginPath();
         ctx.ellipse(e.x, e.y + 15, 15, 5, 0, 0, Math.PI * 2);
         ctx.fill();
-        
+
         // Corpo
-        ctx.fillStyle = '#ef4444';
+        ctx.fillStyle = e.flash ? '#fca5a5' : (e.sprite === 'slime' ? '#10b981' : '#ef4444');
         ctx.beginPath();
         ctx.arc(e.x, e.y, 15, 0, Math.PI * 2);
         ctx.fill();
-        
-        // Brilho nos olhos
-        ctx.fillStyle = 'white';
-        ctx.fillRect(e.x - 5, e.y - 5, 2, 2);
-        ctx.fillRect(e.x + 3, e.y - 5, 2, 2);
+
+        // Warning Exclamation para WINDUP
+        if (e.state === 'WINDUP') {
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = 'bold 24px Arial';
+          ctx.fillText('!', e.x - 5, e.y - 25);
+        }
 
         // Barra de vida flutuante
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.fillRect(e.x - 20, e.y - 30, 40, 5);
         ctx.fillStyle = '#f87171';
-        ctx.fillRect(e.x - 20, e.y - 30, (e.hp / 50) * 40, 5);
+        ctx.fillRect(e.x - 20, e.y - 30, (e.hp / (e.maxHp || 50)) * 40, 5);
       });
 
       // Player
@@ -245,28 +476,49 @@ export function SideScrollerGame() {
         // Sombra do player
         ctx.fillStyle = 'rgba(0,0,0,0.3)';
         ctx.beginPath();
-        ctx.ellipse(p.x + p.width/2, p.y + p.height, 20, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(p.x + p.width / 2, p.y + p.height, 20, 6, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Corpo (Representação animada)
-        ctx.fillStyle = '#3b82f6';
-        const frame = animationSystem.getCurrentFrame(p.anim);
-        // Usamos o frame para distorcer levemente o retângulo e simular animação
-        const bounce = Math.sin(now / 100) * 2;
-        const drawW = p.width + (p.anim.current === 'player_run' ? bounce : 0);
-        const drawH = p.height - (p.anim.current === 'player_run' ? bounce : 0);
-        
-        ctx.fillRect(p.x + (p.width - drawW)/2, p.y + (p.height - drawH), drawW, drawH);
-        
-        // Detalhe de "Capa" ou rastro
-        ctx.fillStyle = '#1d4ed8';
-        const capeX = p.facing === 'right' ? p.x : p.x + p.width - 10;
-        ctx.fillRect(capeX, p.y + 15, 10, 25);
+        // Corpo (Representação por Sprite Pixel Art)
+        const frameData = animationSystem.getFrameData(p.anim);
+        if (frameData && frameData.image) {
+          const { image, frame } = frameData;
+          ctx.save();
 
-        // Olhos
-        ctx.fillStyle = 'white';
-        const eyeX = p.facing === 'right' ? p.x + p.width - 10 : p.x + 5;
-        ctx.fillRect(eyeX, p.y + 10, 4, 4);
+          // Centralizar e desenhar
+          const drawX = p.x + (p.width - p.width) / 2;
+          const drawY = p.y + (p.height - p.height);
+
+          if (p.facing === 'left') {
+            ctx.translate(p.x + p.width / 2, p.y + p.height / 2);
+            ctx.scale(-1, 1);
+            ctx.translate(-(p.x + p.width / 2), -(p.y + p.height / 2));
+          }
+
+          // Filtro Racial/Classe
+          if (heroClass === 'clerigo') {
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#fde047';
+          } else if (heroRace === 'elfo') {
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#60a5fa'; // Azul arcano
+          } else if (p.anim.current === 'player_attack' && p.attackCooldown > 150) {
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#fbbf24';
+          }
+
+          ctx.drawImage(
+            image,
+            frame.x, frame.y, frame.w, frame.h,
+            p.x, p.y, p.width, p.height
+          );
+
+          ctx.restore();
+        } else {
+          // Fallback se a imagem não carregar
+          ctx.fillStyle = '#3b82f6';
+          ctx.fillRect(p.x, p.y, p.width, p.height);
+        }
       }
 
       // Efeitos de Combate
@@ -275,8 +527,8 @@ export function SideScrollerGame() {
       // --- ILUMINAÇÃO DINÂMICA (Overlay) ---
       ctx.globalCompositeOperation = 'multiply';
       const lightGrad = ctx.createRadialGradient(
-        p.x + p.width/2, p.y + p.height/2, 50,
-        p.x + p.width/2, p.y + p.height/2, 300
+        p.x + p.width / 2, p.y + p.height / 2, 50,
+        p.x + p.width / 2, p.y + p.height / 2, 300
       );
       lightGrad.addColorStop(0, 'rgba(255, 255, 200, 0.2)'); // Luz ao redor do player
       lightGrad.addColorStop(1, 'rgba(0, 0, 20, 0.8)');     // Escuridão distante
@@ -287,10 +539,16 @@ export function SideScrollerGame() {
       ctx.restore();
 
       // --- HUD TORMENTA20 (Fixed) ---
-      this.drawHUD(ctx, activeHero);
+      drawHUD(ctx, activeHero);
+
+      // HUD de Missão (Quest)
+      const qHUD = useGameStore.getState().activeQuest;
+      if (qHUD) {
+        drawQuestHUD(ctx, qHUD);
+      }
 
       // Log de Mensagens
-      this.drawMessages(ctx, messages);
+      drawMessages(ctx, messages);
 
       animationId = requestAnimationFrame(loop);
     };
@@ -315,7 +573,7 @@ export function SideScrollerGame() {
     ctx.roundRect(startX, startY, 280, 105, 5);
     ctx.fill();
     ctx.stroke();
-    
+
     // Cantos decorativos
     ctx.fillStyle = '#fbbf24';
     ctx.fillRect(startX - 5, startY - 5, 15, 15);
@@ -333,7 +591,7 @@ export function SideScrollerGame() {
 
     // Barra de PV (Vida)
     this.drawBar(ctx, startX + 15, startY + 45, 250, 15, hero.hp / hero.maxHp, '#ef4444', '#7f1d1d', `PV ${hero.hp}/${hero.maxHp}`);
-    
+
     // Barra de PM (Mana)
     this.drawBar(ctx, startX + 15, startY + 65, 200, 12, hero.mp / hero.maxMp, '#3b82f6', '#1e3a8a', `PM ${hero.mp}/${hero.maxMp}`);
 
@@ -351,7 +609,7 @@ export function SideScrollerGame() {
       ctx.fillStyle = 'white';
       ctx.font = 'bold 10px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(text, x + w/2, y + h - 3);
+      ctx.fillText(text, x + w / 2, y + h - 3);
       ctx.textAlign = 'left';
     }
   };
@@ -362,11 +620,39 @@ export function SideScrollerGame() {
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
       const textW = ctx.measureText(m.text).width + 20;
       ctx.fillRect(20, 540 - 40 - (i * 30), textW, 25);
-      
+
       ctx.fillStyle = m.type === 'success' ? '#4ade80' : m.type === 'danger' ? '#f87171' : '#60a5fa';
       ctx.font = 'bold 13px sans-serif';
       ctx.fillText(m.text, 30, 540 - 23 - (i * 30));
     });
+  };
+
+  const drawQuestHUD = (ctx, quest) => {
+    const x = 960 - 260;
+    const y = 30;
+
+    // Fundo
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+    ctx.strokeStyle = quest.status === 'completed' ? '#10b981' : '#d97706';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(x, y, 230, 70, 5);
+    ctx.fill();
+    ctx.stroke();
+
+    // Título
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = 'bold 16px Inter, sans-serif';
+    ctx.fillText('MISSÃO ATIVA', x + 15, y + 25);
+
+    // Progresso
+    ctx.fillStyle = 'white';
+    ctx.font = '14px Inter, sans-serif';
+    ctx.fillText(quest.title, x + 15, y + 45);
+
+    const progressText = quest.status === 'completed' ? 'CONCLUÍDO!' : `${quest.current}/${quest.target}`;
+    ctx.fillStyle = quest.status === 'completed' ? '#10b981' : '#fbbf24';
+    ctx.fillText(progressText, x + 15, y + 60);
   };
 
   if (gameState !== 'explore') return null;

@@ -1,342 +1,423 @@
 export const ORIGENS = {
-  acrobata: {
-    id: 'acrobata',
-    nome: 'Acrobata',
-    descricao: 'Você treinou movimentos acrobáticos, conseguindo se equilibrar e saltar com facilidade.',
-    beneficio: '+2 em Acrobacia. Você pode usar Acrobacia em vez de Reflexos para evitar dano.',
-    itens: ['Corda de seda (10m)'],
-    pericias: ['Acrobacia', 'Reflexos'],
-    atributos: { DES: 1 }
+  acolito: {
+    id: 'acolito',
+    nome: 'Acólito',
+    descricao: 'Você serviu em um templo, auxiliando sacerdotes e aprendendo os dogmas de sua fé.',
+    itens: ['Símbolo sagrado', 'Túnica de acólito'],
+    pericias: ['Cura', 'Religião', 'Vontade'],
+    poderes: ['Medicina', 'Membro da Igreja', 'Vontade de Ferro'],
+    poderUnico: {
+      nome: 'Membro da Igreja (Poder Único)',
+      descricao: 'Você recebe hospedagem e informação gratuitamente em templos de sua divindade.'
+    }
   },
-
   amigo_dos_animais: {
     id: 'amigo_dos_animais',
     nome: 'Amigo dos Animais',
     descricao: 'Você tem uma afinidade natural com animais e criaturas selvagens.',
-    beneficio: '+2 em Adestramento. Você pode se comunicar com animais.',
-    itens: ['Ração para animais'],
-    pericias: ['Adestramento', 'Sobrevivência'],
-    atributos: { SAB: 1 }
+    itens: ['Ração para animais (uma semana)', 'Flauta ou pequeno instrumento'],
+    pericias: ['Adestramento', 'Cavalgar'],
+    poderes: ['Amigo Especial'],
+    poderUnico: {
+      nome: 'Amigo Especial (Poder Único)',
+      descricao: '+5 em Adestramento e você possui um animal parceiro (+2 em uma perícia à sua escolha).'
+    }
   },
-
+  amnesico: {
+    id: 'amnesico',
+    nome: 'Amnésico',
+    descricao: 'Você não se lembra de quem era ou de onde veio. Seu passado é um mistério.',
+    itens: ['Um item misterioso (definido pelo mestre)'],
+    pericias: ['Escolha do Mestre'],
+    poderes: ['Lembranças Graduais'],
+    poderUnico: {
+      nome: 'Lembranças Graduais (Poder Único)',
+      descricao: 'Você pode fazer um teste de Sabedoria (CD 10) para reconhecer fatos, locais ou pessoas do seu passado.'
+    }
+  },
   aristocrata: {
     id: 'aristocrata',
     nome: 'Aristocrata',
     descricao: 'Você pertence à nobreza, com acesso a recursos e treinamento de etiqueta.',
-    beneficio: '+2 em Diplomacia. Começa com 3x o dinheiro inicial.',
     itens: ['Traje nobre', 'Anel de sinete'],
-    pericias: ['Diplomacia', 'Nobreza'],
-    atributos: { CAR: 1 }
+    pericias: ['Diplomacia', 'Enganação', 'Nobreza'],
+    poderes: ['Comandar', 'Sangue Azul'],
+    poderUnico: {
+      nome: 'Sangue Azul (Poder Único)',
+      descricao: 'Você possui influência política e tratamento privilegiado pela lei e pela alta sociedade.'
+    }
   },
-
   artesao: {
     id: 'artesao',
     nome: 'Artesão',
     descricao: 'Você é habilidoso na criação de itens práticos e úteis.',
-    beneficio: '+2 em Ofício. Pode criar itens mundanos com 50% do custo.',
-    itens: ['Ferramentas de artesão'],
-    pericias: ['Ofício', 'Percepção'],
-    atributos: { INT: 1 }
+    itens: ['Ferramentas de artesão', 'Um item de sua autoria'],
+    pericias: ['Ofício', 'Vontade'],
+    poderes: ['Frutos do Trabalho', 'Sortudo'],
+    poderUnico: {
+      nome: 'Frutos do Trabalho (Poder Único)',
+      descricao: 'Você recebe o dobro de dinheiro em testes de sustento usando sua perícia de Ofício.'
+    }
   },
-
   artista: {
     id: 'artista',
     nome: 'Artista',
     descricao: 'Você tem talento para as artes, seja música, pintura ou performance.',
-    beneficio: '+2 em Atuação. Pode ganhar dinheiro se apresentando.',
-    itens: ['Instrumento musical'],
-    pericias: ['Atuação', 'Intuição'],
-    atributos: { CAR: 1 }
+    itens: ['Instrumento musical', 'Traje de artista'],
+    pericias: ['Atuação', 'Enganação'],
+    poderes: ['Atraente', 'Dom Artístico', 'Sortudo', 'Torcida'],
+    poderUnico: {
+      nome: 'Dom Artístico (Poder Único)',
+      descricao: 'Você recebe o dobro de tibares ao realizar apresentações com a perícia Atuação.'
+    }
   },
-
-  assassino: {
-    id: 'assassino',
-    nome: 'Assassino',
-    descricao: 'Você foi treinado na arte de matar silenciosamente.',
-    beneficio: '+2 em Furtividade. +2 de dano em ataques furtivos.',
-    itens: ['Adaga envenenada', 'Capuz negro'],
-    pericias: ['Furtividade', 'Ladinagem'],
-    atributos: { DES: 1 }
+  assistente_laboratorio: {
+    id: 'assistente_laboratorio',
+    nome: 'Assistente de Lab.',
+    descricao: 'Você trabalhou auxiliando alquimistas ou inventores em seus experimentos.',
+    itens: ['Balança', '1d4 frascos vazios'],
+    pericias: ['Ofício (alquimia)', 'Misticismo'],
+    poderes: ['Esse Cheiro...', 'Venefício', 'Poder da Tormenta'],
+    poderUnico: {
+      nome: 'Esse Cheiro... (Poder Único)',
+      descricao: 'Você recebe +2 em Fortitude e identifica itens alquímicos automaticamente ao cheirá-los.'
+    }
   },
-
   batedor: {
     id: 'batedor',
     nome: 'Batedor',
-    descricao: 'Você é experiente em explorar territórios desconhecidos.',
-    beneficio: '+2 em Sobrevivência. Não sofre penalidades por terreno difícil.',
-    itens: ['Mapa em branco', 'Bússola'],
-    pericias: ['Sobrevivência', 'Percepção'],
-    atributos: { SAB: 1 }
+    descricao: 'Você é experiente em explorar territórios desconhecidos e encontrar caminhos.',
+    itens: ['Bússola', 'Pé de cabra'],
+    pericias: ['Furtividade', 'Percepção', 'Sobrevivência'],
+    poderes: ['À Prova de Tudo', 'Estilo de Disparo', 'Sentidos Aguçados'],
+    poderUnico: {
+      nome: 'À Prova de Tudo (Poder Único)',
+      descricao: 'Você ignora penalidades de movimento por clima ruim e terreno difícil natural.'
+    }
   },
-
   capanga: {
     id: 'capanga',
     nome: 'Capanga',
-    descricao: 'Você trabalhou como segurança ou guarda-costas.',
-    beneficio: '+2 em Intimidação. +2 PV.',
-    itens: ['Cassetete', 'Algemas'],
-    pericias: ['Intimidação', 'Luta'],
-    atributos: { FOR: 1 }
+    descricao: 'Você trabalhou como segurança, guarda-costas ou executor para o crime ou a lei.',
+    itens: ['Porrete (clava)', 'Algemas'],
+    pericias: ['Luta', 'Intimidação'],
+    poderes: ['Confissão', 'Poder de Combate'],
+    poderUnico: {
+      nome: 'Confissão (Poder Único)',
+      descricao: 'Você pode usar Intimidação para obter informações de um alvo sem custo em PM.'
+    }
   },
-
   charlatao: {
     id: 'charlatao',
     nome: 'Charlatão',
-    descricao: 'Você é mestre em enganar e ludibriar os outros.',
-    beneficio: '+2 em Enganação. Pode falsificar documentos.',
+    descricao: 'Você é mestre em enganar e ludibriar os outros para seu próprio ganho.',
     itens: ['Kit de disfarce', 'Dados viciados'],
-    pericias: ['Enganação', 'Ladinagem'],
-    atributos: { CAR: 1 }
+    pericias: ['Enganação', 'Jogatina'],
+    poderes: ['Alpinista Social', 'Aparência Inofensiva', 'Sortudo'],
+    poderUnico: {
+      nome: 'Alpinista Social (Poder Único)',
+      descricao: 'Você pode substituir testes de Diplomacia por testes de Enganação.'
+    }
   },
-
+  circense: {
+    id: 'circense',
+    nome: 'Circense',
+    descricao: 'Você viveu sob a lona, encantando o público com acrobacias ou truques.',
+    itens: ['Traje colorido', 'Maquiagem'],
+    pericias: ['Acrobacia', 'Atuação', 'Reflexos'],
+    poderes: ['Acrobático', 'Torcida', 'Truque de Mágica'],
+    poderUnico: {
+      nome: 'Truque de Mágica (Poder Único)',
+      descricao: 'Você pode lançar Explosão de Chamas, Hipnotismo e Transmutar Objetos como truques mundanos.'
+    }
+  },
   criminoso: {
     id: 'criminoso',
     nome: 'Criminoso',
     descricao: 'Você viveu à margem da lei, envolvido em atividades ilícitas.',
-    beneficio: '+2 em Ladinagem. Conhece a rede criminosa local.',
     itens: ['Gazua', 'Capa com capuz'],
-    pericias: ['Ladinagem', 'Furtividade'],
-    atributos: { DES: 1 }
+    pericias: ['Enganação', 'Furtividade', 'Ladinagem'],
+    poderes: ['Punguista', 'Venefício'],
+    poderUnico: {
+      nome: 'Punguista (Poder Único)',
+      descricao: 'Você pode usar a perícia Ladinagem para realizar testes de sustento (como se fosse Ofício).'
+    }
   },
-
   curandeiro: {
     id: 'curandeiro',
     nome: 'Curandeiro',
-    descricao: 'Você é treinado em artes médicas e cura.',
-    beneficio: '+2 em Cura. Pacientes se recuperam mais rapidamente.',
+    descricao: 'Você é treinado em artes médicas e sabe como tratar ferimentos e doenças.',
     itens: ['Kit de medicina', 'Ervas medicinais'],
-    pericias: ['Cura', 'Religião'],
-    atributos: { SAB: 1 }
+    pericias: ['Cura', 'Vontade'],
+    poderes: ['Medicina', 'Médico de Campo', 'Venefício'],
+    poderUnico: {
+      nome: 'Médico de Campo (Poder Único)',
+      descricao: 'Realizar primeiros socorros em alvos com 0 PV recupera 1d6 PV neles.'
+    }
   },
-
   eremita: {
     id: 'eremita',
     nome: 'Eremita',
-    descricao: 'Você viveu isolado, meditando e contemplando os mistérios do mundo.',
-    beneficio: '+2 em Religião. +2 em testes de resistência contra efeitos mentais.',
-    itens: ['Manto simples', 'Livro sagrado'],
-    pericias: ['Religião', 'Sobrevivência'],
-    atributos: { SAB: 1 }
+    descricao: 'Você viveu isolado da civilização, buscando sabedoria no silêncio.',
+    itens: ['Cajado', 'Manto simples'],
+    pericias: ['Misticismo', 'Religião', 'Sobrevivência'],
+    poderes: ['Busca Interior', 'Lobo Solitário'],
+    poderUnico: {
+      nome: 'Busca Interior (Poder Único)',
+      descricao: 'Você pode gastar 1 PM para meditar e receber uma dica do mestre sobre um mistério ou caminho.'
+    }
   },
-
   escravo: {
     id: 'escravo',
     nome: 'Escravo',
-    descricao: 'Você foi propriedade de outros, mas conseguiu sua liberdade.',
-    beneficio: '+2 em Fortitude. +2 em testes para resistir a fadiga.',
-    itens: ['Correntes quebradas'],
-    pericias: ['Fortitude', 'Vontade'],
-    atributos: { CON: 1 }
+    descricao: 'Você foi propriedade de outros, mas conseguiu sua liberdade ou fugiu.',
+    itens: ['Correntes quebradas', 'Farrapos'],
+    pericias: ['Atletismo', 'Fortitude', 'Furtividade'],
+    poderes: ['Desejo de Liberdade', 'Vitalidade'],
+    poderUnico: {
+      nome: 'Desejo de Liberdade (Poder Único)',
+      descricao: '+5 em testes contra manobras de agarrar e contra efeitos que limitem seu movimento.'
+    }
   },
-
   estudioso: {
     id: 'estudioso',
     nome: 'Estudioso',
     descricao: 'Você dedicou anos ao estudo de livros e manuscritos antigos.',
-    beneficio: '+2 em Conhecimento. Pode ler qualquer idioma dado tempo.',
-    itens: ['Livros diversos', 'Óculos de leitura'],
-    pericias: ['Conhecimento', 'Investigação'],
-    atributos: { INT: 1 }
+    itens: ['Livros de estudo', 'Kit de escrita'],
+    pericias: ['Conhecimento', 'Guerra', 'Misticismo'],
+    poderes: ['Aparência Inofensiva', 'Palpite Fundamentado'],
+    poderUnico: {
+      nome: 'Palpite Fundamentado (Poder Único)',
+      descricao: 'Você pode gastar 2 PM para usar a perícia Conhecimento no lugar de qualquer outra perícia de INT ou SAB.'
+    }
   },
-
   fazendeiro: {
     id: 'fazendeiro',
     nome: 'Fazendeiro',
-    descricao: 'Você cresceu trabalhando a terra, cultivando e criando animais.',
-    beneficio: '+2 em Adestramento ou Ofício. +2 PV.',
-    itens: ['Ferramentas de fazenda', 'Sementes'],
-    pericias: ['Adestramento', 'Fortitude'],
-    atributos: { CON: 1 }
+    descricao: 'Você cresceu trabalhando a terra, cultivando e cuidando de animais.',
+    itens: ['Foice ou enxada', 'Animal de carga (burro ou cavalo)'],
+    pericias: ['Adestramento', 'Cavalgar', 'Ofício', 'Sobrevivência'],
+    poderes: ['Água no Feijão', 'Ginete'],
+    poderUnico: {
+      nome: 'Água no Feijão (Poder Único)',
+      descricao: 'Você paga apenas metade do custo de matéria-prima para usar a perícia Ofício (cozinheiro).'
+    }
   },
-
+  forasteiro: {
+    id: 'forasteiro',
+    nome: 'Forasteiro',
+    descricao: 'Você veio de uma terra distante e desconhecida, com costumes exóticos.',
+    itens: ['Traje exótico', 'Mapa de sua terra natal'],
+    pericias: ['Cavalgar', 'Pilotagem', 'Sobrevivência'],
+    poderes: ['Cultura Exótica', 'Lobo Solitário'],
+    poderUnico: {
+      nome: 'Cultura Exótica (Poder Único)',
+      descricao: 'Você pode gastar 1 PM para usar uma perícia somente treinada mesmo sem ter o treinamento necessário.'
+    }
+  },
   gladiador: {
     id: 'gladiador',
     nome: 'Gladiador',
-    descricao: 'Você lutou em arenas para o entretenimento das massas.',
-    beneficio: '+2 em Luta. +1 em rolagens de dano corpo a corpo.',
-    itens: ['Tridente ou rede', 'Armadura de couro'],
-    pericias: ['Luta', 'Intimidação'],
-    atributos: { FOR: 1 }
+    descricao: 'Você lutou em arenas sob os olhares de multidões, por glória ou sobrevivência.',
+    itens: ['Rede ou tridente', 'Armadura leve'],
+    pericias: ['Atuação', 'Luta'],
+    poderes: ['Atraente', 'Pão e Circo', 'Torcida', 'Poder de Combate'],
+    poderUnico: {
+      nome: 'Pão e Circo (Poder Único)',
+      descricao: 'Você pode causar dano não letal sem sofrer a penalidade de -5 no ataque.'
+    }
   },
-
   guarda: {
     id: 'guarda',
     nome: 'Guarda',
-    descricao: 'Você serviu como guarda da cidade ou de uma propriedade.',
-    beneficio: '+2 em Percepção. Conhece as leis locais.',
-    itens: ['Lança', 'Insígnia de guarda'],
-    pericias: ['Percepção', 'Intimidação'],
-    atributos: { SAB: 1 }
+    descricao: 'Você serviu como sentinela ou vigia de vilas, castelos ou portões.',
+    itens: ['Lança', 'Insígnia ou apito'],
+    pericias: ['Investigação', 'Luta', 'Percepção'],
+    poderes: ['Detetive', 'Investigador', 'Poder de Combate'],
+    poderUnico: {
+      nome: 'Detetive (Poder Único)',
+      descricao: 'Você pode substituir testes de Percepção e Intuição por testes de Investigação.'
+    }
   },
-
   herdeiro: {
     id: 'herdeiro',
     nome: 'Herdeiro',
-    descricao: 'Você é herdeiro de uma fortuna ou propriedade significativa.',
-    beneficio: '+2 em Nobreza. Começa com 5x o dinheiro inicial.',
-    itens: ['Documento de herança', 'Jóias'],
-    pericias: ['Nobreza', 'Diplomacia'],
-    atributos: { CAR: 1 }
+    descricao: 'Você é herdeiro de algo de grande valor, físico ou simbólico.',
+    itens: ['Item de valor (T$ 100)', 'Documentos de posse'],
+    pericias: ['Misticismo', 'Nobreza', 'Ofício'],
+    poderes: ['Comandar', 'Herança'],
+    poderUnico: {
+      nome: 'Herança (Poder Único)',
+      descricao: 'Você começa com um item de até T$ 1.000 (ou T$ 2.000 se escolher este benefício duas vezes).'
+    }
   },
-
-  investigador: {
-    id: 'investigador',
-    nome: 'Investigador',
-    descricao: 'Você é treinado em desvendar mistérios e encontrar pistas.',
-    beneficio: '+2 em Investigação. Pode refazer testes de Investigação.',
-    itens: ['Lupa', 'Caderno de anotações'],
-    pericias: ['Investigação', 'Intuição'],
-    atributos: { INT: 1 }
+  heroi_campones: {
+    id: 'heroi_campones',
+    nome: 'Herói Camponês',
+    descricao: 'Você defendeu sua vila de uma ameaça e tornou-se um símbolo local.',
+    itens: ['Ferramenta improvisada como arma', 'Traje de camponês'],
+    pericias: ['Adestramento', 'Ofício'],
+    poderes: ['Amigo dos Plebeus', 'Sortudo', 'Surto Heroico', 'Torcida'],
+    poderUnico: {
+      nome: 'Amigo dos Plebeus (Poder Único)',
+      descricao: 'Você recebe hospedagem e alimentação gratuita ao se abrigar com famílias plebeias.'
+    }
   },
-
-  marinheiro: {
-    id: 'marinheiro',
-    nome: 'Marinheiro',
-    descricao: 'Você passou anos navegando pelos mares.',
-    beneficio: '+2 em Atletismo. Velocidade de natação igual à velocidade terrestre.',
-    itens: ['Corda', 'Kit de navegação'],
-    pericias: ['Atletismo', 'Sobrevivência'],
-    atributos: { FOR: 1 }
+  marujo: {
+    id: 'marujo',
+    nome: 'Marujo',
+    descricao: 'Você passou anos cruzando os mares de Arton como parte de uma tripulação.',
+    itens: ['Corda', 'Gancho de escalada'],
+    pericias: ['Atletismo', 'Jogatina', 'Pilotagem'],
+    poderes: ['Acrobático', 'Passagem de Navio'],
+    poderUnico: {
+      nome: 'Passagem de Navio (Poder Único)',
+      descricao: 'Você e seu grupo recebem transporte marítimo gratuito em troca de seu trabalho a bordo.'
+    }
   },
-
   mateiro: {
     id: 'mateiro',
     nome: 'Mateiro',
-    descricao: 'Você conhece bem as florestas e seus segredos.',
-    beneficio: '+2 em Sobrevivência. Pode se mover silenciosamente em ambientes naturais.',
-    itens: ['Armadilha', 'Kit de sobrevivência'],
-    pericias: ['Sobrevivência', 'Furtividade'],
-    atributos: { SAB: 1 }
+    descricao: 'Você vive no mato, caçando e coletando o que a natureza oferece.',
+    itens: ['Armadilha', 'Peles de animais'],
+    pericias: ['Atletismo', 'Furtividade', 'Sobrevivência'],
+    poderes: ['Lobo Solitário', 'Sentidos Aguçados', 'Vendedor de Carcaças'],
+    poderUnico: {
+      nome: 'Vendedor de Carcaças (Poder Único)',
+      descricao: 'Você pode usar a perícia Sobrevivência para realizar testes de sustento (como se fosse Ofício).'
+    }
   },
-
+  membro_guilda: {
+    id: 'membro_guilda',
+    nome: 'Membro de Guilda',
+    descricao: 'Você faz parte de uma guilda de artesãos, mercadores ou profissionais.',
+    itens: ['Distintivo da guilda', 'Ferramentas'],
+    pericias: ['Diplomacia', 'Enganação', 'Misticismo', 'Ofício'],
+    poderes: ['Foco em Perícia', 'Rede de Contatos'],
+    poderUnico: {
+      nome: 'Rede de Contatos (Poder Único)',
+      descricao: 'Você pode usar a perícia Diplomacia para obter informações sem custo em dinheiro.'
+    }
+  },
   mercador: {
     id: 'mercador',
     nome: 'Mercador',
-    descricao: 'Você negociou mercadorias e conhece o valor das coisas.',
-    beneficio: '+2 em Diplomacia. Compra itens por 90% do preço, vende por 110%.',
-    itens: ['Balança', 'Livro de contas'],
-    pericias: ['Diplomacia', 'Intuição'],
-    atributos: { CAR: 1 }
+    descricao: 'Você vive de comprar barato e vender caro, cruzando estradas perigosas.',
+    itens: ['Balança', 'Carroça ou animal de carga'],
+    pericias: ['Diplomacia', 'Intuição', 'Ofício'],
+    poderes: ['Negociação', 'Proficiência', 'Sortudo'],
+    poderUnico: {
+      nome: 'Negociação (Poder Único)',
+      descricao: 'Você consegue vender itens por um valor 10% maior que o normal.'
+    }
   },
-
-  membro_de_guilda: {
-    id: 'membro_de_guilda',
-    nome: 'Membro de Guilda',
-    descricao: 'Você faz parte de uma organização profissional.',
-    beneficio: '+2 em Ofício. Acesso a recursos da guilda.',
-    itens: ['Distintivo da guilda', 'Ferramentas'],
-    pericias: ['Ofício', 'Diplomacia'],
-    atributos: { INT: 1 }
-  },
-
   minerador: {
     id: 'minerador',
     nome: 'Minerador',
-    descricao: 'Você trabalhou em minas, extraindo metais e gemas.',
-    beneficio: '+2 em Atletismo. Visão no escuro 9m.',
+    descricao: 'Você passou sua vida em túneis escuros e apertados, extraindo minérios.',
     itens: ['Picareta', 'Lanterna'],
-    pericias: ['Atletismo', 'Fortitude'],
-    atributos: { FOR: 1 }
+    pericias: ['Atletismo', 'Fortitude', 'Ofício'],
+    poderes: ['Ataque Poderoso', 'Escavador', 'Sentidos Aguçados'],
+    poderUnico: {
+      nome: 'Escavador (Poder Único)',
+      descricao: 'Você recebe proficiência em picareta e ignora terreno difícil natural em masmorras.'
+    }
   },
-
   nomade: {
     id: 'nomade',
     nome: 'Nômade',
-    descricao: 'Você viajou constantemente, sem casa fixa.',
-    beneficio: '+2 em Sobrevivência. +3m de deslocamento.',
-    itens: ['Tenda', 'Mochila resistente'],
-    pericias: ['Sobrevivência', 'Atletismo'],
-    atributos: { CON: 1 }
+    descricao: 'Você não tem um lugar fixo, movendo-se sempre com as estações.',
+    itens: ['Tenda para duas pessoas', 'Mochila reforçada'],
+    pericias: ['Cavalgar', 'Pilotagem', 'Sobrevivência'],
+    poderes: ['Lobo Solitário', 'Mochileiro', 'Sentidos Aguçados'],
+    poderUnico: {
+      nome: 'Mochileiro (Poder Único)',
+      descricao: 'Sua capacidade de carga aumenta em +5 espaços de inventário.'
+    }
   },
-
-  orfao: {
-    id: 'orfao',
-    nome: 'Órfão',
-    descricao: 'Você cresceu sem pais, aprendendo a sobreviver sozinho.',
-    beneficio: '+2 em Fortitude ou Vontade. +1 em testes de iniciativa.',
-    itens: ['Medalhão familiar', 'Manta velha'],
-    pericias: ['Fortitude', 'Vontade'],
-    atributos: { CON: 1 }
-  },
-
   pivete: {
     id: 'pivete',
     nome: 'Pivete',
-    descricao: 'Você cresceu nas ruas, vivendo de pequenos furtos.',
-    beneficio: '+2 em Ladinagem. Tamanho -1 (se aplicável).',
-    itens: ['Gazua improvisada', 'Bolsa de moedas falsas'],
-    pericias: ['Ladinagem', 'Furtividade'],
-    atributos: { DES: 1 }
+    descricao: 'Você cresceu nas ruas de cidades grandes, roubando para não passar fome.',
+    itens: ['Dados viciados', 'Capa gasta'],
+    pericias: ['Furtividade', 'Iniciativa', 'Ladinagem'],
+    poderes: ['Acrobático', 'Aparência Inofensiva', 'Quebra-Galho'],
+    poderUnico: {
+      nome: 'Quebra-Galho (Poder Único)',
+      descricao: 'Em cidades, você pode comprar itens mundanos não superiores pela metade do preço.'
+    }
   },
-
   refugiado: {
     id: 'refugiado',
     nome: 'Refugiado',
-    descricao: 'Você fugiu de uma guerra ou desastre, perdendo tudo.',
-    beneficio: '+2 em Sobrevivência. +2 em testes de Vontade.',
-    itens: ['Relíquia de sua terra natal'],
-    pericias: ['Sobrevivência', 'Vontade'],
-    atributos: { SAB: 1 }
+    descricao: 'Você perdeu sua casa e seu povo, fugindo para terras estranhas.',
+    itens: ['Relíquia de sua terra natal', 'Manta gasta'],
+    pericias: ['Fortitude', 'Reflexos', 'Vontade'],
+    poderes: ['Estoico', 'Vontade de Ferro'],
+    poderUnico: {
+      nome: 'Estoico (Poder Único)',
+      descricao: 'Sua categoria de descanso é sempre aumentada em um nível (ex: Ruim torna-se Normal).'
+    }
   },
-
-  sacerdote: {
-    id: 'sacerdote',
-    nome: 'Sacerdote',
-    descricao: 'Você serviu uma divindade como líder religioso.',
-    beneficio: '+2 em Religião. Pode realizar cerimônias religiosas.',
-    itens: ['Símbolo sagrado', 'Vestes sacerdotais'],
-    pericias: ['Religião', 'Diplomacia'],
-    atributos: { SAB: 1 }
-  },
-
   seguidor: {
     id: 'seguidor',
     nome: 'Seguidor',
-    descricao: 'Você foi discípulo de um herói ou mestre renomado.',
-    beneficio: '+2 em qualquer perícia. Ganhe uma habilidade do mestre.',
-    itens: ['Carta de recomendação'],
-    pericias: ['Qualquer', 'Qualquer'],
-    atributos: { }
+    descricao: 'Você serviu como assistente ou aprendiz de um grande mestre ou herói.',
+    itens: ['Carta de recomendação', 'Equipamento de reserva'],
+    pericias: ['Adestramento', 'Ofício'],
+    poderes: ['Antigo Mestre', 'Proficiência', 'Surto Heroico'],
+    poderUnico: {
+      nome: 'Antigo Mestre (Poder Único)',
+      descricao: 'Uma vez por aventura, você pode pedir uma ajuda emergencial ao seu antigo mentor.'
+    }
   },
-
   selvagem: {
     id: 'selvagem',
     nome: 'Selvagem',
-    descricao: 'Você cresceu longe da civilização, em contato com a natureza.',
-    beneficio: '+2 em Sobrevivência. +3m de deslocamento.',
+    descricao: 'Você cresceu em isolamento total, no coração da natureza selvagem.',
     itens: ['Lança rústica', 'Peles de animais'],
-    pericias: ['Sobrevivência', 'Atletismo'],
-    atributos: { FOR: 1 }
+    pericias: ['Percepção', 'Reflexos', 'Sobrevivência'],
+    poderes: ['Lobo Solitário', 'Vida Rústica', 'Vitalidade'],
+    poderUnico: {
+      nome: 'Vida Rústica (Poder Único)',
+      descricao: 'Você pode descansar em qualquer lugar. Sua recuperação mínima de PV e PM por descanso é igual ao seu nível.'
+    }
   },
-
   soldado: {
     id: 'soldado',
     nome: 'Soldado',
-    descricao: 'Você serviu em um exército organizado.',
-    beneficio: '+2 em Luta. Proficiência com uma arma marcial à escolha.',
-    itens: ['Uniforme militar', 'Insígnia'],
-    pericias: ['Luta', 'Intimidação'],
-    atributos: { FOR: 1 }
+    descricao: 'Você foi membro de uma milícia ou exército organizado.',
+    itens: ['Espada curta ou lança', 'Uniforme militar'],
+    pericias: ['Fortitude', 'Guerra', 'Luta', 'Pontaria'],
+    poderes: ['Influência Militar', 'Poder de Combate'],
+    poderUnico: {
+      nome: 'Influência Militar (Poder Único)',
+      descricao: 'Você recebe hospedagem e informações gratuitamente em bases militares ou acampamentos.'
+    }
   },
-
   taverneiro: {
     id: 'taverneiro',
     nome: 'Taverneiro',
-    descricao: 'Você administrou ou trabalhou em uma taverna.',
-    beneficio: '+2 em Diplomacia. Conhece rumores e fofocas locais.',
-    itens: ['Cerveja de qualidade', 'Avental'],
-    pericias: ['Diplomacia', 'Intuição'],
-    atributos: { CAR: 1 }
+    descricao: 'Você viveu cercado de canecas, balções e histórias de aventureiros.',
+    itens: ['Barril de cerveja pequena', 'Avental'],
+    pericias: ['Diplomacia', 'Jogatina', 'Ofício'],
+    poderes: ['Gororoba', 'Proficiência', 'Vitalidade'],
+    poderUnico: {
+      nome: 'Gororoba (Poder Único)',
+      descricao: 'Ao usar a perícia Ofício (cozinheiro), você pode preparar o dobro de porções com o mesmo teste.'
+    }
   },
-
   trabalhador: {
     id: 'trabalhador',
     nome: 'Trabalhador',
-    descricao: 'Você trabalhou duro em serviços braçais.',
-    beneficio: '+2 em Atletismo. +2 PV.',
-    itens: ['Ferramentas de trabalho'],
+    descricao: 'Você dedicou sua vida ao trabalho pesado, como estivador ou lenhador.',
+    itens: ['Ferramentas de trabalho', 'Traje resistente'],
     pericias: ['Atletismo', 'Fortitude'],
-    atributos: { FOR: 1 }
+    poderes: ['Atlético', 'Esforçado'],
+    poderUnico: {
+      nome: 'Esforçado (Poder Único)',
+      descricao: 'Você recebe +2 em todos os seus testes de perícias estendidos.'
+    }
   }
 };
 

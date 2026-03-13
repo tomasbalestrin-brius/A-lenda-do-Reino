@@ -82,6 +82,82 @@ const gameStoreInternal = createStore((set, get) => ({
   enemies: (MAPS['hub'].spawns || []).map((s, i) => ({ id: `hub-${i}`, x: s.x * TILE_SIZE, y: s.y * TILE_SIZE, speed: 1.1, sprite: s.sprite })),
   rooms: MAPS,
 
+  // ========= Campanha & Quests =========
+  activeQuest: {
+    id: 'intro_goblins',
+    title: 'A Ameaça Verde',
+    description: 'Derrote 5 Goblins na Floresta para proteger a vila.',
+    target: 5,
+    current: 0,
+    status: 'active', // active, completed, rewarded
+    reward: { xp: 500, unlockClass: 'barbaro' }
+  },
+
+  completedQuests: [],
+
+  startQuest: (quest) => set({ activeQuest: quest }),
+
+  updateQuestProgress: (amount = 1) => set((state) => {
+    if (!state.activeQuest || state.activeQuest.status !== 'active') return state;
+    const newCurrent = state.activeQuest.current + amount;
+    const isDone = newCurrent >= state.activeQuest.target;
+
+    return {
+      activeQuest: {
+        ...state.activeQuest,
+        current: newCurrent,
+        status: isDone ? 'completed' : 'active'
+      },
+      messages: isDone ? [...state.messages, { text: `Missão Completa: ${state.activeQuest.title}!`, type: 'success', timestamp: Date.now() }] : state.messages
+    };
+  }),
+
+  setGameState: (state) => set({ gameState: state }),
+
+  setHero: (hero) => set((state) => ({
+    heroes: { ...state.heroes, [hero.id]: hero },
+    activeHeroId: hero.id,
+    gameState: 'explore'
+  })),
+
+  claimQuestReward: () => set((state) => {
+    if (!state.activeQuest || state.activeQuest.status !== 'completed') return state;
+    const reward = state.activeQuest.reward;
+
+    // Aplicar recompensas
+    if (reward.xp) get().gainXP(reward.xp);
+
+    // Próxima Missão (Transição de Atos)
+    let nextQuest = null;
+    if (state.activeQuest.id === 'intro_goblins') {
+      nextQuest = {
+        id: 'act2_fragment',
+        title: 'O Eco do Vazio',
+        description: 'Chegue ao topo da Torre e recupere o Fragmento.',
+        target: 1,
+        current: 0,
+        status: 'active',
+        reward: { xp: 1500, unlockRace: 'elfo' }
+      };
+    } else if (state.activeQuest.id === 'act2_fragment') {
+      nextQuest = {
+        id: 'act3_final_boss',
+        title: 'Coração da Corrupção',
+        description: 'Derrote Aderbal, o Arauto, no Coração da Tormenta.',
+        target: 1,
+        current: 0,
+        status: 'active',
+        reward: { xp: 5000, unlockTitle: 'Lenda do Reino' }
+      };
+    }
+
+    return {
+      completedQuests: [...state.completedQuests, state.activeQuest.id],
+      activeQuest: nextQuest,
+      messages: [...state.messages, { text: `Você recebeu as recompensas da missão!`, type: 'success', timestamp: Date.now() }]
+    };
+  }),
+
   // ========= Actions =========
   swapHero: (heroId) =>
     set((state) => {
@@ -221,19 +297,19 @@ const gameStoreInternal = createStore((set, get) => ({
   gainXP: (amount) => set((state) => {
     const hero = state.heroes[state.activeHeroId];
     if (!hero) return state;
-    
+
     const newXP = (hero.xp || 0) + amount;
     const nextLevelXP = (hero.level || 1) * 1000; // Simplificação T20
-    
+
     if (newXP >= nextLevelXP) {
       // Subir de nível
       const newLevel = (hero.level || 1) + 1;
       const infoClasse = state.rooms['hub'] ? {} : {}; // Placeholder
-      
+
       // Recalcular PV e PM (Lógica simplificada aqui, idealmente usa a classe Personagem)
       const newMaxHp = hero.maxHp + 5 + (hero.stats.constitution || 0);
       const newMaxMp = hero.maxMp + 3;
-      
+
       return {
         heroes: {
           ...state.heroes,
@@ -250,7 +326,7 @@ const gameStoreInternal = createStore((set, get) => ({
         messages: [...state.messages, { text: `SUBIU PARA O NÍVEL ${newLevel}!`, type: 'success', timestamp: Date.now() }]
       };
     }
-    
+
     return {
       heroes: {
         ...state.heroes,
@@ -287,12 +363,12 @@ const gameStoreInternal = createStore((set, get) => ({
       if (!h) return state;
       const newHp = Math.max(0, h.hp - amount);
       if (newHp === 0 && state.gameState !== 'gameover') {
-         // Lógica de morte pode ser adicionada aqui
+        // Lógica de morte pode ser adicionada aqui
       }
       return { heroes: { ...state.heroes, [state.activeHeroId]: { ...h, hp: newHp } } };
     }),
-  
-  updateEnemies: () => 
+
+  updateEnemies: () =>
     set((state) => {
       if (state.gameState !== 'explore') return state;
       // IA simples para inimigos no modo Side-Scroller
@@ -321,7 +397,33 @@ const gameStoreInternal = createStore((set, get) => ({
         visitedRooms: [...new Set([...state.progress.visitedRooms, newId])],
       },
       playerPos: { x: spawnX ?? 4 * TILE_SIZE, y: spawnY ?? 6 * TILE_SIZE },
-      enemies: (MAPS[newId]?.spawns || []).map((s, i) => ({ id: `${newId}-${i}`, x: s.x * TILE_SIZE, y: s.y * TILE_SIZE, speed: 1.1, sprite: s.sprite })),
+      enemies: (MAPS[newId]?.spawns || []).map((s, i) => {
+        const sprite = s.sprite;
+        const isAct1Boss = sprite === 'capitao_goblin';
+        const isAct2Boss = sprite === 'constructo_arcano';
+        const isFinalBoss = sprite === 'aderbal_arauto';
+        const isGolem = sprite === 'golem_pedra';
+        const isLefeu = sprite.startsWith('lefeu');
+
+        let hp = 50;
+        let speed = 1.1;
+
+        if (isAct1Boss) { hp = 500; speed = 2.5; }
+        else if (isAct2Boss) { hp = 1000; speed = 3.0; }
+        else if (isFinalBoss) { hp = 2500; speed = 4.0; }
+        else if (isGolem) { hp = 200; speed = 0.8; }
+        else if (isLefeu) { hp = 150; speed = 1.8; }
+
+        return {
+          id: `${newId}-${i}`,
+          x: s.x * TILE_SIZE,
+          y: s.y * TILE_SIZE,
+          speed,
+          hp,
+          maxHp: hp,
+          sprite
+        };
+      }),
     })),
 
   // ===== Save/Load (Quick) =====
@@ -368,7 +470,7 @@ const gameStoreInternal = createStore((set, get) => ({
         progress: data.progress ?? state.progress,
         currentRoomId: data.currentRoomId ?? state.currentRoomId,
         playerPos: data.playerPos ?? state.playerPos,
-        enemies: (MAPS[data.currentRoomId ?? state.currentRoomId]?.spawns || []).map((s, i) => ({ id: `${data.currentRoomId ?? state.currentRoomId}-${i}` , x: s.x * TILE_SIZE, y: s.y * TILE_SIZE, speed: 1.1, sprite: s.sprite })),
+        enemies: (MAPS[data.currentRoomId ?? state.currentRoomId]?.spawns || []).map((s, i) => ({ id: `${data.currentRoomId ?? state.currentRoomId}-${i}`, x: s.x * TILE_SIZE, y: s.y * TILE_SIZE, speed: 1.1, sprite: s.sprite })),
         spriteSizeExplore: data.spriteSizeExplore ?? state.spriteSizeExplore,
         spriteSizeCombat: data.spriteSizeCombat ?? state.spriteSizeCombat,
         messages: [

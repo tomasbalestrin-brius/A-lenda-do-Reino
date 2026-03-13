@@ -1,8 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import CLASSES from '../data/classes';
 import RACES from '../data/races';
 import ORIGENS from '../data/origins';
 import { divindades as DEUSES } from '../data/gods';
+import { rollDice, rollAttribute } from '../utils/diceSystem';
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -41,15 +43,353 @@ const CLASS_ROLE = {
   nobre: 'Social', paladino: 'Paladino',
 };
 
-const ROLE_COLORS = {
-  Mago: 'bg-purple-900 text-purple-200', Berserker: 'bg-red-900 text-red-200',
-  Suporte: 'bg-green-900 text-green-200', Espadachim: 'bg-blue-900 text-blue-200',
-  Ranger: 'bg-emerald-900 text-emerald-200', Tanque: 'bg-gray-700 text-gray-200',
-  Curandeiro: 'bg-teal-900 text-teal-200', Natureza: 'bg-green-900 text-green-200',
-  Guerreiro: 'bg-orange-900 text-orange-200', Utilitário: 'bg-cyan-900 text-cyan-200',
-  Furtivo: 'bg-slate-700 text-slate-200', Combatente: 'bg-red-900 text-red-200',
-  Social: 'bg-yellow-900 text-yellow-200', Paladino: 'bg-amber-900 text-amber-200',
+const DEITY_ICONS = {
+  allihanna: '🌿', azgher: '☀️', hyninn: '📖', khalmyr: '⚖️',
+  lena: '❤️', linwu: '🎐', marah: '🕊️', megalokk: '👹',
+  nimb: '🎭', oceano: '🌊', sszzaas: '🐍', tanna_toh: '🌙',
+  tenebra: '💀', thyatis: '💰', valkaria: '⚔️', wynna: '🔮',
+  ragnar: '🪓', keenn: '🌇', arsenal: '🛡️', grande_oceano: '🌀',
 };
+
+const ROLE_COLORS = {
+  Mago: 'bg-purple-900/60 text-purple-300',
+  Berserker: 'bg-red-900/60 text-red-300',
+  Suporte: 'bg-blue-900/60 text-blue-300',
+  Espadachim: 'bg-sky-900/60 text-sky-300',
+  Ranger: 'bg-emerald-900/60 text-emerald-300',
+  Tanque: 'bg-slate-700 text-slate-200',
+  Curandeiro: 'bg-yellow-900/60 text-yellow-300',
+  Natureza: 'bg-green-900/60 text-green-300',
+  Guerreiro: 'bg-orange-900/60 text-orange-300',
+  Utilitário: 'bg-zinc-700 text-zinc-200',
+  Furtivo: 'bg-gray-900 text-gray-400',
+  Combatente: 'bg-rose-900/60 text-rose-300',
+  Social: 'bg-amber-900/60 text-amber-300',
+  Paladino: 'bg-yellow-600 text-black',
+};
+
+// ─────────────────────────────────────────────────────────────
+// NEW COMPONENTS: SELECTION MODALS
+// ─────────────────────────────────────────────────────────────
+
+function AttributePill({ value, label }) {
+  return (
+    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm ${
+      value > 0 ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400'
+      : value < 0 ? 'bg-red-900/20 border-red-500/30 text-red-400'
+      : 'bg-gray-800 border-gray-700 text-gray-300'
+    }`}>
+      {signStr(value)} {label}
+    </div>
+  );
+}
+
+function RaceModal({ id, race, onClose, onConfirm, isSelected }) {
+  const bonuses = attrBonusDisplay(race);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Left: Artwork */}
+        <div className="w-full md:w-1/2 bg-gray-950 flex items-center justify-center relative group">
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent z-10 opacity-60" />
+          <div className="w-full h-full min-h-[300px] flex items-center justify-center p-8">
+            <div className="relative z-20 text-center">
+              <span className="text-8xl mb-4 block animate-pulse">{RACE_ICONS[id] || '🧑'}</span>
+              <p className="text-amber-500/50 text-xs font-mono uppercase tracking-[0.2em]">Registro de Raça — Arton</p>
+            </div>
+            <div className="absolute w-48 h-48 bg-amber-500/10 blur-[80px] rounded-full top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10">✕</button>
+        </div>
+
+        {/* Right: Info */}
+        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+          <div className="border-b border-amber-900/20 pb-4">
+            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+              {race.nome}
+              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativo</span>}
+            </h3>
+            <p className="text-amber-400/80 text-sm mt-1 font-medium leading-relaxed italic">"{race.descricao}"</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            <section>
+              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Atributos Raciais</h4>
+              <div className="flex flex-wrap gap-2">
+                {bonuses.map((b, i) => (
+                  <div key={i} className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border font-bold text-sm ${
+                    b.startsWith('+') ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-400'
+                    : b.startsWith('-') ? 'bg-red-900/20 border-red-500/30 text-red-400'
+                    : 'bg-gray-800 border-gray-700 text-gray-300'
+                  }`}>
+                    {b}
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="flex flex-col gap-4">
+              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 ml-1">Poderes de Herança</h4>
+              {race.habilidades?.map((h, i) => (
+                <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4 group hover:bg-gray-800/60 transition-all">
+                  <p className="text-amber-400 font-bold mb-1 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full group-hover:scale-150 transition-transform" />
+                    {h.nome}
+                  </p>
+                  <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
+                </div>
+              ))}
+            </section>
+          </div>
+
+          <button onClick={onConfirm} className="mt-4 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+            Confirmar {race.nome}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
+  const role = CLASS_ROLE[id] || 'Aventureiro';
+  const roleColor = ROLE_COLORS[role] || 'bg-gray-700 text-gray-200';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Left: Icon/Visual */}
+        <div className="w-full md:w-1/2 bg-gray-950 flex flex-col items-center justify-center relative p-8">
+          <div className="text-9xl mb-6 relative z-10">{CLASS_ICONS[id] || '⚔️'}</div>
+          <span className={`px-4 py-1.5 rounded-full font-bold text-xs uppercase tracking-[0.2em] relative z-10 ${roleColor}`}>{role}</span>
+          <div className="absolute w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full" />
+          <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center border border-white/10">✕</button>
+        </div>
+
+        {/* Right: Info */}
+        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+          <div className="border-b border-amber-900/20 pb-4">
+            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+              {cls.nome}
+              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
+            </h3>
+            <p className="text-gray-400 text-sm mt-2 leading-relaxed">{cls.descricao}</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
+              <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Vida Inicial</p>
+              <p className="text-xl font-black text-red-500">{cls.vidaInicial} PV</p>
+              <p className="text-[10px] text-gray-400">+{cls.vidaPorNivel} / nível</p>
+            </div>
+            <div className="bg-gray-800/40 p-3 rounded-2xl border border-gray-700/50">
+              <p className="text-[10px] uppercase text-gray-500 font-bold mb-1 tracking-widest">Mana Inicial</p>
+              <p className="text-xl font-black text-blue-500">{cls.pm} PM</p>
+              <p className="text-[10px] text-gray-400">por nível</p>
+            </div>
+          </div>
+
+          <section>
+            <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Habilidades de Nível 1</h4>
+            <div className="flex flex-col gap-3">
+              {cls.habilidades?.[1]?.map((h, i) => (
+                <div key={i} className="bg-gray-800/40 border border-gray-700/50 rounded-2xl p-4">
+                  <p className="text-amber-400 font-bold text-sm mb-1">✦ {h.nome}</p>
+                  <p className="text-xs text-gray-400 leading-relaxed">{h.descricao}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <button onClick={onConfirm} className="mt-2 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+            Tornar-se {cls.nome}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Left: Icon/Glow */}
+        <div className="w-full md:w-1/2 bg-gray-950 flex flex-col items-center justify-center relative p-8">
+           <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent" />
+           <div className="relative z-10 text-9xl mb-4 drop-shadow-2xl">{DEITY_ICONS[id] || '✨'}</div>
+           <p className="text-amber-500/50 text-xs font-mono uppercase tracking-[0.2em] relative z-10">Panteão de Arton</p>
+           <div className="absolute w-64 h-64 bg-amber-500/5 blur-[100px] rounded-full" />
+           <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center border border-white/10">✕</button>
+        </div>
+
+        {/* Right: Info */}
+        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+          <div className="border-b border-amber-900/20 pb-4">
+            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+              {deus.nome}
+              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Devoto</span>}
+            </h3>
+            <p className="text-amber-400/80 text-sm mt-1 font-bold italic tracking-wide">{deus.titulo}</p>
+          </div>
+
+          <div className="flex flex-col gap-5">
+            <section className="grid grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Portfolio</h4>
+                <p className="text-xs text-gray-300 font-medium">{deus.portfolio}</p>
+              </div>
+              <div>
+                <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 mb-1">Arma Sagrada</h4>
+                <p className="text-xs text-gray-300 font-medium">⚔️ {deus.arma}</p>
+              </div>
+            </section>
+
+            <section className="bg-gray-800/40 border border-gray-700/50 p-4 rounded-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-2 opacity-5 text-4xl">📜</div>
+              <h4 className="text-[10px] uppercase tracking-widest font-black text-amber-500/80 mb-2">Dogma</h4>
+              <p className="text-xs text-gray-300 leading-relaxed italic">"{deus.dogma}"</p>
+            </section>
+
+            <section className="flex flex-col gap-3">
+              <h4 className="text-[10px] uppercase tracking-widest font-black text-gray-500 ml-1">Bênçãos & Deveres</h4>
+              
+              <div className="p-3 bg-emerald-900/10 border border-emerald-500/30 rounded-2xl">
+                <p className="text-[10px] text-emerald-400 font-black uppercase mb-1">Poder Concedido (Nível 1)</p>
+                <p className="text-xs text-emerald-200 font-bold">{deus.devoto.poderes[0].nome}</p>
+                <p className="text-[11px] text-emerald-100/70 mt-1 leading-relaxed">{deus.devoto.poderes[0].descricao}</p>
+              </div>
+
+              <div className="p-3 bg-red-900/10 border border-red-500/30 rounded-2xl">
+                <p className="text-[10px] text-red-400 font-black uppercase mb-1">Restrições & Obrigações</p>
+                <p className="text-xs text-red-200 leading-relaxed font-medium">{deus.devoto.restricoes}</p>
+              </div>
+            </section>
+          </div>
+
+          <button onClick={onConfirm} className="mt-2 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+            Devotar-se a {deus.nome}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function OriginModal({ id, origin, onClose, onConfirm, isSelected }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20, opacity: 0 }}
+        animate={{ scale: 1, y: 0, opacity: 1 }}
+        exit={{ scale: 0.9, y: 20, opacity: 0 }}
+        className="bg-gray-900 border border-amber-900/40 w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col md:flex-row"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Left Visual */}
+        <div className="w-full md:w-1/2 bg-gray-950 flex flex-col items-center justify-center relative p-8">
+          <div className="text-8xl mb-6 grayscale opacity-40">📜</div>
+          <p className="text-amber-500/50 text-xs font-mono uppercase tracking-[0.2em] relative z-10 text-center">Registros de Antecedentes</p>
+          <div className="absolute w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full" />
+          <button onClick={onClose} className="absolute top-4 left-4 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center border border-white/10">✕</button>
+        </div>
+
+        {/* Right Info */}
+        <div className="w-full md:w-1/2 p-6 md:p-10 overflow-y-auto flex flex-col gap-6" style={{ scrollbarWidth: 'thin', scrollbarColor: '#451a03 transparent' }}>
+          <div className="border-b border-amber-900/20 pb-4">
+            <h3 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+              {origin.nome}
+              {isSelected && <span className="text-xs bg-amber-600 text-black px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">Ativa</span>}
+            </h3>
+            <p className="text-gray-400 text-sm mt-2 leading-relaxed">{origin.descricao}</p>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <section>
+              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Itens Iniciais</h4>
+              <div className="flex flex-wrap gap-2">
+                {origin.itens?.map((item, i) => (
+                  <span key={i} className="text-xs bg-gray-800 border border-gray-700 px-3 py-1 rounded-full text-gray-300">📦 {item}</span>
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h4 className="text-[11px] uppercase tracking-[0.2em] font-bold text-gray-500 mb-3 ml-1">Caminhos Disponíveis</h4>
+              <div className="grid grid-cols-1 gap-2">
+                <div className="p-3 bg-indigo-900/10 border border-indigo-500/30 rounded-2xl">
+                  <p className="text-[10px] text-indigo-400 font-black uppercase mb-1">Perícias</p>
+                  <p className="text-xs text-indigo-200">{origin.pericias?.join(', ')}</p>
+                </div>
+                <div className="p-3 bg-amber-900/10 border border-amber-500/30 rounded-2xl">
+                  <p className="text-[10px] text-amber-500 font-black uppercase mb-1">Poderes</p>
+                  <p className="text-xs text-amber-200">{origin.poderes?.join(', ')}</p>
+                </div>
+              </div>
+            </section>
+
+            {origin.poderUnico && (
+              <section className="bg-gradient-to-br from-amber-600/20 to-transparent border border-amber-500/30 p-4 rounded-3xl">
+                <p className="text-amber-400 font-black text-xs uppercase tracking-widest mb-1 italic">✨ {origin.poderUnico.nome}</p>
+                <p className="text-xs text-amber-100/80 leading-relaxed font-medium">{origin.poderUnico.descricao}</p>
+              </section>
+            )}
+          </div>
+
+          <p className="text-[9px] text-gray-500 italic text-center">* Após confirmar, você precisará escolher 2 benefícios deste passado.</p>
+
+          <button onClick={onConfirm} className="mt-2 w-full py-4 rounded-2xl bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+            Confirmar Origem
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 
 // Atributo que é somado ao PM da classe (além do valor base da classe)
 const PM_ATTR_MAP = {
@@ -68,7 +408,15 @@ const SPRITE_MAP = {
   humano_arcanista: '/assets/sprites/heroes/humano_arcanista_idle.png',
 };
 
-const STEP_LABELS = ['Raça', 'Classe', 'Origem', 'Divindade', 'Atributos', 'Perícias', 'Revisão'];
+const STEP_LABELS = ['Raça', 'Classe', 'Origem', 'Divindade', 'Atributos', 'Histórico', 'Treinamento', 'Especialização', 'Revisão'];
+
+const RACE_IMAGES = {
+  humano: 'https://i.imgur.com/8Q8XQ8X.png', // Placeholder for the provided image
+  anao: 'https://i.imgur.com/X8X8X8X.png',
+  dahllan: 'https://i.imgur.com/Y8Y8Y8Y.png',
+  elfo: 'https://i.imgur.com/Z8Z8Z8Z.png',
+  goblin: 'https://i.imgur.com/W8W8W8W.png',
+};
 
 // T20: atributos começam em 0, o valor JÁ É o modificador
 // Custo total por valor: -2→+2pts, -1→+1pt, 0→0, 1→1pt, 2→2pts, 3→4pts, 4→7pts
@@ -211,6 +559,9 @@ function getInitialChar() {
     pericias: [],
     racaEscolha: ['FOR', 'DES', 'CON'], // para raças com "escolha"
     racaVariante: 'aggelus',             // para suraggel
+    attrMethod: 'buy',                  // 'buy' ou 'roll'
+    rolagens: [],                       // para armazenar resultados de 4d6k3
+    origemBeneficios: [],               // Perícias ou poderes da origem
   };
 }
 
@@ -410,7 +761,7 @@ function StepRace({ char, onChange }) {
           return (
             <button
               key={id}
-              onClick={() => onChange({ raca: id, racaEscolha: ['FOR', 'DES', 'CON'] })}
+              onClick={() => onChange({ modalRace: id })}
               className={`text-left p-3 rounded-xl border transition-all duration-200 ${
                 isSelected
                   ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
@@ -433,10 +784,26 @@ function StepRace({ char, onChange }) {
               {race.habilidades?.slice(0, 2).map((h, i) => (
                 <p key={i} className="text-[10px] text-gray-400 truncate">• {h.nome}</p>
               ))}
+              <p className="text-[9px] text-amber-500/60 mt-2 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
             </button>
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {char.modalRace && (
+          <RaceModal
+            id={char.modalRace}
+            race={RACES[char.modalRace]}
+            onClose={() => onChange({ modalRace: null })}
+            onConfirm={() => {
+              const id = char.modalRace;
+              onChange({ raca: id, modalRace: null, racaEscolha: ['FOR', 'DES', 'CON'] });
+            }}
+            isSelected={char.raca === char.modalRace}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Picker para raças com bônus de escolha (Humano, Lefou, Osteon, Sereia) */}
       {hasEscolha && (
@@ -480,29 +847,6 @@ function StepRace({ char, onChange }) {
           <p className="text-[11px] text-blue-400/70 mt-1">{char.racaEscolha?.length || 0}/{selectedRace.atributos.escolha} escolhidos</p>
         </div>
       )}
-
-      {/* Picker de variante para Suraggel */}
-      {selectedRace?.atributos?.variante && selectedRace.variantes && (
-        <div className="bg-purple-900/20 border border-purple-700/40 rounded-xl p-3">
-          <p className="text-sm text-purple-300 font-semibold mb-2">Escolha sua linhagem:</p>
-          <div className="flex gap-2">
-            {Object.entries(selectedRace.variantes).map(([varId, varData]) => (
-              <button
-                key={varId}
-                onClick={() => onChange({ racaVariante: varId })}
-                className={`flex-1 p-3 rounded-xl border text-left transition-all ${
-                  char.racaVariante === varId
-                    ? 'border-purple-500 bg-purple-900/30 text-purple-200'
-                    : 'border-gray-700 bg-gray-800/60 text-gray-300 hover:border-purple-600'
-                }`}
-              >
-                <p className="font-bold text-sm">{varData.nome}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{varData.descricao}</p>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -529,7 +873,7 @@ function StepClass({ char, onChange }) {
           return (
             <button
               key={id}
-              onClick={() => onChange({ classe: id, pericias: [] })}
+              onClick={() => onChange({ modalClass: id })}
               className={`text-left p-3 rounded-xl border transition-all duration-200 ${
                 isSelected
                   ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
@@ -547,28 +891,38 @@ function StepClass({ char, onChange }) {
               <div className="flex flex-col gap-1 mb-2">
                 <div className="flex items-center gap-1.5">
                   <span className="text-[9px] text-red-400 w-4">PV</span>
-                  <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-600 rounded-full" style={{ width: `${Math.min(100, (cls.vidaInicial / 30) * 100)}%` }} />
+                  <div className="flex-1 h-1 bg-gray-900 rounded-full overflow-hidden">
+                    <div className="h-full bg-red-500/60" style={{ width: `${(cls.vidaInicial / 24) * 100}%` }} />
                   </div>
-                  <span className="text-[9px] text-gray-400">{cls.vidaInicial}+{cls.vidaPorNivel}/nív</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-[9px] text-blue-400 w-4">PM</span>
-                  <div className="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-600 rounded-full" style={{ width: `${Math.min(100, (cls.pm / 7) * 100)}%` }} />
+                  <div className="flex-1 h-1 bg-gray-900 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-500/60" style={{ width: `${(cls.pm / 6) * 100}%` }} />
                   </div>
-                  <span className="text-[9px] text-gray-400">{cls.pm}×nív</span>
                 </div>
               </div>
-
-              <p className="text-[10px] text-gray-500">Atrib.: <span className="text-gray-300">{cls.atributoChave}</span></p>
-              {cls.habilidades?.[1]?.slice(0, 1).map((h, i) => (
-                <p key={i} className="text-[10px] text-amber-400/80 mt-1 truncate">✦ {h.nome}</p>
-              ))}
+              <p className="text-[9px] text-amber-500/60 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
             </button>
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {char.modalClass && (
+          <ClassModal
+            id={char.modalClass}
+            cls={CLASSES[char.modalClass]}
+            onClose={() => onChange({ modalClass: null })}
+            onConfirm={() => {
+              const id = char.modalClass;
+              // Reset pericias when changing class
+              onChange({ classe: id, modalClass: null, pericias: [], periciasObrigEscolha: {} });
+            }}
+            isSelected={char.classe === char.modalClass}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -578,52 +932,355 @@ function StepClass({ char, onChange }) {
 // ─────────────────────────────────────────────────────────────
 
 function StepOrigin({ char, onChange }) {
-  const origens = Object.entries(ORIGENS);
+  const origins = Object.entries(ORIGENS);
 
   return (
     <div className="flex flex-col gap-4">
       <div>
         <h2 className="text-2xl font-bold text-amber-400 mb-1">Escolha sua Origem</h2>
-        <p className="text-gray-400 text-sm">Sua história antes de aventurar. Concede perícias, itens e bônus únicos.</p>
+        <p className="text-gray-400 text-sm">Sua origem define o que você fazia antes de se tornar um aventureiro.</p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <button
-          onClick={() => onChange({ origem: '' })}
-          className={`text-left p-3 rounded-xl border transition-all ${
-            !char.origem ? 'border-amber-500 bg-amber-900/20' : 'border-gray-700 bg-gray-800/60 hover:border-gray-500'
-          }`}
-        >
-          <p className={`font-bold text-sm ${!char.origem ? 'text-amber-300' : 'text-gray-400'}`}>— Sem origem definida</p>
-        </button>
-        {origens.map(([id, orig]) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {origins.map(([id, origin]) => {
           const isSelected = char.origem === id;
           return (
             <button
               key={id}
-              onClick={() => onChange({ origem: id })}
+              onClick={() => onChange({ modalOrigin: id })}
               className={`text-left p-3 rounded-xl border transition-all duration-200 ${
                 isSelected
                   ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
                   : 'border-gray-700 bg-gray-800/60 hover:border-gray-500 hover:bg-gray-800'
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1">
-                  <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{orig.nome}</p>
-                  <p className="text-[11px] text-gray-400 mt-0.5 leading-relaxed">{orig.descricao}</p>
-                </div>
-                <div className="shrink-0 flex flex-col gap-1 items-end">
-                  {orig.pericias?.map(p => (
-                    <span key={p} className="text-[10px] bg-indigo-900/50 text-indigo-300 border border-indigo-700/40 px-1.5 py-0.5 rounded-full">{p}</span>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">📜</span>
+                <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{origin.nome}</p>
               </div>
-              {orig.beneficio && <p className="text-[10px] text-green-400 mt-1.5">✦ {orig.beneficio}</p>}
-              {orig.itens?.length > 0 && <p className="text-[10px] text-gray-500 mt-0.5">Itens: {orig.itens.join(', ')}</p>}
+              <p className="text-[10px] text-gray-400 line-clamp-1 italic">"{origin.descricao}"</p>
+              <p className="text-[9px] text-amber-500/60 mt-2 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
             </button>
           );
         })}
+      </div>
+
+      <AnimatePresence>
+        {char.modalOrigin && (
+          <OriginModal
+            id={char.modalOrigin}
+            origin={ORIGENS[char.modalOrigin]}
+            onClose={() => onChange({ modalOrigin: null })}
+            onConfirm={() => {
+              const id = char.modalOrigin;
+              onChange({ origem: id, modalOrigin: null, origemBeneficios: [] });
+            }}
+            isSelected={char.origem === char.modalOrigin}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// PHASE 1: BENEFÍCIOS DE ORIGEM
+// ─────────────────────────────────────────────────────────────
+
+function StepOrigemBeneficios({ char, onChange, stats }) {
+  const origem = ORIGENS[char.origem];
+  if (!origem) return <div className="text-gray-500 italic p-12 text-center">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;
+
+  const choices = char.origemBeneficios || [];
+  const max = 2;
+
+  function toggle(benefit) {
+    const isSkill = origem.pericias.includes(benefit);
+    const has = choices.includes(benefit);
+    let next = [...choices];
+    let nextPericias = [...char.pericias];
+
+    if (has) {
+      next = next.filter(b => b !== benefit);
+      if (isSkill) nextPericias = nextPericias.filter(p => p !== benefit);
+    } else if (choices.length < max) {
+      next.push(benefit);
+      if (isSkill) nextPericias = [...new Set([...nextPericias, benefit])];
+    } else {
+      return;
+    }
+
+    onChange({ 
+      origemBeneficios: next,
+      pericias: nextPericias
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-indigo-950/20 p-8 rounded-[2.5rem] border border-indigo-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">📜</div>
+        <div className="flex-1">
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <span className="text-indigo-400">VI.</span> Histórico: {origem.nome}
+          </h2>
+          <p className="text-gray-400 text-sm mt-2 max-w-md leading-relaxed">
+            Escolha <strong className="text-indigo-400">2 benefícios</strong> entre as competências e talentos do seu passado.
+          </p>
+        </div>
+        <div className={`px-8 py-4 rounded-2xl border-2 font-black transition-all shadow-xl ${
+          choices.length === max 
+            ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400 shadow-emerald-900/10' 
+            : 'bg-gray-950 border-gray-800 text-amber-500 shadow-amber-900/5'
+        }`}>
+          <span className="text-2xl">{choices.length}</span>
+          <span className="text-xs uppercase ml-2 opacity-60">de {max}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Perícias Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 ml-1">
+            <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+            <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Perícias de Origem</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+             {origem.pericias.map(p => (
+               <button
+                 key={p}
+                 onClick={() => toggle(p)}
+                 className={`p-5 rounded-[1.5rem] border-2 text-left transition-all relative overflow-hidden group ${
+                   choices.includes(p) 
+                     ? 'bg-indigo-600 border-indigo-400 text-white shadow-xl shadow-indigo-900/20' 
+                     : (choices.length >= max ? 'bg-gray-900/30 border-gray-800/50 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/50 border-gray-800 text-gray-400 hover:border-indigo-500/50 hover:bg-gray-900 hover:text-white')
+                 }`}
+               >
+                 <div className="flex items-center justify-between">
+                    <span className="font-black text-lg tracking-tight uppercase">{p}</span>
+                    <span className={`text-xs opacity-40 font-bold ${choices.includes(p) ? 'text-white' : 'text-indigo-400'}`}>+2</span>
+                 </div>
+               </button>
+             ))}
+          </div>
+        </div>
+
+        {/* Poderes Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 ml-1">
+            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+            <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Poderes de Origem</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+             {origem.poderes.map(p => {
+               const isSpecial = origem.poderUnico?.nome.includes(p);
+               return (
+                 <button
+                   key={p}
+                   onClick={() => toggle(p)}
+                   className={`p-5 rounded-[1.5rem] border-2 text-left transition-all relative overflow-hidden group ${
+                     choices.includes(p) 
+                       ? 'bg-amber-600 border-amber-400 text-gray-900 shadow-xl shadow-amber-900/20' 
+                       : (choices.length >= max ? 'bg-gray-900/30 border-gray-800/50 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/50 border-gray-800 text-gray-400 hover:border-amber-500/50 hover:bg-gray-900 hover:text-white')
+                   }`}
+                 >
+                   <div className="flex flex-col">
+                     <span className="font-black text-lg tracking-tight uppercase flex items-center gap-2">
+                       {p}
+                       {isSpecial && <span className={`text-[9px] px-2 py-0.5 rounded-full border ${choices.includes(p) ? 'bg-gray-900/20 border-gray-900/30 text-gray-900' : 'bg-amber-900/20 border-amber-500/30 text-amber-500'}`}>ÚNICO</span>}
+                     </span>
+                     {isSpecial && (
+                       <span className={`text-[10px] mt-2 leading-relaxed font-medium ${choices.includes(p) ? 'text-gray-950 font-bold' : 'text-gray-500'}`}>
+                         {origem.poderUnico.descricao}
+                       </span>
+                     )}
+                   </div>
+                 </button>
+               );
+             })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// PHASE 2: TREINAMENTO DE CLASSE
+// ─────────────────────────────────────────────────────────────
+
+function StepClassePericias({ char, onChange, stats }) {
+  const cls = CLASSES[char.classe];
+  if (!cls) return null;
+
+  const rawObrig = cls.periciasObrigatorias || [];
+  const fixedObrig = rawObrig.filter(s => typeof s === 'string');
+  const orChoices = rawObrig.filter(s => Array.isArray(s));
+  const obrigEscolhas = char.periciasObrigEscolha || {};
+
+  const originSkills = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
+
+  function handleOrChoice(index, choice) {
+    const nextObrigChoices = { ...obrigEscolhas, [index]: choice };
+    const currentChosen = Object.values(nextObrigChoices);
+    const allMandatory = [...fixedObrig, ...currentChosen];
+    const nextPericias = [...new Set([...originSkills, ...allMandatory])];
+    
+    onChange({ periciasObrigEscolha: nextObrigChoices, pericias: nextPericias });
+  }
+
+  useEffect(() => {
+    const currentChosen = Object.values(obrigEscolhas);
+    const allMandatory = [...fixedObrig, ...currentChosen];
+    const nextPericias = [...new Set([...originSkills, ...allMandatory])];
+    // Sync pericias with selected origin skills + class mandatory
+    if (JSON.stringify(char.pericias) !== JSON.stringify(nextPericias)) {
+        onChange({ pericias: nextPericias });
+    }
+  }, [char.classe, char.origemBeneficios]);
+
+  return (
+    <div className="flex flex-col gap-8">
+       <div className="bg-gray-900/40 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">{CLASS_ICONS[char.classe] || '⚔️'}</div>
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <span className="text-amber-500">VII.</span> Treinamento: {cls.nome}
+          </h2>
+          <p className="text-gray-500 text-sm mt-2 max-w-md leading-relaxed font-medium">
+            Todo {cls.nome} recebe um treinamento rigoroso em certas habilidades fundamentais para sua sobrevivência.
+          </p>
+       </div>
+
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 ml-1">
+              <span className="w-1.5 h-1.5 bg-gray-500 rounded-full" />
+              <p className="text-[10px] uppercase font-black text-gray-500 tracking-[0.2em]">Perícias Obrigatórias</p>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+               {fixedObrig.map(p => (
+                 <div key={p} className="p-5 rounded-2xl bg-gray-950 border border-gray-800 flex items-center justify-between shadow-inner">
+                    <span className="text-base font-black text-gray-300 uppercase tracking-tight">{p}</span>
+                    <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-[10px]">🔒</div>
+                 </div>
+               ))}
+            </div>
+          </div>
+
+          {orChoices.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 ml-1">
+                <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                <p className="text-[10px] uppercase font-black text-amber-500/60 tracking-[0.2em]">Especialização de Classe</p>
+              </div>
+              <div className="space-y-4">
+                {orChoices.map((opts, i) => (
+                  <div key={i} className="flex flex-col gap-3 p-6 bg-amber-950/10 border border-amber-950/20 rounded-[2rem]">
+                     <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest text-center px-4">Escolha uma das opções abaixo:</p>
+                     <div className="flex gap-2">
+                        {opts.map(opt => (
+                          <button
+                            key={opt}
+                            onClick={() => handleOrChoice(i, opt)}
+                            className={`flex-1 py-4 rounded-xl font-black text-xs transition-all uppercase tracking-tighter border-2 ${
+                              obrigEscolhas[i] === opt
+                              ? 'bg-amber-600 border-amber-500 text-gray-950 shadow-lg shadow-amber-900/20'
+                              : 'bg-gray-950 border-gray-800 text-gray-500 hover:border-amber-600/30 hover:text-gray-300'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// PHASE 3: BÔNUS DE INTELIGÊNCIA
+// ─────────────────────────────────────────────────────────────
+
+function StepIntPericias({ char, onChange, stats }) {
+  const cls = CLASSES[char.classe];
+  if (!cls) return null;
+
+  const intBonus = Math.max(0, stats.attrs.INT || 0);
+  const classSkills = cls.periciasClasse || [];
+  
+  const rawObrig = cls.periciasObrigatorias || [];
+  const fixedObrig = rawObrig.filter(s => typeof s === 'string');
+  const chosenObrig = Object.values(char.periciasObrigEscolha || {});
+  const mandatoryFromClass = [...fixedObrig, ...chosenObrig];
+  const originPericias = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
+  
+  const alreadyTrained = [...new Set([...mandatoryFromClass, ...originPericias])];
+  const currentExtras = char.pericias.filter(p => !alreadyTrained.includes(p));
+  const availableExtras = intBonus - currentExtras.length;
+
+  function toggle(skill) {
+    if (alreadyTrained.includes(skill)) return;
+    const has = char.pericias.includes(skill);
+    if (has) {
+      onChange({ pericias: char.pericias.filter(p => p !== skill) });
+    } else if (availableExtras > 0) {
+      onChange({ pericias: [...char.pericias, skill] });
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-8">
+       <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-blue-950/20 p-8 rounded-[2.5rem] border border-blue-500/20 shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-5 text-6xl">🧠</div>
+        <div className="flex-1">
+          <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
+            <span className="text-blue-400">VIII.</span> Especialização (INT)
+          </h2>
+          <p className="text-gray-500 text-sm mt-2 max-w-md leading-relaxed font-medium">
+            Seu raciocínio rápido permite que você aprenda <strong className="text-blue-400">{intBonus} perícia{intBonus !== 1 ? 's' : ''} extra{intBonus !== 1 ? 's' : ''}</strong> da sua classe.
+          </p>
+        </div>
+        <div className={`px-8 py-4 rounded-2xl border-2 font-black transition-all shadow-xl ${
+          availableExtras === 0 
+            ? 'bg-emerald-950/30 border-emerald-500/50 text-emerald-400 shadow-emerald-900/10' 
+            : 'bg-gray-950 border-gray-800 text-blue-400 shadow-blue-900/5'
+        }`}>
+          <span className="text-2xl">{currentExtras.length}</span>
+          <span className="text-xs uppercase ml-2 opacity-60">de {intBonus}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+         {classSkills.map(skillName => {
+           const isAlreadyTrained = alreadyTrained.includes(skillName);
+           const isSelected = char.pericias.includes(skillName);
+           
+           return (
+             <button
+               key={skillName}
+               disabled={isAlreadyTrained || (!isSelected && availableExtras === 0)}
+               onClick={() => toggle(skillName)}
+               className={`p-5 rounded-[1.5rem] border-2 text-left transition-all relative group h-full flex flex-col justify-between ${
+                 isSelected 
+                   ? (isAlreadyTrained ? 'bg-gray-900/20 border-gray-800/40 opacity-40 grayscale text-gray-500' : 'bg-blue-600 border-blue-400 text-white shadow-xl shadow-blue-900/20')
+                   : (availableExtras === 0 ? 'bg-gray-900/30 border-transparent opacity-20 pointer-events-none' : 'bg-gray-900/80 border-gray-800 text-gray-400 hover:border-blue-500/50 hover:bg-gray-900 hover:text-white shadow-inner')
+               }`}
+             >
+               <div className="flex items-center justify-between w-full">
+                 <span className="font-black text-sm uppercase tracking-tight">{skillName}</span>
+                 {isSelected && !isAlreadyTrained && <span className="text-[10px]">✨</span>}
+               </div>
+               {isAlreadyTrained && (
+                 <span className="text-[8px] font-black text-gray-600 uppercase tracking-widest mt-2 border-t border-gray-800/50 pt-2">Treinamento Base</span>
+               )}
+             </button>
+           );
+         })}
       </div>
     </div>
   );
@@ -641,7 +1298,9 @@ function StepDeus({ char, onChange }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1">Divindade</h2>
+        <h2 className="text-2xl font-bold text-amber-400 mb-1 tracking-tight">
+          <span className="opacity-40 mr-2 text-xl font-black">IV.</span> Divindade
+        </h2>
         <p className="text-gray-400 text-sm">
           {isDivine
             ? 'Como ' + (CLASSES[char.classe]?.nome || '') + ', sua divindade concede poderes especiais.'
@@ -667,7 +1326,7 @@ function StepDeus({ char, onChange }) {
           return (
             <button
               key={id}
-              onClick={() => onChange({ deus: id })}
+              onClick={() => onChange({ modalDeity: id })}
               className={`text-left p-3 rounded-xl border transition-all duration-200 ${
                 isSelected
                   ? 'border-amber-500 bg-amber-900/20 shadow-lg shadow-amber-900/20'
@@ -677,6 +1336,7 @@ function StepDeus({ char, onChange }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
+                    <span className="text-lg">{DEITY_ICONS[id] || '✨'}</span>
                     <p className={`font-bold text-sm ${isSelected ? 'text-amber-300' : 'text-white'}`}>{deus.nome}</p>
                     {deus.alinhamento && (
                       <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded">{deus.alinhamento}</span>
@@ -686,16 +1346,26 @@ function StepDeus({ char, onChange }) {
                 </div>
                 {deus.arma && <span className="text-[10px] text-gray-500 shrink-0">⚔ {deus.arma}</span>}
               </div>
-              {deus.devoto?.poderes?.[0] && (
-                <p className="text-[10px] text-amber-400/80 mt-1">✦ {deus.devoto.poderes[0].nome}: {deus.devoto.poderes[0].descricao}</p>
-              )}
-              {deus.devoto?.restricoes && (
-                <p className="text-[10px] text-red-400/80 mt-0.5">⚠ {deus.devoto.restricoes}</p>
-              )}
+              <p className="text-[9px] text-amber-500/60 mt-2 text-right uppercase tracking-widest font-bold">Ver detalhes →</p>
             </button>
           );
         })}
       </div>
+
+      <AnimatePresence>
+        {char.modalDeity && (
+          <DeityModal
+            id={char.modalDeity}
+            deus={DEUSES[char.modalDeity]}
+            onClose={() => onChange({ modalDeity: null })}
+            onConfirm={() => {
+              const id = char.modalDeity;
+              onChange({ deus: id, modalDeity: null });
+            }}
+            isSelected={char.deus === char.modalDeity}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -705,109 +1375,218 @@ function StepDeus({ char, onChange }) {
 // ─────────────────────────────────────────────────────────────
 
 function StepAttributes({ char, onChange, stats }) {
+  const [rolling, setRolling] = useState(false);
   const remaining = stats.pontosDisponiveis;
+  const isBuy = char.attrMethod === 'buy';
 
   function handleChange(key, delta) {
+    if (!isBuy) return;
     const current = char.atributos[key] || 0;
     const next = current + delta;
     if (next < ATTR_MIN || next > ATTR_MAX) return;
-    // Custo para aumentar: se não há pontos suficientes, bloqueia
     if (delta > 0 && costToIncrease(current) > remaining) return;
     onChange({ atributos: { ...char.atributos, [key]: next } });
   }
 
+  function handleRoll() {
+    setRolling(true);
+    const newRolls = [];
+    for (let i = 0; i < 6; i++) {
+        newRolls.push(rollAttribute());
+    }
+    // Artificial delay for "premium" feel
+    setTimeout(() => {
+        onChange({ rolagens: newRolls });
+        setRolling(false);
+    }, 800);
+  }
+
+  function assignRoll(attrKey, rollIdx) {
+    const roll = char.rolagens[rollIdx];
+    if (!roll) return;
+    
+    const newAttrs = { ...char.atributos, [attrKey]: roll.modifier };
+    const newRolls = [...char.rolagens];
+    newRolls[rollIdx] = { ...roll, assignedTo: attrKey };
+    
+    // If this attribute already had a roll, free it
+    newRolls.forEach((r, idx) => {
+        if (idx !== rollIdx && r.assignedTo === attrKey) {
+            newRolls[idx] = { ...r, assignedTo: null };
+        }
+    });
+
+    onChange({ atributos: newAttrs, rolagens: newRolls });
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-1">Atributos</h2>
-          <p className="text-gray-400 text-sm">
-            Distribua <strong className="text-amber-400">{POINT_POOL} pontos</strong>. Todos começam em 0.
-            Custo: +1 e +2 = 1pt cada, +3 = 2pts, +4 = 3pts. Reduzir a –1 ou –2 recupera 1pt cada.
+    <div className="flex flex-col gap-6">
+      {/* Header & Method Toggle */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-gray-900/50 p-6 rounded-[2.5rem] border border-gray-800 shadow-2xl">
+        <div className="flex-1">
+          <h2 className="text-3xl font-black text-white tracking-tight mb-2 flex items-center gap-3">
+             <span className="text-amber-500">V.</span> Atributos
+          </h2>
+          <p className="text-gray-400 text-sm leading-relaxed max-w-md">
+            {isBuy 
+              ? `Distribua seus ${POINT_POOL} pontos. Todos os atributos começam em 0. Custo variável por valor.`
+              : "A sorte está lançada! Role 4d6 (descarta o menor) para cada atributo e atribua os resultados."}
           </p>
         </div>
-        <div className={`flex flex-col items-center bg-gray-800 border rounded-xl px-4 py-2 shrink-0 ${remaining > 0 ? 'border-amber-600/60' : remaining === 0 ? 'border-green-700/60' : 'border-red-700/60'}`}>
-          <span className={`text-2xl font-bold ${remaining > 0 ? 'text-amber-400' : remaining === 0 ? 'text-green-400' : 'text-red-400'}`}>{remaining}</span>
-          <span className="text-[11px] text-gray-400">pontos</span>
+
+        <div className="flex items-center bg-gray-950 p-1.5 rounded-2xl border border-gray-800">
+           {['buy', 'roll'].map(m => (
+             <button
+               key={m}
+               onClick={() => onChange({ attrMethod: m, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 }, rolagens: [] })}
+               className={`px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${
+                 char.attrMethod === m 
+                   ? 'bg-amber-600 text-gray-900 shadow-xl shadow-amber-900/20' 
+                   : 'text-gray-500 hover:text-gray-300'
+               }`}
+             >
+               {m === 'buy' ? 'Compra de Pontos' : 'Rolagem de Dados'}
+             </button>
+           ))}
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      {/* Point Buy Pool Display */}
+      {isBuy && (
+        <div className="flex justify-center -mt-4">
+           <div className={`px-8 py-3 rounded-full border bg-gray-900 flex items-center gap-4 shadow-2xl ${remaining > 0 ? 'border-amber-600/40' : remaining === 0 ? 'border-emerald-500/40' : 'border-red-500/40'}`}>
+              <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pontos Restantes</span>
+              <div className="h-4 w-px bg-gray-800" />
+              <span className={`text-2xl font-black ${remaining > 0 ? 'text-amber-500' : remaining === 0 ? 'text-emerald-500' : 'text-red-500'}`}>{remaining}</span>
+           </div>
+        </div>
+      )}
+
+      {/* Dice Roll Box */}
+      {!isBuy && char.rolagens.length === 0 && (
+         <div className="flex flex-col items-center justify-center py-12 bg-gray-900/40 border border-dashed border-gray-800 rounded-[3rem] gap-6">
+            <div className={`text-7xl ${rolling ? 'animate-bounce' : 'opacity-20'}`}>🎲</div>
+            <p className="text-gray-500 font-medium">Você ainda não rolou seus atributos para este herói.</p>
+            <button
+              onClick={handleRoll}
+              disabled={rolling}
+              className="px-12 py-4 rounded-full bg-gradient-to-r from-amber-700 to-amber-500 text-gray-900 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-amber-900/30 disabled:opacity-50"
+            >
+              {rolling ? 'Rolando...' : 'Rolar Atributos!'}
+            </button>
+         </div>
+      )}
+
+      {/* Dice Selection Area */}
+      {!isBuy && char.rolagens.length > 0 && (
+        <div className="bg-gray-900/60 p-6 rounded-[2.5rem] border border-gray-800">
+           <div className="flex items-center justify-between mb-6 border-b border-gray-800 pb-4">
+              <h3 className="text-[10px] uppercase font-black text-gray-500 tracking-widest">Seus Resultados (4d6k3)</h3>
+              <button onClick={handleRoll} className="text-[10px] font-bold text-amber-500 uppercase hover:underline">Rolar Novamente</button>
+           </div>
+           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+              {char.rolagens.map((r, idx) => (
+                <div 
+                  key={idx} 
+                  className={`relative group bg-gray-950 border rounded-2xl p-4 flex flex-col items-center transition-all ${
+                    r.assignedTo ? 'opacity-20 grayscale border-gray-800' : 'border-amber-900/30 hover:border-amber-500'
+                  }`}
+                >
+                   <span className="text-[9px] text-gray-600 font-bold mb-1">Total: {r.diceTotal}</span>
+                   <span className="text-2xl font-black text-amber-500">{signStr(r.modifier)}</span>
+                   <div className="mt-2 flex gap-0.5">
+                      {r.rolls.map((d, di) => (
+                        <span key={di} className="text-[8px] text-gray-700">{d}</span>
+                      ))}
+                   </div>
+                </div>
+              ))}
+           </div>
+        </div>
+      )}
+
+      {/* Attributes Grid */}
+      <div className="grid grid-cols-1 gap-3">
         {ATTR_KEYS.map(key => {
           const base = char.atributos[key] || 0;
           const bonus = stats.raceBonus[key] || 0;
           const total = stats.attrs[key];
           const increaseCost = costToIncrease(base);
-          const canIncrease = base < ATTR_MAX && increaseCost <= remaining;
-          const canDecrease = base > ATTR_MIN;
+          const canIncrease = isBuy && base < ATTR_MAX && increaseCost <= remaining;
+          const canDecrease = isBuy && base > ATTR_MIN;
           const isPmAttr = PM_ATTR_MAP[char.classe] === key;
           const isAtkAttr = (char.classe === 'cacador' && key === 'DES') || (char.classe !== 'cacador' && key === 'FOR');
 
           return (
-            <div key={key} className="bg-gray-800/80 border border-gray-700 rounded-xl p-3">
-              <div className="flex items-center gap-3">
-                <div className="w-32 shrink-0">
-                  <p className="font-bold text-white text-sm">{ATTR_LABELS[key]}</p>
-                  <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{ATTR_EFFECTS[key]}</p>
-                </div>
-
-                <div className="flex items-center gap-2 flex-1">
-                  <button
-                    onClick={() => handleChange(key, -1)}
-                    disabled={!canDecrease}
-                    className={`w-9 h-9 rounded-lg font-bold text-lg flex items-center justify-center transition-all ${
-                      canDecrease ? 'bg-gray-700 hover:bg-gray-600 text-white' : 'bg-gray-900 text-gray-700 cursor-not-allowed'
-                    }`}
-                  >−</button>
-
-                  <div className="flex-1 text-center">
-                    {/* T20: o valor base já é o modificador */}
-                    <div className={`text-2xl font-bold ${base >= 0 ? 'text-white' : 'text-red-400'}`}>
-                      {signStr(base)}
-                    </div>
-                    {bonus !== 0 && (
-                      <div className={`text-xs font-semibold ${bonus > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {bonus > 0 ? `+${bonus}` : bonus} raça → <span className="text-white">{signStr(total)}</span>
-                      </div>
-                    )}
-                    {increaseCost > 0 && canIncrease && (
-                      <div className="text-[9px] text-amber-600/70 mt-0.5">{increaseCost}pt p/ +1</div>
-                    )}
+            <div key={key} className={`bg-gray-800/40 backdrop-blur-sm border rounded-[2rem] p-5 transition-all duration-500 ${
+              isAtkAttr ? 'border-orange-500/30 bg-orange-950/10' :
+              isPmAttr ? 'border-blue-500/30 bg-blue-950/10' :
+              'border-gray-800 hover:border-gray-700'
+            }`}>
+              <div className="flex items-center gap-6">
+                <div className="w-40 shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-black text-white text-lg tracking-tight uppercase">{ATTR_LABELS[key]}</p>
+                    {isAtkAttr && <span className="text-[9px] bg-orange-600 text-black px-1.5 py-0.5 rounded-full font-black">ATK</span>}
+                    {isPmAttr && <span className="text-[9px] bg-blue-600 text-black px-1.5 py-0.5 rounded-full font-black">MANA</span>}
                   </div>
-
-                  <button
-                    onClick={() => handleChange(key, +1)}
-                    disabled={!canIncrease}
-                    className={`w-9 h-9 rounded-lg font-bold text-lg flex items-center justify-center transition-all ${
-                      canIncrease ? 'bg-amber-700 hover:bg-amber-600 text-white' : 'bg-gray-900 text-gray-700 cursor-not-allowed'
-                    }`}
-                  >+</button>
+                  <p className="text-[10px] text-gray-500 leading-tight font-medium opacity-60">{ATTR_EFFECTS[key]}</p>
                 </div>
-              </div>
 
-              {/* Live stat impacts */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {key === 'CON' && (
-                  <span className="text-[10px] bg-red-900/30 text-red-400 px-2 py-0.5 rounded-full border border-red-800/30">
-                    PV: {stats.pv}
-                  </span>
-                )}
-                {key === 'DES' && (
-                  <>
-                    <span className="text-[10px] bg-sky-900/30 text-sky-400 px-2 py-0.5 rounded-full border border-sky-800/30">DEF: {stats.def}</span>
-                    <span className="text-[10px] bg-green-900/30 text-green-400 px-2 py-0.5 rounded-full border border-green-800/30">INI: {stats.ini >= 0 ? '+' : ''}{stats.ini}</span>
-                  </>
-                )}
-                {isAtkAttr && (
-                  <span className="text-[10px] bg-orange-900/30 text-orange-400 px-2 py-0.5 rounded-full border border-orange-800/30">
-                    ATK: {stats.atk >= 0 ? '+' : ''}{stats.atk}
-                  </span>
-                )}
-                {isPmAttr && (
-                  <span className="text-[10px] bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded-full border border-blue-800/30">
-                    PM: {stats.pm}
-                  </span>
-                )}
+                <div className="flex items-center gap-4 flex-1 justify-end">
+                   {isBuy ? (
+                    <div className="flex items-center bg-gray-950 rounded-2xl p-1.5 border border-gray-800 shadow-inner">
+                      <button
+                        onClick={() => handleChange(key, -1)}
+                        disabled={!canDecrease}
+                        className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
+                          canDecrease ? 'bg-gray-900 border border-gray-800 hover:bg-gray-800 text-white shadow-lg' : 'text-gray-800 opacity-20'
+                        }`}
+                      >−</button>
+                      <div className="w-16 text-center">
+                        <span className={`text-2xl font-black ${base > 0 ? 'text-amber-500' : base < 0 ? 'text-red-500' : 'text-white'}`}>
+                          {signStr(base)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleChange(key, +1)}
+                        disabled={!canIncrease}
+                        className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
+                          canIncrease ? 'bg-amber-600 hover:bg-amber-500 text-gray-900 shadow-xl shadow-amber-900/20' : 'text-gray-800 opacity-20'
+                        }`}
+                      >+</button>
+                    </div>
+                   ) : (
+                    <div className="flex-1 flex justify-end">
+                       <div className="flex flex-wrap gap-2 justify-end">
+                          {char.rolagens.map((r, ri) => (
+                            <button
+                              key={ri}
+                              onClick={() => assignRoll(key, ri)}
+                              className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
+                                r.assignedTo === key
+                                  ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg'
+                                  : r.assignedTo 
+                                    ? 'hidden' // Oculta se já atribuído a outro
+                                    : 'bg-gray-950 border-gray-800 text-amber-500 hover:border-amber-500/50'
+                              }`}
+                            >
+                               {signStr(r.modifier)}
+                            </button>
+                          ))}
+                       </div>
+                    </div>
+                   )}
+
+                  <div className="min-w-[60px] flex flex-col items-center">
+                    <span className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter mb-1">Total</span>
+                    <div className={`w-14 h-14 rounded-2xl bg-gray-950 border-2 flex items-center justify-center shadow-inner transition-colors ${
+                      total > 0 ? 'border-amber-500/20 text-amber-500' : total < 0 ? 'border-red-500/20 text-red-500' : 'border-gray-800 text-white'
+                    }`}>
+                       <span className="text-xl font-black leading-none">{signStr(total)}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           );
@@ -821,135 +1600,7 @@ function StepAttributes({ char, onChange, stats }) {
 // STEP 5 — PERÍCIAS
 // ─────────────────────────────────────────────────────────────
 
-function StepPericias({ char, onChange, stats }) {
-  const cls = CLASSES[char.classe];
-  const origem = ORIGENS[char.origem];
-  const originSkills = origem?.pericias || [];
-
-  // Perícias obrigatórias da classe (podem ter "ou": [['Luta','Pontaria'], 'Fortitude'])
-  const rawObrig = cls?.periciasObrigatorias || [];
-  const fixedObrig = rawObrig.filter(s => typeof s === 'string');
-  const orChoices = rawObrig.filter(s => Array.isArray(s)); // ex: ['Luta','Pontaria']
-
-  // Escolha das "ou" obrigatórias fica em char.periciasObrigEscolha
-  const obrigEscolhas = char.periciasObrigEscolha || {};
-  const chosenObrig = orChoices.map((opts, i) => obrigEscolhas[i] || opts[0]);
-  const allMandatory = [...new Set([...fixedObrig, ...chosenObrig])];
-
-  // Bônus de INT: se INT > 0, jogador ganha INT perícias extras de qualquer lista
-  const intBonus = Math.max(0, stats?.attrs?.INT || 0);
-
-  const maxPericias = (cls?.pericias || 2) + intBonus;
-  const classSkills = cls?.periciasClasse || [];
-  const available = maxPericias - char.pericias.length;
-
-  // Todas as perícias locadas (obrigatórias + origem + escolhidas)
-  const lockedSkills = [...new Set([...allMandatory, ...originSkills])];
-
-  function toggle(skill) {
-    if (lockedSkills.includes(skill)) return;
-    const has = char.pericias.includes(skill);
-    if (has) {
-      onChange({ pericias: char.pericias.filter(p => p !== skill) });
-    } else if (available > 0) {
-      onChange({ pericias: [...char.pericias, skill] });
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-start justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-1">Perícias</h2>
-          <p className="text-gray-400 text-sm">
-            Escolha em quais perícias seu personagem é treinado.
-            {intBonus > 0 && <span className="text-green-400 ml-1">+{intBonus} extra (INT {signStr(stats?.attrs?.INT)})</span>}
-          </p>
-        </div>
-        <div className={`flex flex-col items-center bg-gray-800 border rounded-xl px-4 py-2 shrink-0 ${available > 0 ? 'border-amber-600/60' : 'border-green-700/60'}`}>
-          <span className={`text-2xl font-bold ${available > 0 ? 'text-amber-400' : 'text-green-400'}`}>{available}</span>
-          <span className="text-[11px] text-gray-400">restantes</span>
-        </div>
-      </div>
-
-      {/* Escolha das perícias "ou" obrigatórias */}
-      {orChoices.length > 0 && (
-        <div className="bg-amber-900/20 border border-amber-700/40 rounded-xl p-3">
-          <p className="text-[11px] text-amber-300 font-semibold mb-2">🔒 Perícia obrigatória — escolha uma:</p>
-          {orChoices.map((opts, i) => (
-            <div key={i} className="flex gap-2">
-              {opts.map(opt => (
-                <button
-                  key={opt}
-                  onClick={() => onChange({ periciasObrigEscolha: { ...obrigEscolhas, [i]: opt } })}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold border transition-all ${
-                    (obrigEscolhas[i] || opts[0]) === opt
-                      ? 'border-amber-500 bg-amber-900/30 text-amber-300'
-                      : 'border-gray-600 bg-gray-800 text-gray-300 hover:border-amber-600'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Obrigatórias fixas da classe */}
-      {allMandatory.length > 0 && (
-        <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-3">
-          <p className="text-[11px] text-gray-400 font-semibold mb-2">🔒 Automáticas da classe ({cls?.nome}):</p>
-          <div className="flex flex-wrap gap-1">
-            {allMandatory.map(s => (
-              <span key={s} className="text-[11px] bg-amber-900/40 text-amber-300 border border-amber-700/40 px-2 py-1 rounded-lg">{s}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {originSkills.length > 0 && (
-        <div className="bg-blue-900/20 border border-blue-700/40 rounded-xl p-3">
-          <p className="text-[11px] text-blue-300 font-semibold mb-2">✦ Concedidas pela Origem ({ORIGENS[char.origem]?.nome}):</p>
-          <div className="flex flex-wrap gap-1">
-            {originSkills.map(s => (
-              <span key={s} className="text-[11px] bg-blue-800/60 text-blue-200 border border-blue-600/40 px-2 py-1 rounded-lg">{s}</span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div>
-        <p className="text-sm text-gray-300 mb-2">
-          Escolha <span className="text-amber-400 font-bold">{maxPericias}</span> perícias da lista da {cls?.nome}:
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-          {classSkills.map(skill => {
-            const isOrigin = originSkills.includes(skill);
-            const isChosen = char.pericias.includes(skill);
-            const canSelect = !isOrigin && !isChosen && available > 0;
-            return (
-              <button
-                key={skill}
-                onClick={() => toggle(skill)}
-                disabled={isOrigin || (!isChosen && available <= 0)}
-                className={`text-left px-3 py-2 rounded-lg border text-sm transition-all ${
-                  isOrigin ? 'border-blue-700/40 bg-blue-900/20 text-blue-300 cursor-default'
-                  : isChosen ? 'border-amber-500 bg-amber-900/20 text-amber-300'
-                  : canSelect ? 'border-gray-600 bg-gray-800/80 text-gray-300 hover:border-gray-400'
-                  : 'border-gray-700 bg-gray-900 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                <span className="mr-1.5">{isOrigin ? '🔒' : isChosen ? '✓' : '○'}</span>
-                {skill}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
+// StepPericias was removed and replaced by Phase 1, 2 and 3 components above.
 
 // ─────────────────────────────────────────────────────────────
 // STEP 6 — REVISÃO
@@ -963,78 +1614,108 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
   const allPericias = [...new Set([...(ORIGENS[char.origem]?.pericias || []), ...char.pericias])];
 
   return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-2xl font-bold text-amber-400 mb-1">Revisão Final</h2>
-        <p className="text-gray-400 text-sm">Confirme tudo e dê um nome ao seu herói.</p>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-amber-900/20 border border-amber-500/30 flex items-center justify-center text-4xl shadow-lg shadow-amber-900/10">
+          {CLASS_ICONS[char.classe] || '⚔️'}
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-white tracking-tight">
+             <span className="text-amber-500 mr-2">IX.</span> Revisão Final
+          </h2>
+          <p className="text-amber-500/60 text-sm font-medium">O nascimento de uma lenda...</p>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm text-gray-300 mb-1.5 font-semibold">Nome do Personagem *</label>
-        <input
-          className="w-full bg-gray-900 border border-gray-600 rounded-xl px-4 py-2.5 text-white text-base focus:outline-none focus:border-amber-500 transition-colors"
-          placeholder="Como seu herói é chamado?"
-          value={char.nome}
-          onChange={e => onChange({ nome: e.target.value })}
-          autoFocus
-        />
-      </div>
-
-      <div className="bg-gray-800/80 border border-gray-700 rounded-xl p-4 flex flex-col gap-3">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          {[
-            ['Raça', `${RACE_ICONS[char.raca] || ''} ${race?.nome || '—'}`],
-            ['Classe', `${CLASS_ICONS[char.classe] || ''} ${cls?.nome || '—'}`],
-            ['Origem', orig?.nome || '—'],
-            ['Divindade', deus?.nome || 'Nenhuma'],
-          ].map(([label, val]) => (
-            <div key={label}>
-              <span className="text-gray-500 text-xs uppercase tracking-wider block">{label}</span>
-              <span className="text-white font-semibold">{val}</span>
-            </div>
-          ))}
+      <div className="space-y-4">
+        <div className="relative group">
+          <label className="block text-[10px] uppercase tracking-[0.2em] font-black text-gray-500 mb-2 ml-1">Nome do Personagem</label>
+          <input
+            className="w-full bg-gray-900 border-2 border-gray-800 rounded-3xl px-6 py-4 text-white text-xl font-black focus:outline-none focus:border-amber-500 focus:bg-gray-950 transition-all shadow-inner"
+            placeholder="Ex: Valerius Thorne"
+            value={char.nome}
+            onChange={e => onChange({ nome: e.target.value })}
+            autoFocus
+          />
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 group-focus-within:opacity-100 transition-opacity">✏️</div>
         </div>
 
-        <div className="border-t border-gray-700 pt-3 grid grid-cols-4 gap-2 text-center">
-          {[
-            ['PV', stats.pv, 'text-red-400'],
-            ['PM', stats.pm, 'text-blue-400'],
-            ['DEF', stats.def, 'text-sky-400'],
-            ['ATK', (stats.atk >= 0 ? '+' : '') + stats.atk, 'text-orange-400'],
-          ].map(([l, v, c]) => (
-            <div key={l} className="bg-gray-900 rounded-lg py-2">
-              <div className={`text-lg font-bold ${c}`}>{v}</div>
-              <div className="text-[10px] text-gray-500">{l}</div>
+        <div className="bg-gray-900 rounded-[2rem] border border-gray-800 overflow-hidden shadow-2xl">
+          <div className="p-6 grid grid-cols-2 gap-6 bg-gradient-to-br from-gray-900 to-gray-950">
+            <div className="space-y-4">
+               {[
+                 { label: 'Raça', val: race?.nome, sub: RACE_ICONS[char.raca] },
+                 { label: 'Classe', val: cls?.nome, sub: CLASS_ICONS[char.classe] },
+               ].map(item => (
+                 <div key={item.label} className="group">
+                   <span className="text-[10px] uppercase tracking-widest font-black text-gray-500 block mb-1">{item.label}</span>
+                   <div className="flex items-center gap-2">
+                     <span className="text-xl">{item.sub}</span>
+                     <span className="text-base font-black text-white">{item.val}</span>
+                   </div>
+                 </div>
+               ))}
             </div>
-          ))}
-        </div>
+            <div className="space-y-4">
+               {[
+                 { label: 'Origem', val: orig?.nome, sub: '📜' },
+                 { label: 'Divindade', val: deus?.nome || 'Ateu', sub: DEITY_ICONS[char.deus] || '🚫' },
+               ].map(item => (
+                 <div key={item.label}>
+                   <span className="text-[10px] uppercase tracking-widest font-black text-gray-500 block mb-1">{item.label}</span>
+                   <div className="flex items-center gap-2">
+                     <span className="text-xl">{item.sub}</span>
+                     <span className="text-base font-black text-white truncate">{item.val}</span>
+                   </div>
+                 </div>
+               ))}
+            </div>
+          </div>
 
-        {allPericias.length > 0 && (
-          <div className="border-t border-gray-700 pt-3">
-            <p className="text-[11px] text-gray-500 uppercase tracking-wider mb-1.5">Perícias</p>
-            <div className="flex flex-wrap gap-1">
+          <div className="px-6 py-6 bg-gray-800/20 border-t border-gray-800">
+             <div className="grid grid-cols-4 gap-3">
+                {[
+                  { l: 'Vida', v: stats.pv, color: 'from-red-600 to-red-900', icon: '❤️' },
+                  { l: 'Mana', v: stats.pm, color: 'from-blue-600 to-blue-900', icon: '💧' },
+                  { l: 'Defesa', v: stats.def, color: 'from-sky-600 to-sky-900', icon: '🛡️' },
+                  { l: 'Ataque', v: (stats.atk >= 0 ? '+' : '') + stats.atk, color: 'from-orange-600 to-orange-900', icon: '⚔️' },
+                ].map(stat => (
+                  <div key={stat.l} className="flex flex-col items-center gap-1.5 p-3 bg-gray-950 rounded-2xl border border-gray-800 shadow-lg">
+                    <span className="text-xs">{stat.icon}</span>
+                    <span className="text-xl font-black text-white leading-none">{stat.v}</span>
+                    <span className="text-[9px] uppercase tracking-tighter font-black text-gray-500">{stat.l}</span>
+                  </div>
+                ))}
+             </div>
+          </div>
+
+          <div className="p-6 border-t border-gray-800 bg-gray-950/40">
+            <span className="text-[10px] uppercase tracking-[0.2em] font-black text-gray-600 block mb-3 text-center">Treinamentos Adquiridos</span>
+            <div className="flex flex-wrap justify-center gap-1.5">
               {allPericias.map(p => (
-                <span key={p} className="text-xs bg-indigo-900/50 text-indigo-300 border border-indigo-700/40 px-2 py-0.5 rounded-full">{p}</span>
+                <span key={p} className="text-[10px] bg-amber-900/10 text-amber-500/80 border border-amber-900/20 px-3 py-1 rounded-full font-black uppercase tracking-tighter">
+                  {p}
+                </span>
               ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="flex gap-3">
-        <button
-          onClick={onSave}
-          disabled={!char.nome.trim()}
-          className="flex-1 py-3 rounded-xl border border-amber-700/60 bg-amber-900/20 text-amber-300 font-bold text-sm hover:bg-amber-800/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          💾 Salvar na Biblioteca
-        </button>
+      <div className="flex flex-col gap-3 pt-4">
         <button
           onClick={onPlay}
           disabled={!char.nome.trim()}
-          className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-gray-900 font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-amber-900/30"
+          className="w-full py-5 rounded-[2rem] bg-gradient-to-r from-amber-700 to-amber-500 hover:from-amber-600 hover:to-amber-400 text-gray-900 font-black text-base uppercase tracking-widest transition-all shadow-2xl shadow-amber-900/40 disabled:opacity-30 disabled:grayscale active:scale-95"
         >
           ⚔️ Iniciar Aventura!
+        </button>
+        <button
+          onClick={onSave}
+          disabled={!char.nome.trim()}
+          className="w-full py-4 rounded-2xl border border-gray-800 bg-gray-900/50 text-gray-400 font-bold text-xs uppercase tracking-[0.2em] hover:bg-gray-800 hover:text-white transition-all disabled:opacity-30"
+        >
+          💾 Salvar para depois
         </button>
       </div>
     </div>
@@ -1047,59 +1728,78 @@ function StepReview({ char, onChange, stats, onSave, onPlay }) {
 
 function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
   return (
-    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6">
-      <div className="text-center mb-10">
-        <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-b from-amber-400 to-amber-700 mb-2 tracking-tight">
-          A Lenda do Reino
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-amber-600/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="text-center mb-16 relative z-10">
+        <h1 className="text-6xl font-black text-white tracking-tighter mb-4">
+          A LENDA DO REINO
         </h1>
-        <p className="text-gray-400 text-lg">Tormenta20 — Escolha seu herói</p>
+        <div className="flex items-center justify-center gap-3">
+          <div className="h-px w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
+          <p className="text-amber-500 text-sm font-black uppercase tracking-[0.4em]">Tormenta20 Roleplay</p>
+          <div className="h-px w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
+        </div>
       </div>
 
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-6xl relative z-10">
         {characters.length === 0 ? (
-          <div className="text-center py-16 text-gray-500">
-            <div className="text-6xl mb-4">⚔️</div>
-            <p className="text-lg mb-2">Nenhum personagem criado ainda.</p>
-            <p className="text-sm">Crie seu primeiro herói para começar a aventura.</p>
+          <div className="text-center py-20 bg-gray-900/20 border border-dashed border-gray-800 rounded-[3rem]">
+            <div className="text-7xl mb-6 opacity-30 grayscale saturate-0 backdrop-blur-sm bg-amber-500 w-24 h-24 mx-auto rounded-full flex items-center justify-center">⚔️</div>
+            <p className="text-white text-xl font-black uppercase tracking-widest">A taverna está vazia</p>
+            <p className="text-gray-500 mt-2">Nenhum herói atendeu ao chamado ainda.</p>
+            <button onClick={onNew} className="mt-8 px-10 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-gray-900 font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+              Criar Primeiro Herói
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {characters.map((char, idx) => {
               const cls = CLASSES[char.classe];
               const race = RACES[char.raca];
-              const spriteKey = `${char.raca}_${char.classe}`;
-              const sprite = SPRITE_MAP[spriteKey] || SPRITE_MAP[`humano_${char.classe}`];
               const s = char.stats || {};
               return (
-                <div key={idx} className="bg-gray-800/80 border border-gray-700 rounded-2xl p-4 flex flex-col gap-3 hover:border-amber-700/60 transition-all">
-                  <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-xl bg-gray-900 border border-amber-700/40 flex items-center justify-center overflow-hidden shrink-0">
-                      {sprite
-                        ? <img src={sprite} alt="" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
-                        : <span className="text-2xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
-                      }
+                <div 
+                  key={idx} 
+                  className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative"
+                >
+                  <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl group-hover:opacity-10 transition-opacity">
+                    {CLASS_ICONS[char.classe]}
+                  </div>
+
+                  <div className="flex items-center gap-5">
+                    <div className="w-20 h-20 rounded-3xl bg-gray-950 border border-gray-800 flex items-center justify-center text-4xl shadow-2xl">
+                       {CLASS_ICONS[char.classe] || '⚔️'}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-white truncate">{char.nome}</p>
-                      <p className="text-[11px] text-gray-400">{RACE_ICONS[char.raca]} {race?.nome || char.raca} · {CLASS_ICONS[char.classe]} {cls?.nome || char.classe}</p>
-                      <p className="text-[10px] text-gray-500">Nível 1</p>
+                      <p className="text-2xl font-black text-white truncate tracking-tight">{char.nome}</p>
+                      <p className="text-xs font-black text-amber-500/80 uppercase tracking-widest mt-1">
+                        {race?.nome} · {cls?.nome}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-1 text-center">
-                    {[['PV', s.pv, 'text-red-400'], ['PM', s.pm, 'text-blue-400'], ['DEF', s.def, 'text-sky-400'], ['ATK', s.atk != null ? (s.atk >= 0 ? '+' : '') + s.atk : '?', 'text-orange-400']].map(([l, v, c]) => (
-                      <div key={l} className="bg-gray-900 rounded-lg py-1.5">
-                        <div className={`font-bold text-sm ${c}`}>{v ?? '?'}</div>
-                        <div className="text-[9px] text-gray-600">{l}</div>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-4 gap-2">
+                     {[
+                       { l: 'PV', v: s.pv, c: 'text-red-400' },
+                       { l: 'PM', v: s.pm, c: 'text-blue-400' },
+                       { l: 'DEF', v: s.def, c: 'text-sky-400' },
+                       { l: 'ATK', v: s.atk != null ? (s.atk >= 0 ? '+' : '') + s.atk : '?', c: 'text-orange-400' }
+                     ].map(stat => (
+                       <div key={stat.l} className="bg-gray-950/80 rounded-2xl py-3 border border-gray-800/50 shadow-inner flex flex-col items-center">
+                         <span className={`text-base font-black ${stat.c}`}>{stat.v ?? '?'}</span>
+                         <span className="text-[9px] font-black text-gray-600 uppercase tracking-tighter">{stat.l}</span>
+                       </div>
+                     ))}
                   </div>
 
-                  <div className="flex gap-2">
-                    <button onClick={() => onPlay(char)} className="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-gray-900 font-bold text-sm transition-all">
-                      ▶ Jogar
+                  <div className="flex gap-3 mt-auto">
+                    <button onClick={() => onPlay(char)} className="flex-[3] py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-900/20 active:scale-95">
+                      Jogar
                     </button>
-                    <button onClick={() => onDelete(idx)} className="px-3 py-2 rounded-xl border border-gray-600 hover:border-red-600 hover:text-red-400 text-gray-500 text-sm transition-all">
+                    <button onClick={() => onDelete(idx)} className="flex-1 py-4 rounded-2xl bg-gray-950/80 border border-gray-800 hover:border-red-600 hover:text-red-500 text-gray-700 transition-all active:scale-90">
                       🗑
                     </button>
                   </div>
@@ -1110,12 +1810,11 @@ function CharacterLibrary({ characters, onPlay, onDelete, onNew }) {
         )}
 
         <div className="flex justify-center">
-          <button
-            onClick={onNew}
-            className="px-8 py-3 rounded-xl bg-gradient-to-r from-amber-700 to-amber-600 hover:from-amber-600 hover:to-amber-500 text-gray-900 font-bold text-base transition-all shadow-lg shadow-amber-900/30"
-          >
-            ✨ Criar Novo Personagem
-          </button>
+           <button onClick={onNew} className="group relative flex items-center gap-4 px-12 py-5 rounded-full bg-white text-gray-950 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="relative z-10 text-xl">+</span>
+              <span className="relative z-10">Criar Novo Herói</span>
+           </button>
         </div>
       </div>
     </div>
@@ -1181,9 +1880,30 @@ export function CharacterCreation({ onComplete }) {
   }
 
   const canGoNext = useMemo(() => {
-    if (step === 4) return stats.pontosDisponiveis >= 0;
+    if (step === 2) return !!char.origem;
+    if (step === 4) {
+        if (char.attrMethod === 'buy') return stats.pontosDisponiveis >= 0;
+        return char.rolagens.length === 6 && char.rolagens.every(r => r.assignedTo);
+    }
+    if (step === 5) return char.origemBeneficios?.length === 2;
+    if (step === 6) {
+      const cls = CLASSES[char.classe];
+      const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
+      const chosen = Object.keys(char.periciasObrigEscolha || {}).length;
+      return chosen === orChoices.length;
+    }
+    if (step === 7) {
+      const intBonus = Math.max(0, stats.attrs.INT || 0);
+      const cls = CLASSES[char.classe];
+      const fixed = cls?.periciasObrigatorias?.filter(s => typeof s === 'string') || [];
+      const chosenObrig = Object.values(char.periciasObrigEscolha || {});
+      const originP = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
+      const alreadyTrained = [...new Set([...fixed, ...chosenObrig, ...originP])];
+      const currentExtras = char.pericias.filter(p => !alreadyTrained.includes(p));
+      return currentExtras.length === intBonus;
+    }
     return true;
-  }, [step, stats]);
+  }, [step, char, stats]);
 
   if (view === 'library') {
     return (
@@ -1230,8 +1950,10 @@ export function CharacterCreation({ onComplete }) {
           {step === 2 && <StepOrigin char={char} onChange={updateChar} />}
           {step === 3 && <StepDeus char={char} onChange={updateChar} />}
           {step === 4 && <StepAttributes char={char} onChange={updateChar} stats={stats} />}
-          {step === 5 && <StepPericias char={char} onChange={updateChar} stats={stats} />}
-          {step === 6 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
+          {step === 5 && <StepOrigemBeneficios char={char} onChange={updateChar} stats={stats} />}
+          {step === 6 && <StepClassePericias char={char} onChange={updateChar} stats={stats} />}
+          {step === 7 && <StepIntPericias char={char} onChange={updateChar} stats={stats} />}
+          {step === 8 && <StepReview char={char} onChange={updateChar} stats={stats} onSave={handleSave} onPlay={handleSaveAndPlay} />}
         </div>
 
         {/* Right: Live preview — desktop only */}
@@ -1290,10 +2012,14 @@ export function CharacterCreation({ onComplete }) {
           {step === 4 && stats.pontosDisponiveis > 0 && (
             <span className="text-amber-500">{stats.pontosDisponiveis} pontos para distribuir</span>
           )}
-          {step === 5 && (() => {
-            const cls = CLASSES[char.classe];
-            const rem = (cls?.pericias || 2) - char.pericias.length;
-            return rem > 0 ? <span className="text-amber-500">{rem} perícia{rem > 1 ? 's' : ''} para escolher</span> : null;
+          {step === 5 && char.origemBeneficios?.length < 2 && (
+            <span className="text-indigo-400">Selecione 2 benefícios de {ORIGENS[char.origem]?.nome}</span>
+          )}
+          {step === 7 && (() => {
+            const intBonus = Math.max(0, stats.attrs.INT || 0);
+            const extraCount = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b))].includes(p))).length;
+            const rem = intBonus - extraCount;
+            return rem > 0 ? <span className="text-blue-400">{rem} perícia{rem > 1 ? 's' : ''} extra{rem > 1 ? 's' : ''} para escolher</span> : null;
           })()}
         </div>
 

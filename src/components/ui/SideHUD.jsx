@@ -1,34 +1,65 @@
 ﻿import React from "react";
 import HealthBar from "../HealthBar";
 
-// HUD lateral simplificado (compatível com o store atual)
-export default function SideHUD({ hero }) {
-  if (!hero) return null;
+// HUD lateral (compatível com PixelRPG.jsx)
+export default function SideHUD({ player, pvMax, pmMax, atk, def }) {
+  if (!player) return null;
   return (
-    <div className="w-1/4 bg-gray-900 p-4 border-r border-gray-700 flex flex-col">
-      <h2 className="text-xl font-bold mb-4">{hero.name}</h2>
-      <p>Nivel: {hero.level}</p>
+    <div className="w-1/4 bg-gray-900 p-4 border-r border-gray-700 flex flex-col overflow-y-auto">
+      <h2 className="text-xl font-bold mb-4">{player.nome}</h2>
+      <p className="text-sm text-gray-400 mb-1">
+        {player.raca} {player.classe} - Nível {player.nivel}
+      </p>
 
-      <div className="mt-4">
-        <p className="font-bold">HP:</p>
-        <HealthBar current={hero.hp} max={hero.maxHp} colorClass="bg-red-500" />
-        <p className="font-bold mt-2">MP:</p>
-        <HealthBar current={hero.mp} max={hero.maxMp} colorClass="bg-blue-500" />
+      <div className="mt-4 space-y-3">
+        <div>
+          <p className="text-xs font-bold text-gray-400 uppercase">PV</p>
+          <HealthBar
+            current={player.hp}
+            max={Math.max(1, pvMax)}
+            colorClass="bg-red-500"
+          />
+          <p className="text-[10px] text-right mt-1 text-gray-400">
+            {player.hp} / {Math.floor(pvMax)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs font-bold text-gray-400 uppercase">PM</p>
+          <HealthBar
+            current={player.mp}
+            max={Math.max(1, pmMax)}
+            colorClass="bg-blue-500"
+          />
+          <p className="text-[10px] text-right mt-1 text-gray-400">
+            {player.mp} / {Math.floor(pmMax)}
+          </p>
+        </div>
       </div>
 
-      <div className="mt-4">
-        <p className="font-bold">Atributos</p>
-        <p>Ataque: {hero.stats?.attack ?? '-'}</p>
-        <p>Defesa: {hero.stats?.defense ?? '-'}</p>
-        <p>Velocidade: {hero.stats?.speed ?? '-'}</p>
+      <div className="mt-6 space-y-2 border-t border-gray-800 pt-4">
+        <p className="text-xs font-bold text-gray-400 uppercase mb-2">Estatísticas</p>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Ataque:</span>
+          <span className="font-mono text-yellow-500">{atk}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Defesa:</span>
+          <span className="font-mono text-blue-500">{def}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-400">Ouro:</span>
+          <span className="font-mono text-yellow-600">{player.ouro}</span>
+        </div>
       </div>
 
-      <div className="mt-auto text-sm text-gray-400">
-        <p>Controles:</p>
-        <p>WASD/Setas: Mover</p>
-        <p>M: Minimap</p>
+      <div className="mt-auto pt-6 text-[10px] text-gray-500 space-y-1">
+        <p className="font-bold text-gray-400 uppercase mb-1">Controles</p>
+        <p>Setas: Mover</p>
+        <p>Enter: Atacar</p>
+        <p>I: Inventário</p>
         <p>Esc: Pausar</p>
       </div>
     </div>
   );
 }
+
