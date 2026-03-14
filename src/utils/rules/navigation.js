@@ -22,22 +22,21 @@ export function canGoNext(step, char, stats) {
         const ok = !!char.choices?.suraggel;
         return { ok, reason: ok ? null : 'Selecione sua linhagem (Aggelus ou Sulfure).' };
       }
-      
-      if (r === 'humano') {
+
+      if (['humano', 'lefou', 'osteon'].includes(r)) {
         const tipo = char.choices?.tipoVersatilidade || 'pericias';
-        if (tipo === 'poder') {
-          const hasSkill = (char.choices?.pericias || []).length === 1;
-          const hasPower = !!char.choices?.herancaPower;
-          const ok = hasSkill && hasPower;
-          return { ok, reason: ok ? null : 'Selecione 1 perícia e 1 poder geral.' };
-        } else {
-          const ok = (char.choices?.pericias || []).length === 2;
-          return { ok, reason: ok ? null : 'Selecione 2 perícias da sua herança.' };
-        }
+        const requiredSkills = r === 'osteon' ? (tipo === 'poder' ? 0 : 1) : (tipo === 'poder' ? 1 : 2);
+        
+        const hasSkills = (char.choices?.pericias || []).length === requiredSkills;
+        const hasPower = tipo === 'poder' ? (r === 'lefou' ? true : !!char.choices?.herancaPower) : true;
+        
+        const ok = hasSkills && hasPower;
+        const msg = r === 'osteon' ? 'Selecione sua perícia ou poder geral.' : `Selecione ${requiredSkills} perícia(s) ${tipo === 'poder' ? 'e 1 poder' : ''}.`;
+        return { ok, reason: ok ? null : msg };
       }
 
-      if (['lefou', 'sereia', 'silfide', 'kliren', 'osteon', 'qareen'].includes(r)) {
-        const required = (r === 'humano' || r === 'lefou' || r === 'sereia' || r === 'silfide') ? 2 : 1;
+      if (['sereia', 'silfide', 'kliren', 'qareen'].includes(r)) {
+        const required = (r === 'sereia' || r === 'silfide') ? 2 : 1;
         const selected = char.choices?.pericias?.length || 0;
         const ok = selected === required;
         return { ok, reason: ok ? null : `Selecione ${required} competências da sua herança.` };

@@ -243,18 +243,91 @@ export function StepHeritage() {
           </motion.div>
         )}
         {isLefou && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {renderSelection("Deformidades da Tormenta", ALL_PERICIAS, 2, "A mácula da Tormenta concede um bônus de +2 em duas perícias à sua escolha.")}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+            <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 backdrop-blur-md">
+              <h3 className="text-sm font-black text-red-400 uppercase tracking-[0.2em] mb-4">Deformidade</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { id: 'pericias', label: '2 Perícias (+2)', icon: '👁️' },
+                  { id: 'poder', label: '1 Perícia + 1 Poder Tormenta', icon: '👹' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => updateChar({ choices: { ...currentChoices, tipoVersatilidade: opt.id, pericias: [], herancaPower: null } })}
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 font-black text-sm ${
+                      (currentChoices.tipoVersatilidade || 'pericias') === opt.id
+                        ? 'border-red-400 bg-red-600 text-white'
+                        : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-red-500/30'
+                    }`}
+                  >
+                    <span>{opt.icon}</span> {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {renderSelection(
+              "Bônus de Deformidade", 
+              ALL_PERICIAS, 
+              (currentChoices.tipoVersatilidade === 'poder' ? 1 : 2), 
+              "A mácula da Tormenta concede bônus em suas competências."
+            )}
+            {currentChoices.tipoVersatilidade === 'poder' && (
+              <div className="bg-red-950/40 p-8 rounded-[2.5rem] border border-red-500/20 text-center">
+                <p className="text-red-400 font-black text-sm uppercase mb-2">Poder da Tormenta</p>
+                <p className="text-slate-400 text-xs">Poderes da Tormenta serão selecionados no Passo de Poderes (XI). Esta escolha libera o slot.</p>
+              </div>
+            )}
           </motion.div>
         )}
+
         {isKliren && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             {renderSelection("Híbrido", ALL_PERICIAS, 1, "Sua natureza dual permite treinamento imediato em uma perícia extra.")}
           </motion.div>
         )}
+
         {isOsteon && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {renderSelection("Memória Póstuma", ALL_PERICIAS, 1, "Fragmentos de sua vida passada permitem que você recupere uma competência.")}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+            <div className="bg-slate-900/60 rounded-[2.5rem] border border-white/5 p-8">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Memória Póstuma</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { id: 'pericias', label: '1 Perícia extra', icon: '📜' },
+                  { id: 'poder', label: '1 Poder Geral', icon: '✨' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => updateChar({ choices: { ...currentChoices, tipoVersatilidade: opt.id, pericias: [], herancaPower: null } })}
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 font-black text-sm ${
+                      (currentChoices.tipoVersatilidade || 'pericias') === opt.id
+                        ? 'border-slate-400 bg-slate-700 text-white'
+                        : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-slate-500/30'
+                    }`}
+                  >
+                    <span>{opt.icon}</span> {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {currentChoices.tipoVersatilidade === 'poder' ? (
+               <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+                 <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Escolha seu Poder Póstumo</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {Object.values(GENERAL_POWERS).flat().map(p => {
+                      const stats = computeStats(char);
+                      const isSelected = currentChoices.herancaPower?.nome === p.nome;
+                      if (!checkPowerEligibility(p, char, stats).ok && !isSelected) return null;
+                      return (
+                        <button key={p.nome} onClick={() => setChoices({ ...currentChoices, herancaPower: isSelected ? null : p })} className={`p-4 rounded-2xl border-2 text-left text-xs transition-all ${isSelected ? 'border-purple-400 bg-purple-600 text-white' : 'border-white/5 bg-gray-950/40 text-slate-400'}`}>
+                          <p className="font-black">{p.nome}</p>
+                        </button>
+                      );
+                    })}
+                 </div>
+               </div>
+            ) : (
+              renderSelection("Herança de Vida", ALL_PERICIAS, 1, "Recupere uma competência de sua vida passada.")
+            )}
           </motion.div>
         )}
         {isQareen && (
@@ -271,6 +344,25 @@ export function StepHeritage() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             {renderSelection("Magia das Fadas", ["Criar Ilusão", "Enfeitiçar", "Luz", "Sono"], 2, "O encanto feérico é natural para você. Escolha duas magias nativas das fadas.")}
           </motion.div>
+        )}
+        {raca === 'golem' && (
+           <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+             <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">🤖</div>
+             <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Propósito de Criação</h3>
+             <p className="text-[11px] text-slate-400 font-medium mb-6">Golems não possuem origem, mas recebem um bônus especial de sua fabricação. Escolha um poder geral.</p>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {Object.values(GENERAL_POWERS).flat().map(p => {
+                  const stats = computeStats(char);
+                  const isSelected = currentChoices.herancaPower?.nome === p.nome;
+                  if (!checkPowerEligibility(p, char, stats).ok && !isSelected) return null;
+                  return (
+                    <button key={p.nome} onClick={() => setChoices({ ...currentChoices, herancaPower: isSelected ? null : p })} className={`p-4 rounded-2xl border-2 text-left text-xs transition-all ${isSelected ? 'border-purple-400 bg-purple-600 text-white' : 'border-white/5 bg-gray-950/40 text-slate-400'}`}>
+                      <p className="font-black">{p.nome}</p>
+                    </button>
+                  );
+                })}
+             </div>
+           </div>
         )}
       </AnimatePresence>
     </div>
