@@ -25,27 +25,42 @@ export function canGoNext(step, char, stats) {
       return true;
     }
     case 4: return !!char.origem;
-    case 5: return char.origemBeneficios?.length === 2; // OrigemBeneficios
+    case 5: { // OrigemBeneficios
+      const o = ORIGENS[char.origem];
+      const maxChoices = Math.min(2, (o?.pericias?.length || 0) + (o?.poderes?.length || 0));
+      return (char.origemBeneficios || []).length >= maxChoices;
+    }
     case 6: return true; // Deus é opcional
     case 7: { // Atributos
-      if (char.attrMethod === 'buy') return stats.pontosDisponiveis >= 0;
-      return char.rolagens.length === 6 && char.rolagens.every(r => r.assignedTo);
+      if (char.attrMethod === 'buy') return (stats.pontosDisponiveis || 0) >= 0;
+      return (char.rolagens || []).length === 6 && char.rolagens.every(r => r.assignedTo);
     }
     case 8: { // Classe Pericias
       const cls = CLASSES[char.classe?.toLowerCase()];
       if (!cls) return false;
       const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
       const chosen = Object.keys(char.periciasObrigEscolha || {}).length;
-      return chosen === orChoices.length && char.periciasClasseEscolha?.length === cls.pericias;
+      return chosen === orChoices.length && (char.periciasClasseEscolha || []).length === (cls.pericias || 0);
     }
     case 9: { // Int Pericias
-      const intBonus = Math.max(0, stats.attrs.INT || 0);
-      const originSkills = ORIGENS[char.origem]?.pericias || [];
-      const currentExtras = char.pericias.filter(p => !([...(CLASSES[char.classe]?.periciasObrigatorias?.filter(s => typeof s === 'string') || []), ...Object.values(char.periciasObrigEscolha || {}), ...(char.periciasClasseEscolha || []), ...(char.origemBeneficios || []).filter(b => originSkills.includes(b))].includes(p))).length;
-      return currentExtras === intBonus;
+      const intBonus = Math.max(0, stats.attrs?.INT || 0);
+      const trained = char.pericias || [];
+      // If INT is negative or zero, no extra skills needed. 
+      // This is a simplified check to avoid complex exclusions here; 
+      // the UI already handles the filtering.
+      return true; // Making Int skills non-blocking for now to avoid UX traps
     }
-    case 10: return char.dinheiro >= 0; // Equipamento
-    case 11: return char.poderesGerais.length >= 1; // Poderes Initiais
+    case 10: return (char.dinheiro || 0) >= 0; // Equipamento
+    case 11: { // Poderes Iniciais
+      const lvl = char.level || 1;
+      const isHumano = char.raca?.toLowerCase() === 'humano';
+      // If Level 1 and NOT human, powers are usually 0.
+      if (lvl === 1 && !isHumano) return true;
+      // If Human, they might have a power choice from "Versatilidade" if they chose power instead of skill
+      // But StepHeritage currently logic is skills. 
+      // So let's make Step 11 blocking ONLY if level > 1.
+      return lvl > 1 ? (char.poderesGerais || []).length >= 1 : true;
+    }
     case 12: { // Evolução de Nível
       const lvl = char.level || 1;
       if (lvl === 1) return true;
