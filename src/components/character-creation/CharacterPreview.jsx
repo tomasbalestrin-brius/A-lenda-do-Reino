@@ -190,11 +190,16 @@ export function CharacterPreview({ char, stats }) {
       )}
 
       {/* Poderes */}
-      {(char.poderesGerais || []).length > 0 && (
+      {( (char.poderesGerais || []).length > 0 || char.choices?.herancaPower ) && (
         <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
           <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Poderes Gerais</p>
           <div className="flex flex-wrap gap-1">
-            {char.poderesGerais.map(p => (
+            {char.choices?.herancaPower && (
+              <span className="text-[9px] bg-purple-900/40 text-purple-300 border border-purple-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                ✧ {char.choices.herancaPower.nome}
+              </span>
+            )}
+            {char.poderesGerais?.map(p => (
               <span key={p.nome} className="text-[9px] bg-blue-900/40 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
                 ✨ {p.nome}
               </span>

@@ -61,8 +61,9 @@ export function computeStats(char) {
 
   const allPowers = [
     ...(char.poderesGerais || []).map(p => p.nome),
-    ...Object.values(char.poderesProgressao || {}).filter(Boolean)
-  ];
+    ...Object.values(char.poderesProgressao || {}).filter(Boolean),
+    char.choices?.herancaPower?.nome
+  ].filter(Boolean);
 
   const hasVitalidade = allPowers.includes("Vitalidade");
   const hasVontadeFerro = allPowers.includes("Vontade de Ferro");

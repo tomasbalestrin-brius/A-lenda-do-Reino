@@ -2,6 +2,9 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import RACES from '../../../data/races';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { GENERAL_POWERS } from '../../../data/powers';
+import { computeStats } from '../../../utils/rules/characterStats';
+import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 
 const RACE_ICONS = {
   humano: '🧑', anao: '⛏️', elfo: '🌟', dahllan: '🌺',
@@ -161,8 +164,82 @@ export function StepHeritage() {
 
       <AnimatePresence>
         {isHumano && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {renderSelection("Versatilidade Humana", ALL_PERICIAS, 2, "Seu povo é conhecido pela adaptabilidade única. Escolha duas perícias adicionais.")}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+            <div className="bg-blue-950/20 rounded-[2.5rem] border border-blue-500/10 p-8 backdrop-blur-md">
+              <h3 className="text-sm font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Tipo de Versatilidade</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { id: 'pericias', label: '2 Perícias', icon: '📚' },
+                  { id: 'poder', label: '1 Perícia + 1 Poder', icon: '⚔️' }
+                ].map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => updateChar({ choices: { ...currentChoices, tipoVersatilidade: opt.id, pericias: [], herancaPower: null } })}
+                    className={`p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-3 font-black text-sm ${
+                      (currentChoices.tipoVersatilidade || 'pericias') === opt.id
+                        ? 'border-blue-400 bg-blue-600 text-white'
+                        : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-blue-500/30'
+                    }`}
+                  >
+                    <span>{opt.icon}</span> {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {renderSelection(
+              "Perícias Extras", 
+              ALL_PERICIAS, 
+              (currentChoices.tipoVersatilidade === 'poder' ? 1 : 2), 
+              "Escolha as competências adicionais do seu povo."
+            )}
+
+            {currentChoices.tipoVersatilidade === 'poder' && (
+              <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+                <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">⚔️</div>
+                <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+                  <div>
+                    <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-1">Poder Geral</h3>
+                    <p className="text-[11px] text-slate-400 font-medium tracking-wide">Troque uma perícia por um treinamento de combate ou habilidade especial.</p>
+                  </div>
+                  <div className={`px-6 py-2 rounded-full text-xs font-black border-2 transition-all shadow-lg ${
+                    currentChoices.herancaPower 
+                      ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+                      : 'bg-purple-950/40 border-purple-500/40 text-purple-400'
+                  }`}>
+                    {currentChoices.herancaPower ? '1 / 1 Selecionado' : '0 / 1 Selecionado'}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {Object.values(GENERAL_POWERS).flat().map(p => {
+                    const stats = computeStats(char);
+                    const eligibility = checkPowerEligibility(p, char, stats);
+                    const isSelected = currentChoices.herancaPower?.nome === p.nome;
+                    
+                    if (!eligibility.ok && !isSelected) return null; // Only show eligible powers or the selected one
+
+                    return (
+                      <motion.button
+                        key={p.nome}
+                        whileHover={{ y: -2 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setChoices({ ...currentChoices, herancaPower: isSelected ? null : p })}
+                        className={`p-5 rounded-2xl border-2 text-left transition-all flex flex-col gap-2 ${
+                          isSelected 
+                            ? 'border-purple-400 bg-purple-600 text-white shadow-xl shadow-purple-900/20' 
+                            : 'border-white/5 bg-gray-950/40 text-slate-400 hover:border-purple-500/30'
+                        }`}
+                      >
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-purple-200' : 'text-purple-400'}`}>Poder</span>
+                        <span className="text-sm font-black">{p.nome}</span>
+                        <span className={`text-[10px] leading-relaxed font-medium ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>{p.descricao}</span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
         {isLefou && (

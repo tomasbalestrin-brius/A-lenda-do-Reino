@@ -22,7 +22,21 @@ export function canGoNext(step, char, stats) {
         const ok = !!char.choices?.suraggel;
         return { ok, reason: ok ? null : 'Selecione sua linhagem (Aggelus ou Sulfure).' };
       }
-      if (['humano', 'lefou', 'sereia', 'silfide', 'kliren', 'osteon', 'qareen'].includes(r)) {
+      
+      if (r === 'humano') {
+        const tipo = char.choices?.tipoVersatilidade || 'pericias';
+        if (tipo === 'poder') {
+          const hasSkill = (char.choices?.pericias || []).length === 1;
+          const hasPower = !!char.choices?.herancaPower;
+          const ok = hasSkill && hasPower;
+          return { ok, reason: ok ? null : 'Selecione 1 perícia e 1 poder geral.' };
+        } else {
+          const ok = (char.choices?.pericias || []).length === 2;
+          return { ok, reason: ok ? null : 'Selecione 2 perícias da sua herança.' };
+        }
+      }
+
+      if (['lefou', 'sereia', 'silfide', 'kliren', 'osteon', 'qareen'].includes(r)) {
         const required = (r === 'humano' || r === 'lefou' || r === 'sereia' || r === 'silfide') ? 2 : 1;
         const selected = char.choices?.pericias?.length || 0;
         const ok = selected === required;
