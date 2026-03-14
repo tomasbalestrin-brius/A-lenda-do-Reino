@@ -4,7 +4,7 @@ import { ORIGENS } from '../../data/origins';
 /**
  * Verifica se o personagem pode avançar para o próximo passo da criação.
  */
-export function canAdvanceStep(step, char, stats) {
+export function canGoNext(step, char, stats) {
   switch (step) {
     case 0: return !!char.raca;
     case 1: {

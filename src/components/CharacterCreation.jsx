@@ -49,7 +49,7 @@ const STEP_LABELS = [
 ];
 const MAX_STEPS = STEP_LABELS.length;
 
-export function CharacterCreation({ onComplete }) {
+export default function CharacterCreation({ onComplete }) {
   const { char, updateChar, resetChar, loadChar } = useCharacterStore();
   const [view, setView] = useState('library');
   const [step, setStep] = useState(0);
