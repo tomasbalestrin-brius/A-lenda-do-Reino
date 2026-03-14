@@ -211,8 +211,30 @@ export function StepHeritage() {
                   </div>
                 </div>
 
+                <div className="flex flex-wrap gap-2 mb-6">
+                  {[
+                    { id: 'combate', label: 'Combate', icon: '⚔️' },
+                    { id: 'destino', label: 'Destino', icon: '🔮' },
+                    { id: 'magia', label: 'Magia', icon: '✨' },
+                    { id: 'tormenta', label: 'Tormenta', icon: '👹' },
+                  ].map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => setChoices({ ...currentChoices, activePowerTab: t.id })}
+                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
+                        (currentChoices.activePowerTab || 'combate') === t.id 
+                          ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/40' 
+                          : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-purple-500/30'
+                      }`}
+                    >
+                      <span className="text-xs">{t.icon}</span>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {Object.values(GENERAL_POWERS).flat().map(p => {
+                  {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map(p => {
                     const stats = computeStats(char);
                     const eligibility = checkPowerEligibility(p, char, stats);
                     const isSelected = currentChoices.herancaPower?.nome === p.nome;
@@ -312,8 +334,27 @@ export function StepHeritage() {
             {currentChoices.tipoVersatilidade === 'poder' ? (
                <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
                  <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Escolha seu Poder Póstumo</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {Object.values(GENERAL_POWERS).flat().map(p => {
+                 <div className="flex flex-wrap gap-2 mb-6">
+                    {[
+                      { id: 'combate', label: 'Combate', icon: '⚔️' },
+                      { id: 'destino', label: 'Destino', icon: '🔮' },
+                      { id: 'magia', label: 'Magia', icon: '✨' },
+                    ].map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => setChoices({ ...currentChoices, activePowerTab: t.id })}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
+                          (currentChoices.activePowerTab || 'combate') === t.id 
+                            ? 'bg-purple-600 border-purple-400 text-white shadow-lg' 
+                            : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-purple-500/30'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                     {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map(p => {
                       const stats = computeStats(char);
                       const isSelected = currentChoices.herancaPower?.nome === p.nome;
                       if (!checkPowerEligibility(p, char, stats).ok && !isSelected) return null;
@@ -346,12 +387,33 @@ export function StepHeritage() {
           </motion.div>
         )}
         {raca === 'golem' && (
-           <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
-             <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">🤖</div>
-             <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Propósito de Criação</h3>
-             <p className="text-[11px] text-slate-400 font-medium mb-6">Golems não possuem origem, mas recebem um bônus especial de sua fabricação. Escolha um poder geral.</p>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {Object.values(GENERAL_POWERS).flat().map(p => {
+             <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+              <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">🤖</div>
+              <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Propósito de Criação</h3>
+              <p className="text-[11px] text-slate-400 font-medium mb-6">Golems não possuem origem, mas recebem um bônus especial de sua fabricação. Escolha um poder geral.</p>
+              
+              <div className="flex flex-wrap gap-2 mb-6">
+                {[
+                  { id: 'combate', label: 'Combate', icon: '⚔️' },
+                  { id: 'destino', label: 'Destino', icon: '🔮' },
+                  { id: 'magia', label: 'Magia', icon: '✨' },
+                ].map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => setChoices({ ...currentChoices, activePowerTab: t.id })}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
+                      (currentChoices.activePowerTab || 'combate') === t.id 
+                        ? 'bg-purple-600 border-purple-400 text-white' 
+                        : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-purple-500/30'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                 {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map(p => {
                   const stats = computeStats(char);
                   const isSelected = currentChoices.herancaPower?.nome === p.nome;
                   if (!checkPowerEligibility(p, char, stats).ok && !isSelected) return null;

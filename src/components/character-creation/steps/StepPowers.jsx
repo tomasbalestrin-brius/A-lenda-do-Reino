@@ -8,6 +8,7 @@ export function StepPowers({ stats }) {
   const [activeTab, setActiveTab] = useState('combate');
   
   const types = [
+    { id: 'todos', label: 'Todos', icon: '📜' },
     { id: 'combate', label: 'Combate', icon: '⚔️' },
     { id: 'destino', label: 'Destino', icon: '🔮' },
     { id: 'magia', label: 'Magia', icon: '✨' },
@@ -51,7 +52,10 @@ export function StepPowers({ stats }) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {GENERAL_POWERS[activeTab].map(p => {
+        {(activeTab === 'todos' 
+          ? Object.values(GENERAL_POWERS).flat()
+          : (GENERAL_POWERS[activeTab] || [])
+        ).map(p => {
           const isOwned = char.poderesGerais.some(owned => owned.nome === p.nome);
           const eligibility = checkPowerEligibility(p, char, stats);
           const canSelect = eligibility.ok || isOwned;

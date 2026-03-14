@@ -104,8 +104,9 @@ export function computeStats(char) {
 
   // ATK
   const isRanged = char.classe === 'cacador';
-  const hasLuta = char.pericias.includes('Luta');
-  const hasPontaria = char.pericias.includes('Pontaria');
+  const pericias = char.pericias || [];
+  const hasLuta = pericias.includes('Luta');
+  const hasPontaria = pericias.includes('Pontaria');
   const atk = (isRanged ? attrs.DES : attrs.FOR) + halfLevel + ((isRanged ? hasPontaria : hasLuta) ? 2 : 0);
   
   // Saves

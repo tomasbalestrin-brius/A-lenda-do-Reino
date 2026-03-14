@@ -25,6 +25,7 @@ const getInitialCharState = () => ({
   level: 1, // Start at level 1 by default
   atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
   poderes: [],
+  poderesGerais: [],
   equipamento: [],
   choices: {} // Store generic choices made in steps
 });

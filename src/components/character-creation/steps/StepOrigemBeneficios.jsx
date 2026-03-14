@@ -9,11 +9,13 @@ export function StepOrigemBeneficios({ stats }) {
   
   if (!origem) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-3xl border border-white/5">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;
 
+  const periciasOrigem = origem.pericias || [];
+  const poderesOrigem = origem.poderes || [];
   const choices = char.origemBeneficios || [];
   const max = 2;
 
   function toggle(benefit) {
-    const isSkill = origem.pericias.includes(benefit);
+    const isSkill = periciasOrigem.includes(benefit);
     const has = choices.includes(benefit);
     let next = [...choices];
     let nextPericias = [...char.pericias];
@@ -64,7 +66,7 @@ export function StepOrigemBeneficios({ stats }) {
             <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Perícias de Origem</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
-             {origem.pericias.map(p => {
+             {periciasOrigem.map(p => {
                const isSelected = choices.includes(p);
                const isLocked = choices.length >= max && !isSelected;
                return (
@@ -96,7 +98,7 @@ export function StepOrigemBeneficios({ stats }) {
             <p className="text-[10px] uppercase font-black text-slate-500 tracking-[0.3em]">Poderes de Origem</p>
           </div>
           <div className="grid grid-cols-1 gap-3">
-             {origem.poderes.map(p => {
+             {poderesOrigem.map(p => {
                const isSpecial = origem.poderUnico?.nome.includes(p);
                const isSelected = choices.includes(p);
                const isLocked = choices.length >= max && !isSelected;
