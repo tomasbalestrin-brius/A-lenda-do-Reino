@@ -20,12 +20,13 @@ export function getAllTrainedSkills(char) {
   
   if (char.origem && ORIGENS[char.origem]) {
     const o = ORIGENS[char.origem];
-    char.origemBeneficios.forEach(b => {
-      if (o.pericias.includes(b)) trained.add(b);
+    const beneficios = char.origemBeneficios || [];
+    beneficios.forEach(b => {
+      if (o.pericias && o.pericias.includes(b)) trained.add(b);
     });
   }
   
-  if (char.periciasObrigEscolha) {
+  if (char.periciasObrigEscolha && typeof char.periciasObrigEscolha === 'object') {
      Object.values(char.periciasObrigEscolha).forEach(p => trained.add(p));
   }
   
@@ -55,8 +56,9 @@ export function meetsRequirement(req, char, stats) {
   
   // Poderes Anteriores
   if (req.poder) {
+    const owned = char.poderes || [];
     for (const p of req.poder) {
-      if (!char.poderes.includes(p)) return false;
+      if (!owned.includes(p)) return false;
     }
   }
   
