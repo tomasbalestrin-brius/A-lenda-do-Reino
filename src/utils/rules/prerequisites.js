@@ -1,37 +1,7 @@
 import CLASSES from '../../data/classes';
 import { ORIGENS } from '../../data/origins';
 
-/**
- * Retorna todas as perícias treinadas de um personagem, combinando origens, classes e bônus.
- */
-export function getAllTrainedSkills(char) {
-  const trained = new Set();
-  
-  if (char.pericias) char.pericias.forEach(p => trained.add(p));
-  
-  if (char.classe && CLASSES[char.classe]) {
-    const cl = CLASSES[char.classe];
-    if (cl.periciasObrigatorias) {
-        cl.periciasObrigatorias.forEach(p => {
-            if (typeof p === 'string') trained.add(p);
-        });
-    }
-  }
-  
-  if (char.origem && ORIGENS[char.origem]) {
-    const o = ORIGENS[char.origem];
-    const beneficios = char.origemBeneficios || [];
-    beneficios.forEach(b => {
-      if (o.pericias && o.pericias.includes(b)) trained.add(b);
-    });
-  }
-  
-  if (char.periciasObrigEscolha && typeof char.periciasObrigEscolha === 'object') {
-     Object.values(char.periciasObrigEscolha).forEach(p => trained.add(p));
-  }
-  
-  return trained;
-}
+import { getAllTrainedSkills } from './characterStats';
 
 /**
  * Verifica se um personagem atende a todos os pré-requisitos de um poder.

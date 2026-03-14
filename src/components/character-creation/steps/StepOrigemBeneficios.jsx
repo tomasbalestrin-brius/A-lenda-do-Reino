@@ -83,7 +83,9 @@ export function StepOrigemBeneficios({ stats }) {
                 >
                   <div className="flex items-center justify-between">
                      <span className="font-black text-base tracking-tight uppercase">{p}</span>
-                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border font-black text-xs ${isSelected ? 'bg-white/20 border-white/20' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'}`}>+2</div>
+                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center border font-black text-xs bg-blue-500/10 border-blue-500/20 text-blue-400">
+                        +2
+                     </div>
                   </div>
                 </motion.button>
                );

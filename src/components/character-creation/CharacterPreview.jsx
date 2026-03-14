@@ -72,8 +72,10 @@ export function CharacterPreview({ char, stats }) {
   const race = RACES[char.raca];
   const spriteKey = `${char.raca}_${char.classe}`;
   const sprite = SPRITE_MAP[spriteKey] || SPRITE_MAP[`humano_${char.classe}`] || null;
-  const originSkills = ORIGENS[char.origem]?.pericias || [];
-  const allPericias = [...new Set([...originSkills, ...(char.pericias || [])])];
+  
+  const chosenOriginBenefits = char.origemBeneficios || [];
+  const originPericias = (ORIGENS[char.origem]?.pericias || []).filter(p => chosenOriginBenefits.includes(p));
+  const allPericias = [...new Set([...originPericias, ...(char.pericias || [])])];
 
   return (
     <div className="flex flex-col gap-3 pb-4">
