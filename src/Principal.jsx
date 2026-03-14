@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { CharacterCreation } from "./components/CharacterCreation";
+import CharacterCreation from "./components/CharacterCreation";
 import { SideScrollerGame } from "./canvas/SideScrollerGame";
 import { useGameStore } from "./core/store";
 import "./index.css";
