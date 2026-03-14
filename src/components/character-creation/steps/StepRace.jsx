@@ -28,6 +28,25 @@ const RACE_ICONS = {
   kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
 };
 
+const RACE_IMAGES = {
+  humano: '/assets/images/races/humano.png',
+  anao: '/assets/images/races/anao.png',
+  dahllan: '/assets/images/races/dahllan.png',
+  elfo: '/assets/images/races/elfo.png',
+  goblin: '/assets/images/races/goblin.png',
+  lefou: '/assets/images/races/lefou.png',
+  qareen: '/assets/images/races/qareen.png',
+  minotauro: '/assets/images/races/minotauro.png',
+  osteon: '/assets/images/races/osteon.png',
+  hynne: '/assets/images/races/hynne.png',
+  kliren: '/assets/images/races/kliren.png',
+  trog: '/assets/images/races/trog.png',
+  medusa: '/assets/images/races/medusa.png',
+  sereia: '/assets/images/races/sereia.png',
+  suraggel: '/assets/images/races/suraggel_aggelus.png',
+  silfide: '/assets/images/races/silfide.png',
+};
+
 export function StepRace({ onNext }) {
   const { char, updateChar } = useCharacterStore();
   const races = Object.entries(RACES);
@@ -48,21 +67,31 @@ export function StepRace({ onNext }) {
             <div 
               key={id}
               onClick={() => updateChar({ modalRace: id })}
-              className={`group relative overflow-hidden rounded-[2rem] border transition-all cursor-pointer flex flex-col items-center justify-center p-6 h-36 md:h-44 ${
+              className={`group relative overflow-hidden rounded-[2.5rem] border transition-all cursor-pointer flex flex-col items-center justify-center h-44 md:h-56 ${
                 isSelected 
                   ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02]' 
                   : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/20'
               }`}
             >
-              <div className={`text-4xl md:text-5xl mb-3 transition-transform duration-500 ${isSelected ? 'scale-110 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'group-hover:scale-110 group-hover:-translate-y-1'}`}>
+              {/* Image Background */}
+              <div className="absolute inset-0 z-0">
+                <img 
+                  src={RACE_IMAGES[id] || '/assets/images/placeholder.png'} 
+                  alt="" 
+                  className={`w-full h-full object-cover transition-all duration-700 opacity-20 group-hover:opacity-40 group-hover:scale-110 ${isSelected ? 'opacity-50' : ''}`}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
+              </div>
+
+              <div className={`relative z-10 text-4xl md:text-5xl mb-3 transition-transform duration-500 ${isSelected ? 'scale-110 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'group-hover:scale-110 group-hover:-translate-y-1'}`}>
                  {RACE_ICONS[id] || '👤'}
               </div>
-              <span className={`font-black text-[10px] md:text-xs uppercase tracking-[0.2em] text-center ${isSelected ? 'text-amber-400' : 'text-slate-300 group-hover:text-white'}`}>
+              <span className={`relative z-10 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] text-center ${isSelected ? 'text-amber-400' : 'text-slate-300 group-hover:text-white'}`}>
                  {race.nome}
               </span>
               
               {isSelected && (
-                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+                <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)] z-20" />
               )}
             </div>
           );

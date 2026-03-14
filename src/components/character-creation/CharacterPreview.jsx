@@ -21,23 +21,25 @@ const CLASS_ICONS = {
 };
 
 const RACE_IMAGES = {
-  humano: '/assets/images/races/humano.jpg',
-  anao: '/assets/images/races/anao.jpg',
-  dahllan: '/assets/images/races/dahllan.jpg',
-  elfo: '/assets/images/races/elfo.jpg',
-  goblin: '/assets/images/races/goblin.jpg',
-  lefou: '/assets/images/races/lefou.jpg',
-  qareen: '/assets/images/races/qareen.jpg',
-  minotauro: '/assets/images/races/minotauro.jpg',
-  hynne: '/assets/images/races/hynne.jpg',
-  golem: '/assets/images/races/golem.jpg',
-  osteon: '/assets/images/races/osteon.jpg',
-  trog: '/assets/images/races/trog.jpg',
-  kliren: '/assets/images/races/kliren.jpg',
-  medusa: '/assets/images/races/medusa.jpg',
-  sereia: '/assets/images/races/sereia.jpg',
-  silfide: '/assets/images/races/silfide.jpg',
-  suraggel: '/assets/images/races/suraggel.jpg',
+  humano: '/assets/images/races/humano.png',
+  anao: '/assets/images/races/anao.png',
+  dahllan: '/assets/images/races/dahllan.png',
+  elfo: '/assets/images/races/elfo.png',
+  goblin: '/assets/images/races/goblin.png',
+  lefou: '/assets/images/races/lefou.png',
+  qareen: '/assets/images/races/qareen.png',
+  minotauro: '/assets/images/races/minotauro.png',
+  hynne: '/assets/images/races/hynne.png',
+  golem: '/assets/images/races/golem.png',
+  osteon: '/assets/images/races/osteon.png',
+  trog: '/assets/images/races/trog.png', // Fallback or missing
+  kliren: '/assets/images/races/kliren.png',
+  medusa: '/assets/images/races/medusa.png',
+  sereia: '/assets/images/races/sereia.png',
+  silfide: '/assets/images/races/silfide.png',
+  suraggel: '/assets/images/races/suraggel_aggelus.png', // Default to aggelus or handle variably
+  'suraggel_aggelus': '/assets/images/races/suraggel_aggelus.png',
+  'suraggel_sulfure': '/assets/images/races/suraggel_sulfure.png',
 };
 
 const SPRITE_MAP = {
