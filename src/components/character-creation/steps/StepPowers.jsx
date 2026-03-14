@@ -9,8 +9,9 @@ export function StepPowers({ stats }) {
   
   const types = [
     { id: 'combate', label: 'Combate', icon: '⚔️' },
+    { id: 'destino', label: 'Destino', icon: '🔮' },
     { id: 'magia', label: 'Magia', icon: '✨' },
-    { id: 'pericia', label: 'Perícias', icon: '📚' },
+    { id: 'tormenta', label: 'Tormenta', icon: '👹' },
     { id: 'concedidos', label: 'Concedidos', icon: '🙏' },
   ];
 

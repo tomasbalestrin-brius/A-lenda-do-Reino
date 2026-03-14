@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import CLASSES from '../../../data/classes';
 import { ClassModal } from '../modals/ClassModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
@@ -51,13 +52,19 @@ export function StepClass({ onNext }) {
           const isSelected = char.classe === id;
           const role = CLASS_ROLE[id] || 'Combatente';
           return (
-            <div 
+            <motion.div 
               key={id}
               onClick={() => updateChar({ modalClass: id })}
+              whileHover={{ 
+                scale: 1.05, 
+                borderColor: 'rgba(255,255,255,0.3)',
+                boxShadow: '0 0 40px rgba(245,158,11,0.1)'
+              }}
+              whileTap={{ scale: 0.95 }}
               className={`group cursor-pointer overflow-hidden rounded-[2.5rem] border transition-all h-48 md:h-60 flex flex-col items-center justify-center relative ${
                 isSelected 
-                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02]' 
-                  : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.04] hover:border-white/20'
+                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)]' 
+                  : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.04]'
               }`}
             >
               {/* Background Image */}
@@ -82,7 +89,7 @@ export function StepClass({ onNext }) {
               {isSelected && (
                 <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,1)] z-20" />
               )}
-            </div>
+            </motion.div>
           );
         })}
       </div>

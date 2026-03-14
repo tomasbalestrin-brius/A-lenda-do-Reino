@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import RACES from '../../../data/races';
 import { RaceModal } from '../modals/RaceModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
@@ -64,13 +65,19 @@ export function StepRace({ onNext }) {
         {races.map(([id, race]) => {
           const isSelected = char.raca === id;
           return (
-            <div 
+            <motion.div 
               key={id}
               onClick={() => updateChar({ modalRace: id })}
+              whileHover={{ 
+                scale: 1.05, 
+                borderColor: 'rgba(255,255,255,0.3)',
+                boxShadow: '0 0 40px rgba(245,158,11,0.1)'
+              }}
+              whileTap={{ scale: 0.95 }}
               className={`group relative overflow-hidden rounded-[2.5rem] border transition-all cursor-pointer flex flex-col items-center justify-center h-44 md:h-56 ${
                 isSelected 
-                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02]' 
-                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05] hover:border-white/20'
+                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)]' 
+                  : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
               }`}
             >
               {/* Image Background */}
@@ -93,7 +100,7 @@ export function StepRace({ onNext }) {
               {isSelected && (
                 <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)] z-20" />
               )}
-            </div>
+            </motion.div>
           );
         })}
       </div>
