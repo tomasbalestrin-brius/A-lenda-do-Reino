@@ -34,6 +34,23 @@ const ROLE_COLORS = {
   Paladino: 'bg-yellow-600 text-black',
 };
 
+const CLASS_IMAGES = {
+  arcanista: '/assets/images/classes/arcanista.png',
+  barbaro: '/assets/images/classes/barbaro.png',
+  bardo: '/assets/images/classes/bardo.png',
+  bucaneiro: '/assets/images/classes/bucaneiro.png',
+  cacador: '/assets/images/classes/cacador.png',
+  cavaleiro: '/assets/images/classes/cavaleiro.png',
+  clerigo: '/assets/images/classes/clerigo.png',
+  druida: '/assets/images/classes/druida.png',
+  guerreiro: '/assets/images/classes/guerreiro.png',
+  inventor: '/assets/images/classes/inventor.png',
+  ladino: '/assets/images/classes/ladino.png',
+  lutador: '/assets/images/classes/lutador.png',
+  nobre: '/assets/images/classes/nobre.png',
+  paladino: '/assets/images/classes/paladino.png',
+};
+
 export function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
   if (!cls) return null;
 
@@ -57,7 +74,18 @@ export function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
         className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
         {/* Left: Visual/Icon */}
-        <div className="w-full md:w-2/5 relative bg-gray-950 flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0 min-h-[300px]">
+        <div className="w-full md:w-2/5 relative flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0 min-h-[300px]">
+          {/* Background Image */}
+          <div className="absolute inset-0 z-0">
+            <img 
+              src={CLASS_IMAGES[id]} 
+              alt="" 
+              className="w-full h-full object-cover opacity-40 group-hover:scale-110 transition-transform duration-1000"
+              onError={(e) => { e.target.style.display = 'none'; }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
+          </div>
+
           <div className="relative z-10 text-[8rem] md:text-[10rem] mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-float">
              {CLASS_ICONS[id] || '⚔️'}
           </div>

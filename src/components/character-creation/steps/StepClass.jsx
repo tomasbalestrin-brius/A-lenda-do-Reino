@@ -18,6 +18,23 @@ const CLASS_ROLE = {
   nobre: 'Social', paladino: 'Paladino',
 };
 
+const CLASS_IMAGES = {
+  arcanista: '/assets/images/classes/arcanista.png',
+  barbaro: '/assets/images/classes/barbaro.png',
+  bardo: '/assets/images/classes/bardo.png',
+  bucaneiro: '/assets/images/classes/bucaneiro.png',
+  cacador: '/assets/images/classes/cacador.png',
+  cavaleiro: '/assets/images/classes/cavaleiro.png',
+  clerigo: '/assets/images/classes/clerigo.png',
+  druida: '/assets/images/classes/druida.png',
+  guerreiro: '/assets/images/classes/guerreiro.png',
+  inventor: '/assets/images/classes/inventor.png',
+  ladino: '/assets/images/classes/ladino.png',
+  lutador: '/assets/images/classes/lutador.png',
+  nobre: '/assets/images/classes/nobre.png',
+  paladino: '/assets/images/classes/paladino.png',
+};
+
 export function StepClass({ onNext }) {
   const { char, updateChar } = useCharacterStore();
   const classes = Object.entries(CLASSES);
@@ -37,22 +54,33 @@ export function StepClass({ onNext }) {
             <div 
               key={id}
               onClick={() => updateChar({ modalClass: id })}
-              className={`group cursor-pointer overflow-hidden rounded-[2rem] border transition-all p-5 h-40 md:h-48 flex flex-col items-center justify-center relative ${
+              className={`group cursor-pointer overflow-hidden rounded-[2.5rem] border transition-all h-48 md:h-60 flex flex-col items-center justify-center relative ${
                 isSelected 
-                  ? 'bg-gradient-to-br from-amber-600/20 to-amber-900/40 border-amber-500/50 shadow-[0_0_30px_rgba(245,158,11,0.15)] scale-[1.02]' 
+                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)] scale-[1.02]' 
                   : 'bg-white/[0.01] border-white/5 hover:bg-white/[0.04] hover:border-white/20'
               }`}
             >
-              <div className={`text-4xl md:text-5xl mb-4 transition-transform duration-500 ${isSelected ? 'scale-110 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'group-hover:scale-110 group-hover:-translate-y-2'}`}>
+              {/* Background Image */}
+              <div className="absolute inset-0 z-0">
+                <img 
+                  src={CLASS_IMAGES[id]} 
+                  alt="" 
+                  className={`w-full h-full object-cover transition-all duration-700 opacity-20 group-hover:opacity-40 group-hover:scale-110 ${isSelected ? 'opacity-50' : ''}`}
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+              </div>
+
+              <div className={`relative z-10 text-4xl md:text-5xl mb-4 transition-transform duration-500 ${isSelected ? 'scale-110 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'group-hover:scale-110 group-hover:-translate-y-2'}`}>
                 {CLASS_ICONS[id] || '⚔️'}
               </div>
-              <span className={`font-black text-sm md:text-base uppercase tracking-widest text-center ${isSelected ? 'text-amber-400' : 'text-slate-200 group-hover:text-white'}`}>
+              <span className={`relative z-10 font-black text-sm md:text-base uppercase tracking-widest text-center ${isSelected ? 'text-amber-400' : 'text-slate-200 group-hover:text-white'}`}>
                 {cls.nome}
               </span>
-              <span className="text-[9px] uppercase tracking-widest text-slate-500 mt-2 font-bold">{role}</span>
+              <span className="relative z-10 text-[9px] uppercase tracking-widest text-slate-500 mt-2 font-bold">{role}</span>
               
               {isSelected && (
-                <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,1)]" />
+                <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,1)] z-20" />
               )}
             </div>
           );
