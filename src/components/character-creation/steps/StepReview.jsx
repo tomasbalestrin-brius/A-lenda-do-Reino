@@ -301,5 +301,3 @@ export function StepReview({ stats, onSave, onPlay }) {
     </div>
   );
 }
-  );
-}
