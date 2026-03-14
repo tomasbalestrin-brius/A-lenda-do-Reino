@@ -70,3 +70,47 @@ export function meetsRequirement(req, char, stats) {
   
   return true;
 }
+
+/**
+ * Interface amigável para verificar pré-requisitos de um poder.
+ * Retorna { ok: boolean, reason: string }
+ */
+export function checkPowerEligibility(power, char, stats) {
+  if (!power.requisitos) return { ok: true };
+
+  // Atributos
+  if (power.requisitos.attr) {
+    for (const [attr, min] of Object.entries(power.requisitos.attr)) {
+      if ((stats.attrs?.[attr] || 0) < min) {
+        return { ok: false, reason: `${attr} ${min}` };
+      }
+    }
+  }
+
+  // Nível
+  if (power.requisitos.nivel && char.level < power.requisitos.nivel) {
+    return { ok: false, reason: `Nível ${power.requisitos.nivel}` };
+  }
+
+  // Perícias
+  if (power.requisitos.pericia) {
+    const trained = getAllTrainedSkills(char);
+    for (const p of power.requisitos.pericia) {
+      if (!trained.has(p)) {
+        return { ok: false, reason: `${p} Treinada` };
+      }
+    }
+  }
+
+  // Poderes
+  if (power.requisitos.poder) {
+    const owned = char.poderes || [];
+    for (const pName of power.requisitos.poder) {
+      if (!owned.includes(pName)) {
+        return { ok: false, reason: `Poder ${pName}` };
+      }
+    }
+  }
+
+  return { ok: true };
+}
