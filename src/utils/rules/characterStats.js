@@ -143,6 +143,6 @@ export function getAllTrainedSkills(char) {
   const classChoices = char.periciasClasseEscolha || [];
   const intExtras = char.pericias || [];
   
-  return [...new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras])];
+  return new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras]);
 }
 

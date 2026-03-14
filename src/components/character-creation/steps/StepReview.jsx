@@ -72,7 +72,7 @@ export function StepReview({ stats, onSave, onPlay }) {
     if (['Adestramento', 'Cura', 'Intuição', 'Percepção', 'Sobrevivência', 'Vontade'].includes(skillName)) attrKey = 'SAB';
     if (['Atuação', 'Diplomacia', 'Enganação', 'Intimidação'].includes(skillName)) attrKey = 'CAR';
     
-    const isTrained = char.pericias?.includes(skillName) || allPericias.includes(skillName);
+    const isTrained = char.pericias?.includes(skillName) || allPericias.has(skillName);
     return halfLevel + (stats.attrs[attrKey] || 0) + (isTrained ? 2 : 0); 
   };
 
@@ -208,7 +208,7 @@ export function StepReview({ stats, onSave, onPlay }) {
               <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Perícias Treinadas</p>
             </div>
             <div className="relative z-10 flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-3 max-h-[450px]">
-              {allPericias.map(p => {
+              {[...allPericias].sort().map(p => {
                 const mod = getSkillModifier(p);
                 return (
                   <motion.button 

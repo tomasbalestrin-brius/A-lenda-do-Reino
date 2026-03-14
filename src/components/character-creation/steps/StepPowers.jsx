@@ -87,9 +87,11 @@ export function StepPowers({ stats }) {
                 </div>
               )}
 
-              {p.prereq && !p.prereqs && (
-                <div className="mt-1 px-2 py-0.5 bg-black/20 rounded-md inline-block">
-                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Pré-req: {p.prereq}</span>
+              {p.requisitos && (
+                <div className="mt-1 px-2 py-0.5 bg-black/10 rounded-md inline-block">
+                  <span className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">
+                    Req: {p.prereqText || 'Consultar Atributos'}
+                  </span>
                 </div>
               )}
             </div>
