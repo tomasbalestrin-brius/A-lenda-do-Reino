@@ -40,9 +40,9 @@ function getRaceAttrBonus(raceData, escolha, variante) {
 }
 
 export function computeStats(char) {
-  const cls = CLASSES[char.classe] || null;
-  const raceData = RACES[char.raca] || null;
-  const origem = ORIGENS[char.origem] || null;
+  const cls = CLASSES[char.classe?.toLowerCase()] || null;
+  const raceData = RACES[char.raca?.toLowerCase()] || null;
+  const origem = ORIGENS[char.origem?.toLowerCase()] || null;
   const raceBonus = getRaceAttrBonus(raceData, char.racaEscolha, char.racaVariante);
 
   const attrs = {};
@@ -134,7 +134,7 @@ export function getAllTrainedSkills(char) {
   const cls = CLASSES[char.classe?.toLowerCase()];
   if (!cls) return [];
   
-  const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem]?.pericias?.includes(b));
+  const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
   
   const rawObrig = cls.periciasObrigatorias || [];
   const fixedObrig = rawObrig.filter(s => typeof s === 'string');

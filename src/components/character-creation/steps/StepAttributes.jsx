@@ -89,7 +89,7 @@ export function StepAttributes({ stats }) {
   return (
     <div className="flex flex-col gap-10">
       {/* Header & Method Toggle */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-8 bg-gray-900/40 p-10 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden backdrop-blur-sm">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 bg-gray-900/40 p-6 md:p-10 rounded-[2.5rem] md:rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden backdrop-blur-sm">
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">📊</div>
         <div className="flex-1">
           <h2 className="text-4xl font-black text-white tracking-tighter mb-3 flex items-center gap-4">
@@ -122,18 +122,18 @@ export function StepAttributes({ stats }) {
       {/* Point Buy Pool Display */}
       {isBuy && (
         <div className="flex justify-center -mt-8 relative z-10">
-           <motion.div
-             initial={{ y: 20, opacity: 0 }}
-             animate={{ y: 0, opacity: 1 }}
-             className={`px-10 py-5 rounded-full border-2 bg-gray-950 flex items-center gap-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${remaining > 0 ? 'border-amber-600/40' : remaining === 0 ? 'border-emerald-500/40' : 'border-red-500/40'}`}
-           >
-              <span className="text-xs font-black text-slate-500 uppercase tracking-widest">Reserva de Pontos</span>
-              <div className="h-6 w-px bg-white/10" />
-              <div className="flex items-baseline gap-1">
-                 <span className={`text-4xl font-black tabular-nums ${remaining > 0 ? 'text-amber-500' : remaining === 0 ? 'text-emerald-500' : 'text-red-500'}`}>{remaining}</span>
-                 <span className="text-[10px] font-black text-slate-600 uppercase">pts</span>
-              </div>
-           </motion.div>
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className={`px-6 md:px-10 py-4 md:py-5 rounded-full border-2 bg-gray-950 flex items-center gap-4 md:gap-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${remaining > 0 ? 'border-amber-600/40' : remaining === 0 ? 'border-emerald-500/40' : 'border-red-500/40'}`}
+            >
+               <span className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">Reserva de Pontos</span>
+               <div className="h-6 w-px bg-white/10" />
+               <div className="flex items-baseline gap-1">
+                  <span className={`text-3xl md:text-4xl font-black tabular-nums ${remaining > 0 ? 'text-amber-500' : remaining === 0 ? 'text-emerald-500' : 'text-red-500'}`}>{remaining}</span>
+                  <span className="text-[10px] font-black text-slate-600 uppercase">pts</span>
+               </div>
+            </motion.div>
         </div>
       )}
 
@@ -214,7 +214,7 @@ export function StepAttributes({ stats }) {
             <motion.div
               key={key}
               layout
-              className={`relative overflow-hidden group bg-gray-900/60 backdrop-blur-md border-2 rounded-[2.5rem] p-8 transition-all duration-500 ${
+              className={`relative overflow-hidden group bg-gray-900/60 backdrop-blur-md border-2 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500 ${
                 isAtkAttr ? 'border-orange-500/20 bg-orange-950/5' :
                 isPmAttr ? 'border-blue-500/20 bg-blue-950/5' :
                 'border-white/5 hover:border-white/10'
@@ -223,8 +223,8 @@ export function StepAttributes({ stats }) {
               <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
                 {/* Stats Info */}
                 <div className="w-full md:w-64 shrink-0">
-                   <div className="flex items-center gap-3 mb-2">
-                      <span className={`text-[10px] font-black uppercase tracking-[0.3em] ${
+                   <div className="flex items-center gap-3 mb-1">
+                      <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] ${
                         isAtkAttr ? 'text-orange-400' : isPmAttr ? 'text-blue-400' : 'text-slate-500'
                       }`}>{ATTR_TRANSLATION[key]}</span>
                       {(isAtkAttr || isPmAttr) && (
@@ -235,10 +235,10 @@ export function StepAttributes({ stats }) {
                         </span>
                       )}
                    </div>
-                   <h3 className="text-4xl font-black text-white uppercase tracking-tighter mb-1">{key}</h3>
+                   <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-1">{key}</h3>
                    <div className="flex items-center gap-3">
                       <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
-                         <span className="text-[10px] font-black text-slate-500 uppercase">Base</span>
+                         <span className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase">Base</span>
                          <span className="text-xs font-black text-slate-300">{signStr(base)}</span>
                       </div>
                       {bonus !== 0 && (

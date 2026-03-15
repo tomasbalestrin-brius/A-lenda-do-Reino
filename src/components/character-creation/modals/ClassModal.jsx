@@ -74,7 +74,7 @@ export function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
         className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
         {/* Left: Visual/Icon */}
-        <div className="w-full md:w-2/5 relative flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0 min-h-[300px]">
+        <div className="w-full md:w-2/5 relative flex flex-col items-center justify-center p-8 md:p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0 min-h-[240px] md:min-h-[300px]">
           {/* Background Image */}
           <div className="absolute inset-0 z-0">
             <img 
@@ -86,16 +86,16 @@ export function ClassModal({ id, cls, onClose, onConfirm, isSelected }) {
             <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
           </div>
 
-          <div className="relative z-10 text-[8rem] md:text-[10rem] mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-float">
+          <div className="relative z-10 text-[6rem] md:text-[10rem] mb-4 md:mb-6 drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-float">
              {CLASS_ICONS[id] || '⚔️'}
           </div>
-          <span className={`relative z-10 px-6 py-2 rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-xl ${roleColor}`}>
+          <span className={`relative z-10 px-6 py-2 rounded-full font-black text-[10px] md:text-xs uppercase tracking-[0.3em] shadow-xl ${roleColor}`}>
              {role}
           </span>
           <div className="absolute w-80 h-80 bg-amber-500/10 blur-[120px] rounded-full" />
           <button 
             onClick={onClose} 
-            className="absolute top-6 right-6 md:top-8 md:left-8 z-30 w-12 h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
+            className="absolute top-6 right-6 md:top-8 md:left-8 z-30 w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-md transition-all border border-white/10"
           >
             ✕
           </button>

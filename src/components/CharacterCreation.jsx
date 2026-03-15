@@ -185,7 +185,7 @@ export default function CharacterCreation({ onComplete }) {
   const isMobile = window.innerWidth < 768; // For simple preview toggle condition
 
   return (
-    <div className="flex h-screen bg-[#020617] text-slate-300 font-sans overflow-hidden">
+    <div className="flex h-[100dvh] bg-[#020617] text-slate-300 font-sans overflow-hidden">
       
       {/* Sidebar Navigation */}
       <div className="w-16 md:w-64 shrink-0 bg-[#040B16] border-r border-slate-800/60 shadow-2xl z-20 flex flex-col pt-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
@@ -276,10 +276,10 @@ export default function CharacterCreation({ onComplete }) {
            <div className="max-w-4xl mx-auto bg-gray-950/80 backdrop-blur-xl border border-white/10 p-4 rounded-[2.5rem] shadow-2xl flex items-center justify-between">
               <button
                 onClick={handlePrev}
-                className="px-6 md:px-8 py-4 rounded-[1.5rem] bg-gray-900 border border-white/5 hover:border-white/10 text-slate-400 font-bold uppercase tracking-widest text-xs transition-all active:scale-95 flex items-center gap-3 group"
+                className="px-4 min-w-[100px] md:px-8 py-4 rounded-2xl md:rounded-[1.5rem] bg-gray-900 border border-white/5 hover:border-white/10 text-slate-400 font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 group"
               >
                  <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span>
-                 <span className="hidden sm:inline">Voltar</span>
+                 <span className="hidden xs:inline">Voltar</span>
               </button>
               
               <div className="flex-1 flex flex-col items-center">
@@ -299,13 +299,13 @@ export default function CharacterCreation({ onComplete }) {
               <button
                 onClick={handleNext}
                 disabled={!canAdvance}
-                className={`px-6 md:px-10 py-4 rounded-[1.5rem] font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-3 group ${
+                className={`px-4 min-w-[100px] md:px-10 py-4 rounded-2xl md:rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 md:gap-3 group ${
                   canAdvance 
                     ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500 active:scale-95' 
                     : 'bg-gray-900/50 border border-white/5 text-gray-600 cursor-not-allowed opacity-50 grayscale'
                 } ${step === 13 ? 'invisible' : ''}`}
               >
-                <span className="hidden sm:inline">Avançar</span>
+                <span className="hidden xs:inline">Avançar</span>
                 <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
               </button>
            </div>
@@ -346,7 +346,7 @@ export default function CharacterCreation({ onComplete }) {
         {(!char.modalRace && !char.modalClass && !char.modalOrigin && !char.modalDeity) && (
           <button
             onClick={() => setPreviewOpen(true)}
-            className="lg:hidden fixed top-6 right-6 z-[90] w-14 h-14 rounded-full bg-amber-600 text-gray-950 flex shadow-2xl border-2 border-amber-400 items-center justify-center text-xl shadow-amber-900/50"
+            className="lg:hidden fixed bottom-28 right-6 z-[90] w-14 h-14 rounded-2xl bg-amber-600 text-gray-950 flex shadow-[0_10px_30px_rgba(217,119,6,0.5)] border-2 border-amber-400 items-center justify-center text-xl active:scale-90 transition-all active:bg-amber-500"
           >
             📋
           </button>

@@ -80,26 +80,26 @@ export function CharacterPreview({ char, stats }) {
   return (
     <div className="flex flex-col gap-3 pb-4">
       {/* Portrait */}
-      <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl border border-gray-700 p-4 flex flex-col items-center gap-3">
+      <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl border border-gray-700 p-3 md:p-4 flex flex-col items-center gap-3">
         <div className="relative">
-          <div className="w-24 h-24 rounded-xl bg-gray-900 border-2 border-amber-600/60 flex items-center justify-center overflow-hidden shadow-lg shadow-amber-900/20">
+          <div className="w-20 h-20 md:w-24 md:h-24 rounded-xl bg-gray-900 border-2 border-amber-600/60 flex items-center justify-center overflow-hidden shadow-lg shadow-amber-900/20">
             {RACE_IMAGES[char.raca] ? (
               <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
             ) : sprite ? (
               <img src={sprite} alt="" className="w-full h-full object-contain" style={{ imageRendering: 'pixelated' }} />
             ) : (
-              <span className="text-4xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
+              <span className="text-3xl md:text-4xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
             )}
           </div>
           {char.raca && (
-            <span className="absolute -bottom-1 -right-1 text-xl">{RACE_ICONS[char.raca] || '🧑'}</span>
+            <span className="absolute -bottom-1 -right-1 text-lg md:text-xl">{RACE_ICONS[char.raca] || '🧑'}</span>
           )}
         </div>
         <div className="text-center w-full">
-          <p className="font-bold text-white truncate">{char.nome || <span className="text-gray-500 italic text-sm">Sem nome</span>}</p>
+          <p className="font-bold text-white text-sm md:text-base truncate">{char.nome || <span className="text-gray-500 italic text-xs md:text-sm">Sem nome</span>}</p>
           <div className="flex gap-1 justify-center mt-1.5 flex-wrap">
-            {char.raca && <span className="text-[11px] bg-blue-900/60 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-full">{race?.nome || char.raca}</span>}
-            {char.classe && <span className="text-[11px] bg-amber-900/60 text-amber-300 border border-amber-700/40 px-2 py-0.5 rounded-full">{cls?.nome || char.classe}</span>}
+            {char.raca && <span className="text-[9px] md:text-[11px] bg-blue-900/60 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-full">{race?.nome || char.raca}</span>}
+            {char.classe && <span className="text-[9px] md:text-[11px] bg-amber-900/60 text-amber-300 border border-amber-700/40 px-2 py-0.5 rounded-full">{cls?.nome || char.classe}</span>}
           </div>
         </div>
       </div>

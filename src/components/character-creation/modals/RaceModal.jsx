@@ -45,7 +45,7 @@ export function RaceModal({ id, race, onClose, onConfirm, isSelected }) {
         className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
         {/* Left: Visual Content */}
-        <div className="w-full md:w-2/5 relative h-80 md:h-auto overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0">
+        <div className="w-full md:w-2/5 relative h-56 md:h-auto overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0">
           <img 
             src={RACE_IMAGES[id]} 
             alt={race.nome} 
@@ -54,8 +54,8 @@ export function RaceModal({ id, race, onClose, onConfirm, isSelected }) {
           <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-900/40 to-transparent md:hidden" />
           
-          <div className="absolute bottom-0 left-0 p-8">
-             <h3 className="text-5xl md:text-6xl font-black text-white tracking-tighter uppercase drop-shadow-md">
+          <div className="absolute bottom-0 left-0 p-6 md:p-8">
+             <h3 className="text-4xl md:text-6xl font-black text-white tracking-tighter uppercase drop-shadow-md">
                 {race.nome}
              </h3>
           </div>
