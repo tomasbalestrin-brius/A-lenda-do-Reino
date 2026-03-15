@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useCharacterStore } from '../store/useCharacterStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
 import { canGoNext } from '../utils/rules/navigation';
 import { buildHeroData } from '../utils/rules/buildHeroData';
@@ -51,6 +52,7 @@ const MAX_STEPS = STEP_LABELS.length;
 
 export default function CharacterCreation({ onComplete }) {
   const { char, updateChar, resetChar, loadChar } = useCharacterStore();
+  const { user, signOut } = useAuthStore();
   const [view, setView] = useState('library');
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -182,7 +184,6 @@ export default function CharacterCreation({ onComplete }) {
   }
 
   const { ok: canAdvance, reason: blockReason } = canGoNext(step, char, stats);
-  const isMobile = window.innerWidth < 768; // For simple preview toggle condition
 
   return (
     <div className="flex h-[100dvh] bg-[#020617] text-slate-300 font-sans overflow-hidden">
@@ -230,6 +231,27 @@ export default function CharacterCreation({ onComplete }) {
               </button>
             );
           })}
+        </div>
+
+        {/* Bottom User Profile */}
+        <div className="mt-auto p-4 border-t border-slate-800/60 bg-black/20">
+           <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 px-2">
+                 <div className="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-xs">
+                    👤
+                 </div>
+                 <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-slate-500 uppercase font-black truncate">Herói</p>
+                    <p className="text-[11px] text-slate-200 font-medium truncate">{user?.email}</p>
+                 </div>
+              </div>
+              <button 
+                onClick={() => signOut()}
+                className="w-full py-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 border border-red-900/20 text-red-500 text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                Sair
+              </button>
+           </div>
         </div>
       </div>
 
