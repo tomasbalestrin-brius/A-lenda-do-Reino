@@ -23,7 +23,9 @@ const getInitialCharState = () => ({
   crencasBeneficios: [],
   
   level: 1, // Start at level 1 by default
+  attrMethod: 'buy',
   atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
+  rolagens: [],
   poderes: [],
   poderesGerais: [],
   equipamento: [],

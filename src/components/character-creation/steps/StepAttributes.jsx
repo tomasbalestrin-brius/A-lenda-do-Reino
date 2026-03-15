@@ -41,8 +41,8 @@ function signStr(num) {
 export function StepAttributes({ stats }) {
   const { char, updateChar } = useCharacterStore();
   const [rolling, setRolling] = useState(false);
-  const remaining = stats.pontosDisponiveis;
-  const isBuy = char.attrMethod === 'buy';
+  const remaining = stats.pontosDisponiveis || 0;
+  const isBuy = (char.attrMethod || 'buy') === 'buy';
 
   function handleChange(key, delta) {
     if (!isBuy) return;
@@ -67,7 +67,7 @@ export function StepAttributes({ stats }) {
   }
 
   function assignRoll(attrKey, rollIdx) {
-    const roll = char.rolagens[rollIdx];
+    const roll = (char.rolagens || [])[rollIdx];
     if (!roll) return;
 
     const newAttrs = { ...char.atributos, [attrKey]: roll.modifier };
@@ -138,7 +138,7 @@ export function StepAttributes({ stats }) {
       )}
 
       {/* Dice Roll Box */}
-      {!isBuy && char.rolagens.length === 0 && (
+      {!isBuy && (char.rolagens || []).length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 bg-gray-950/40 border border-dashed border-white/10 rounded-[3.5rem] gap-8 backdrop-blur-sm">
              <div className={`text-[8rem] filter drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] ${rolling ? 'animate-bounce' : 'opacity-20 translate-y-2'}`}>🎲</div>
              <div className="text-center space-y-2">
@@ -156,7 +156,7 @@ export function StepAttributes({ stats }) {
       )}
 
       {/* Dice Selection Area */}
-      {!isBuy && char.rolagens.length > 0 && (
+      {!isBuy && (char.rolagens || []).length > 0 && (
         <div className="bg-gray-950/40 p-10 rounded-[3rem] border border-white/10 backdrop-blur-sm space-y-8">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -289,7 +289,7 @@ export function StepAttributes({ stats }) {
                    ) : (
                     <div className="flex-1 flex justify-end">
                        <div className="flex flex-wrap gap-2 justify-end">
-                          {char.rolagens.map((r, ri) => (
+                          {(char.rolagens || []).map((r, ri) => (
                             <button
                               key={ri}
                               onClick={() => assignRoll(key, ri)}
