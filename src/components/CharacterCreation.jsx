@@ -27,6 +27,8 @@ import { StepIntPericias } from './character-creation/steps/StepIntPericias';
 import { StepEquipment } from './character-creation/steps/StepEquipment';
 import { StepPowers } from './character-creation/steps/StepPowers';
 import { StepProgression } from './character-creation/steps/StepProgression';
+import { StepSpells } from './character-creation/steps/StepSpells';
+import { StepIdentity } from './character-creation/steps/StepIdentity';
 import { StepReview } from './character-creation/steps/StepReview';
 
 import { CharacterLibrary } from './character-creation/CharacterLibrary';
@@ -40,13 +42,14 @@ const STEP_LABELS = [
   "Origem",           // 4
   "Benefícios",       // 5
   "Divindade",        // 6
-  "Atributos",        // 7
-  "Perícias (Classe)",// 8
-  "Perícias (Int)",   // 9
-  "Equipamento",      // 10
-  "Poderes Iniciais", // 11
-  "Evolução",         // 12
-  "Revisão"           // 13
+  "Magias",           // 7
+  "Atributos",        // 8
+  "Perícias (Classe)",// 9
+  "Perícias (Int)",   // 10
+  "Equipamento",      // 11
+  "Poderes Iniciais", // 12
+  "Identidade",       // 13
+  "Revisão"           // 14
 ];
 const MAX_STEPS = STEP_LABELS.length;
 
@@ -275,13 +278,14 @@ export default function CharacterCreation({ onComplete }) {
                 {step === 4 && <StepOrigin onNext={handleNext} />}
                 {step === 5 && <StepOrigemBeneficios />}
                 {step === 6 && <StepDeus />}
-                {step === 7 && <StepAttributes stats={stats} />}
-                {step === 8 && <StepClassePericias />}
-                {step === 9 && <StepIntPericias />}
-                {step === 10 && <StepEquipment />}
-                {step === 11 && <StepPowers stats={stats} />}
-                {step === 12 && <StepProgression stats={stats} />}
-                {step === 13 && (
+                {step === 7 && <StepSpells />}
+                {step === 8 && <StepAttributes stats={stats} />}
+                {step === 9 && <StepClassePericias />}
+                {step === 10 && <StepIntPericias stats={stats} />}
+                {step === 11 && <StepEquipment />}
+                {step === 12 && <StepPowers stats={stats} />}
+                {step === 13 && <StepIdentity />}
+                {step === 14 && (
                   <StepReview 
                     stats={stats} 
                     onSave={handleSave} 
@@ -305,7 +309,7 @@ export default function CharacterCreation({ onComplete }) {
               </button>
               
               <div className="flex-1 flex flex-col items-center">
-                 {!canAdvance && step !== 13 && (
+                 {!canAdvance && step !== 14 && (
                    <motion.div 
                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                      className="absolute -top-12 px-6 py-2 bg-rose-950/80 border border-rose-500/30 text-rose-400 font-black uppercase text-[10px] tracking-widest rounded-full backdrop-blur-md shadow-lg shadow-rose-900/20"
@@ -313,7 +317,7 @@ export default function CharacterCreation({ onComplete }) {
                      {blockReason || 'Complete as escolhas pendentes.'}
                    </motion.div>
                  )}
-                 {step === 13 && (
+                 {step === 14 && (
                    <span className="text-[10px] uppercase font-black tracking-[0.4em] text-amber-500/50">Jornada Pronta</span>
                  )}
               </div>
@@ -325,7 +329,7 @@ export default function CharacterCreation({ onComplete }) {
                   canAdvance 
                     ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500 active:scale-95' 
                     : 'bg-gray-900/50 border border-white/5 text-gray-600 cursor-not-allowed opacity-50 grayscale'
-                } ${step === 13 ? 'invisible' : ''}`}
+                } ${step === 14 ? 'invisible' : ''}`}
               >
                 <span className="hidden xs:inline">Avançar</span>
                 <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>

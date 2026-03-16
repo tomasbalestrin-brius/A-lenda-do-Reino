@@ -98,8 +98,9 @@ export function CharacterPreview({ char, stats }) {
         <div className="text-center w-full">
           <p className="font-bold text-white text-sm md:text-base truncate">{char.nome || <span className="text-gray-500 italic text-xs md:text-sm">Sem nome</span>}</p>
           <div className="flex gap-1 justify-center mt-1.5 flex-wrap">
-            {char.raca && <span className="text-[9px] md:text-[11px] bg-blue-900/60 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-full">{race?.nome || char.raca}</span>}
-            {char.classe && <span className="text-[9px] md:text-[11px] bg-amber-900/60 text-amber-300 border border-amber-700/40 px-2 py-0.5 rounded-full">{cls?.nome || char.classe}</span>}
+            {char.raca && <span className="text-[9px] md:text-[11px] bg-blue-900/40 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-full">{race?.nome || char.raca}</span>}
+            {char.classe && <span className="text-[9px] md:text-[11px] bg-amber-900/40 text-amber-300 border border-amber-700/40 px-2 py-0.5 rounded-full">{cls?.nome || char.classe}</span>}
+            {char.idade && <span className="text-[9px] md:text-[11px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-full">{char.idade}</span>}
           </div>
         </div>
       </div>
@@ -167,6 +168,19 @@ export function CharacterPreview({ char, stats }) {
         </div>
       </div>
 
+      {/* Idiomas */}
+      <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
+        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Idiomas ({stats.totalLangsCount})</p>
+        <div className="flex flex-wrap gap-1">
+          {stats.languages.map(l => (
+            <span key={l} className="text-[9px] bg-slate-900 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-lg">🗣️ {l}</span>
+          ))}
+          {Array.from({ length: stats.totalLangsCount - stats.languages.length }).map((_, i) => (
+            <span key={i} className="text-[9px] bg-amber-900/20 text-amber-500/60 border border-amber-500/20 px-2 py-0.5 rounded-lg italic">Escolher</span>
+          ))}
+        </div>
+      </div>
+
       {/* Perícias */}
       {allPericias.length > 0 && (
         <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
@@ -194,19 +208,39 @@ export function CharacterPreview({ char, stats }) {
       )}
 
       {/* Poderes */}
-      {( (char.poderesGerais || []).length > 0 || char.choices?.herancaPower ) && (
+      {( (char.poderesGerais || []).length > 0 || char.choices?.herancaPower || (char.crencasBeneficios || []).length > 0 ) && (
         <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
-          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Poderes Gerais</p>
+          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Poderes e Dons</p>
           <div className="flex flex-wrap gap-1">
             {char.choices?.herancaPower && (
               <span className="text-[9px] bg-purple-900/40 text-purple-300 border border-purple-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
                 ✧ {char.choices.herancaPower.nome}
               </span>
             )}
+            {char.crencasBeneficios?.map(p => (
+              <span key={p.nome} className="text-[9px] bg-emerald-900/40 text-emerald-300 border border-emerald-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                🙏 {p.nome}
+              </span>
+            ))}
             {char.poderesGerais?.map(p => (
               <span key={p.nome} className="text-[9px] bg-blue-900/40 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
                 ✨ {p.nome}
               </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Magias */}
+      {(char.classSpells || []).length > 0 && (
+        <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
+          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Grimório / Orações</p>
+          <div className="flex flex-col gap-1.5">
+            {char.classSpells.map(s => (
+              <div key={s.nome} className="text-[10px] flex items-center justify-between bg-gray-900/50 p-2 rounded-lg border border-white/5">
+                <span className="text-white font-bold">{s.nome}</span>
+                <span className="text-amber-500/60 uppercase font-black text-[8px]">{s.escola}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -227,18 +261,11 @@ export function CharacterPreview({ char, stats }) {
         </div>
       )}
 
-      {/* Race abilities */}
-      {race?.habilidades?.length > 0 && (
+      {/* Identity Fluff */}
+      {char.aparencia && (
         <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
-          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Habilidades Raciais</p>
-          <div className="flex flex-col gap-2">
-            {race.habilidades.map((h, i) => (
-              <div key={i} className="text-xs leading-relaxed">
-                <span className="text-blue-400 font-semibold">{h.nome}:</span>{' '}
-                <span className="text-gray-300">{h.descricao}</span>
-              </div>
-            ))}
-          </div>
+          <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-1 font-semibold">Aparência</p>
+          <p className="text-[10px] text-gray-400 italic leading-relaxed">{char.aparencia}</p>
         </div>
       )}
     </div>

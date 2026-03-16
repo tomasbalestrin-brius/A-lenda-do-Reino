@@ -15,7 +15,7 @@ export function StepIntPericias({ stats }) {
   const fixedObrig = rawObrig.filter(s => typeof s === 'string');
   const chosenObrig = Object.values(char.periciasObrigEscolha || {});
   const mandatoryFromClass = [...fixedObrig, ...chosenObrig];
-  const originPericias = char.origemBeneficios.filter(b => ORIGENS[char.origem]?.pericias.includes(b));
+  const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem]?.pericias?.includes(b));
   
   const alreadyTrained = [...new Set([...mandatoryFromClass, ...originPericias, ...(char.periciasClasseEscolha || [])])];
   const currentExtras = char.pericias.filter(p => !alreadyTrained.includes(p));

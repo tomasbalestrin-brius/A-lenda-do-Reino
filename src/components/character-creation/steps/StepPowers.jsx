@@ -17,11 +17,11 @@ export function StepPowers({ stats }) {
   ];
 
   const togglePower = (power) => {
-    const isOwned = char.poderesGerais.some(p => p.nome === power.nome);
+    const isOwned = (char.poderesGerais || []).some(p => p.nome === power.nome);
     if (isOwned) {
       updateChar({ poderesGerais: char.poderesGerais.filter(p => p.nome !== power.nome) });
     } else {
-      updateChar({ poderesGerais: [...char.poderesGerais, power] });
+      updateChar({ poderesGerais: [...(char.poderesGerais || []), power] });
     }
   };
 
@@ -56,8 +56,8 @@ export function StepPowers({ stats }) {
           ? Object.values(GENERAL_POWERS).flat()
           : (GENERAL_POWERS[activeTab] || [])
         ).map(p => {
-          const isOwned = char.poderesGerais.some(owned => owned.nome === p.nome);
-          const eligibility = checkPowerEligibility(p, char, stats);
+          const isOwned = (char.poderesGerais || []).some(owned => owned.nome === p.nome);
+          const eligibility = checkPowerEligibility(p, char, stats || {});
           const canSelect = eligibility.ok || isOwned;
 
           return (

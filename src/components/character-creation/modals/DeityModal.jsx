@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useCharacterStore } from '../../../store/useCharacterStore';
 
 const DEITY_ICONS = {
   azgher: '☀️', aharadak: '👁️', allihanna: '🌿', arsenal: '⚔️',
@@ -10,7 +11,23 @@ const DEITY_ICONS = {
 };
 
 export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
+  const { char, updateChar } = useCharacterStore();
+  const { classe, crencasBeneficios } = char;
+  
   if (!deus) return null;
+
+  const divineClasses = ['clerigo', 'druida', 'paladino'];
+  const isDivine = divineClasses.includes(classe);
+  const maxPowers = (classe === 'clerigo') ? 2 : (isDivine ? 1 : 0);
+  
+  const togglePower = (power) => {
+    const isOwned = crencasBeneficios.some(p => p.nome === power.nome);
+    if (isOwned) {
+      updateChar({ crencasBeneficios: crencasBeneficios.filter(p => p.nome !== power.nome) });
+    } else if (crencasBeneficios.length < maxPowers) {
+      updateChar({ crencasBeneficios: [...crencasBeneficios, power] });
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -72,24 +89,43 @@ export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
               </div>
 
               {/* Powers */}
-              <div className="space-y-4">
-                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
-                    <span className="w-4 h-px bg-white/10" /> Vantagens e Restrições
+              <div className="space-y-6">
+                 <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center justify-between">
+                    <span className="flex items-center gap-2"><span className="w-4 h-px bg-white/10" /> Poderes Concedidos </span>
+                    {isDivine && <span className="text-amber-500">{crencasBeneficios.length}/{maxPowers}</span>}
                  </h4>
                  
-                 <div className="space-y-4">
-                    <div className="p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/20 group">
-                       <p className="text-emerald-400 font-black text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full group-hover:scale-125 transition-transform" />
-                          Poder Concedido
-                       </p>
-                       <p className="text-white font-black text-sm mb-1">{deus.devoto?.poderes?.[0]?.nome}</p>
-                       <p className="text-slate-400 text-xs leading-relaxed">{deus.devoto?.poderes?.[0]?.descricao}</p>
-                    </div>
+                 <div className="grid grid-cols-1 gap-4">
+                    {deus.devoto?.poderes?.map((p, idx) => {
+                       const isPowerSelected = crencasBeneficios.some(bp => bp.nome === p.nome);
+                       const canPick = isDivine && (isPowerSelected || crencasBeneficios.length < maxPowers);
 
-                    <div className="p-6 rounded-3xl bg-red-500/5 border border-red-500/20 group">
+                       return (
+                        <div 
+                          key={p.nome || idx}
+                          onClick={() => canPick && togglePower(p)}
+                          className={`p-6 rounded-3xl border-2 transition-all group ${
+                            isPowerSelected 
+                              ? 'bg-emerald-500/10 border-emerald-500/50' 
+                              : (canPick ? 'bg-white/[0.02] border-white/5 cursor-pointer hover:border-white/20' : 'bg-gray-900/50 border-gray-900 opacity-50')
+                          }`}
+                        >
+                           <div className="flex items-center justify-between mb-2">
+                             <p className={`font-black text-[10px] uppercase tracking-widest flex items-center gap-2 ${isPowerSelected ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isPowerSelected ? 'bg-emerald-500 animate-pulse' : 'bg-slate-700'}`} />
+                                Poder Concedido
+                             </p>
+                             {isPowerSelected && <span className="text-emerald-500 text-xs">✓</span>}
+                           </div>
+                           <p className={`font-black text-sm mb-1 ${isPowerSelected ? 'text-white' : 'text-slate-300'}`}>{p.nome}</p>
+                           <p className="text-slate-400 text-xs leading-relaxed">{p.descricao}</p>
+                        </div>
+                       );
+                    })}
+
+                    <div className="p-6 rounded-3xl bg-red-500/5 border border-red-500/20 group mt-2">
                        <p className="text-red-400 font-black text-[10px] uppercase tracking-widest mb-2 flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 bg-red-500 rounded-full group-hover:scale-125 transition-transform" />
+                          <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
                           Obrigações e Restrições
                        </p>
                        <p className="text-slate-400 text-xs leading-relaxed font-medium">{deus.devoto?.restricoes}</p>

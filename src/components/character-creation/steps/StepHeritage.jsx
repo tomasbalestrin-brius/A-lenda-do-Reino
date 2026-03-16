@@ -74,8 +74,8 @@ export function StepHeritage() {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   let next;
-                  if (isSelected) next = selectedSkills.filter(x => x !== s);
-                  else if (selectedSkills.length < max) next = [...selectedSkills, s];
+                  if (isSelected) next = (selectedSkills || []).filter(x => x !== s);
+                  else if ((selectedSkills || []).length < max) next = [...(selectedSkills || []), s];
                   else return;
                   setChoices({ ...currentChoices, pericias: next });
                 }}
@@ -235,8 +235,8 @@ export function StepHeritage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map(p => {
-                    const stats = computeStats(char);
-                    const eligibility = checkPowerEligibility(p, char, stats);
+                    const currentStats = computeStats(char);
+                    const eligibility = checkPowerEligibility(p, char, currentStats || {});
                     const isSelected = currentChoices.herancaPower?.nome === p.nome;
                     
                     if (!eligibility.ok && !isSelected) return null; // Only show eligible powers or the selected one

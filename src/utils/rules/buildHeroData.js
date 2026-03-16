@@ -19,5 +19,16 @@ export function buildHeroData(char, stats) {
     deus: char.deus,
     raca: char.raca,
     classe: char.classe,
+    magias: char.classSpells,
+    poderesConcedidos: char.crencasBeneficios,
+    idiomas: stats.languages,
+    identidade: {
+      idade: char.idade,
+      genero: char.genero,
+      aparencia: char.aparencia,
+      historia: char.historia
+    },
+    prototipo: char.choices?.prototipo || null,
+    dinheiro: char.dinheiro
   };
 }

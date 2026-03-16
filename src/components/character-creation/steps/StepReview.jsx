@@ -72,8 +72,8 @@ export function StepReview({ stats, onSave, onPlay }) {
     if (['Adestramento', 'Cura', 'Intuição', 'Percepção', 'Sobrevivência', 'Vontade'].includes(skillName)) attrKey = 'SAB';
     if (['Atuação', 'Diplomacia', 'Enganação', 'Intimidação'].includes(skillName)) attrKey = 'CAR';
     
-    const isTrained = char.pericias?.includes(skillName) || allPericias.has(skillName);
-    return halfLevel + (stats.attrs[attrKey] || 0) + (isTrained ? 2 : 0); 
+    const isTrained = (char.pericias || []).includes(skillName) || allPericias.has(skillName);
+    return halfLevel + (stats?.attrs?.[attrKey] || 0) + (isTrained ? 2 : 0); 
   };
 
   const startTest = (name, modifier) => {
@@ -187,10 +187,10 @@ export function StepReview({ stats, onSave, onPlay }) {
 
             <div className="relative z-10 mt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { l: 'Vida', v: stats.pv, bg: 'bg-rose-500', t: 'PV' },
-                { l: 'Mana', v: stats.pm, bg: 'bg-blue-500', t: 'PM' },
-                { l: 'Defesa', v: stats.def, bg: 'bg-sky-500', t: 'DEF' },
-                { l: 'Ataque', v: (stats.atk >= 0 ? '+' : '') + stats.atk, bg: 'bg-orange-500', t: 'ATK' },
+                { l: 'Vida', v: stats?.pv || 0, bg: 'bg-rose-500', t: 'PV' },
+                { l: 'Mana', v: stats?.pm || 0, bg: 'bg-blue-500', t: 'PM' },
+                { l: 'Defesa', v: stats?.def || 0, bg: 'bg-sky-500', t: 'DEF' },
+                { l: 'Ataque', v: ((stats?.atk || 0) >= 0 ? '+' : '') + (stats?.atk || 0), bg: 'bg-orange-500', t: 'ATK' },
               ].map(st => (
                 <div key={st.l} className="bg-gray-950/80 p-6 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all">
                    <div className={`absolute top-0 inset-x-0 h-1.5 ${st.bg} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />

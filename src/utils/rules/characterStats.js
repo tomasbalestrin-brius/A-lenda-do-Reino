@@ -14,6 +14,13 @@ const PM_ATTR_MAP = {
   guerreiro: null, ladino: null, lutador: null,
 };
 
+const CLASS_WEALTH = {
+  arcanista: '2d4', barbaro: '2d4', bardo: '2d6', bucaneiro: '2d6',
+  cacador: '4d6', cavaleiro: '4d6', clerigo: '2d6', druida: '2d4',
+  guerreiro: '4d6', inventor: '4d6', ladino: '4d6', lutador: '2d4',
+  nobre: '6d6', paladino: '4d6'
+};
+
 function attrPointCost(v) { return ATTR_TOTAL_COST[String(v)] ?? 0; }
 
 function getRaceAttrBonus(raceData, escolha, variante) {
@@ -105,9 +112,9 @@ export function computeStats(char) {
   // ATK
   const isRanged = char.classe === 'cacador';
   const pericias = char.pericias || [];
-  const hasLuta = pericias.includes('Luta');
-  const hasPontaria = pericias.includes('Pontaria');
-  const atk = (isRanged ? attrs.DES : attrs.FOR) + halfLevel + ((isRanged ? hasPontaria : hasLuta) ? 2 : 0);
+  const hasLuta = pericias.includes?.('Luta');
+  const hasPontaria = pericias.includes?.('Pontaria');
+  const atk = (isRanged ? (attrs.DES || 0) : (attrs.FOR || 0)) + halfLevel + ((isRanged ? hasPontaria : hasLuta) ? 2 : 0);
   
   // Saves
   const ini = DES + halfLevel;
@@ -120,13 +127,30 @@ export function computeStats(char) {
   let von = attrs.SAB + halfLevel;
   if (hasVontadeFerro) von += 2;
 
-  const pontosGastos = ATTR_KEYS.reduce((sum, k) => sum + attrPointCost(char.atributos[k] || 0), 0);
+  const pontosGastos = ATTR_KEYS.reduce((sum, k) => sum + attrPointCost(char.atributos?.[k] || 0), 0);
+
+  // Languages
+  const languages = ['Comum'];
+  const raceLangs = {
+    humano: ['Artoniano'], anao: ['Anão'], elfo: ['Élfico'],
+    goblin: ['Goblinoide'], minotauro: ['Tapistano'], qareen: ['Aura'],
+    dahllan: ['Allihanniano'], trog: ['Troglodita'], lefou: ['Comum'],
+    osteon: ['Comum'], golem: ['Comum'], aggelus: ['Celestial'], sulfure: ['Abissal']
+  };
+  const extraLangs = (raceLangs[char.raca?.toLowerCase()] || []);
+  extraLangs.forEach(l => { if (!languages.includes(l)) languages.push(l); });
+  
+  const intLangs = Math.max(0, attrs.INT);
+  const totalLangsCount = languages.length + intLangs;
 
   return {
     attrs, raceBonus,
     pv: Math.max(1, pv), pm: Math.max(0, pm),
     def, atk, ini, fort, ref, von,
     pontosDisponiveis: POINT_POOL - pontosGastos,
+    languages: languages,
+    totalLangsCount: totalLangsCount,
+    startingWealth: CLASS_WEALTH[char.classe?.toLowerCase()] || '2d4'
   };
 }
 

@@ -22,14 +22,24 @@ const getInitialCharState = () => ({
   deus: null,
   crencasBeneficios: [],
   
-  level: 1, // Start at level 1 by default
+  level: 1,
   attrMethod: 'buy',
   atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
   rolagens: [],
   poderes: [],
   poderesGerais: [],
+  idiomas: ['Comum'],
+  riqueza: 0,
   equipamento: [],
-  choices: {} // Store generic choices made in steps
+  
+  // Identidade
+  nome: '',
+  idade: '',
+  genero: '',
+  aparencia: '',
+  historia: '',
+  
+  choices: {}
 });
 
 export const useCharacterStore = create((set, get) => ({

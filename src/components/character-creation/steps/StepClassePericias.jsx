@@ -22,7 +22,7 @@ export function StepClassePericias() {
   const orChoices = rawObrig.filter(s => Array.isArray(s));
   const obrigEscolhas = char.periciasObrigEscolha || {};
 
-  const originSkills = char.origemBeneficios.filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
+  const originSkills = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
   
   // T20: Se já tem perícia da origem, ganha escolha extra da classe
   const skillOverlaps = fixedObrig.filter(s => originSkills.includes(s)).length;

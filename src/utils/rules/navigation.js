@@ -78,7 +78,18 @@ export function canGoNext(step, char, stats) {
 
     case 6: return { ok: true, reason: null }; // Deus é opcional
 
-    case 7: { // Atributos
+    case 7: { // Magias
+      const cls = char.classe?.toLowerCase();
+      const needs = ['arcanista', 'bardo', 'clerigo', 'druida'].includes(cls);
+      if (!needs) return { ok: true, reason: null };
+      
+      const limits = { arcanista: 3, bardo: 2, clerigo: 3, druida: 2 };
+      const limit = limits[cls] || 0;
+      const ok = (char.classSpells || []).length === limit;
+      return { ok, reason: ok ? null : `Selecione ${limit} magias para continuar.` };
+    }
+
+    case 8: { // Atributos
       if (char.attrMethod === 'buy') {
         const ok = (stats.pontosDisponiveis || 0) >= 0;
         return { ok, reason: ok ? null : 'Você gastou mais pontos do que o permitido.' };
@@ -87,7 +98,7 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : 'Distribua todos os valores nos atributos.' };
     }
 
-    case 8: { // Classe Pericias
+    case 9: { // Classe Pericias
       const cls = CLASSES[char.classe?.toLowerCase()];
       if (!cls) return { ok: false, reason: 'Selecione uma classe primeiro.' };
       const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
@@ -96,16 +107,16 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : 'Selecione todas as perícias de classe obrigatórias.' };
     }
 
-    case 9: { // Int Pericias
+    case 10: { // Int Pericias
       return { ok: true, reason: null }; // Non-blocking
     }
 
-    case 10: { // Equipamento
+    case 11: { // Equipamento
       const ok = (char.dinheiro || 0) >= 0;
       return { ok, reason: ok ? null : 'Seu dinheiro não pode ser negativo.' };
     }
 
-    case 11: { // Poderes Iniciais
+    case 12: { // Poderes Iniciais
       const lvl = char.level || 1;
       const isHumano = char.raca?.toLowerCase() === 'humano';
       if (lvl === 1 && !isHumano) return { ok: true, reason: null };
@@ -113,13 +124,9 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : 'Selecione ao menos um poder geral.' };
     }
 
-    case 12: { // Evolução de Nível
-      const lvl = char.level || 1;
-      if (lvl === 1) return { ok: true, reason: null };
-      const requiredAnswers = lvl - 1;
-      const answered = Object.values(char.poderesProgressao || {}).filter(Boolean).length;
-      const ok = answered === requiredAnswers;
-      return { ok, reason: ok ? null : `Selecione os poderes para todos os níveis (${answered}/${requiredAnswers}).` };
+    case 13: { // Identidade
+      const ok = !!char.nome?.trim?.();
+      return { ok, reason: ok ? null : 'Dê um nome ao seu herói para continuar.' };
     }
 
     default: return { ok: true, reason: null };
