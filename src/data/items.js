@@ -608,6 +608,153 @@ export const ITENS = {
     preco: 5,
     peso: 1
   },
+  traje_viajante: {
+    id: 'traje_viajante',
+    nome: 'Traje de Viajante',
+    tipo: 'aventura',
+    preco: 0,
+    peso: 0
+  },
+  saco_dormir: {
+    id: 'saco_dormir',
+    nome: 'Saco de Dormir',
+    tipo: 'aventura',
+    preco: 1,
+    peso: 1
+  },
+  tunica_acolito: {
+    id: 'tunica_acolito',
+    nome: 'Túnica de Acólito',
+    tipo: 'aventura',
+    preco: 1,
+    peso: 1
+  },
+  racao_animal: {
+    id: 'racao_animal',
+    nome: 'Ração para Animais (1 semana)',
+    tipo: 'aventura',
+    preco: 5,
+    peso: 1
+  },
+  flauta: {
+    id: 'flauta',
+    nome: 'Flauta',
+    tipo: 'aventura',
+    preco: 2,
+    peso: 0.5
+  },
+  traje_nobre: {
+    id: 'traje_nobre',
+    nome: 'Traje Nobre',
+    tipo: 'aventura',
+    preco: 100,
+    peso: 2
+  },
+  anel_sinete: {
+    id: 'anel_sinete',
+    nome: 'Anel de Sinete',
+    tipo: 'aventura',
+    preco: 5,
+    peso: 0
+  },
+  ferramentas_artesao: {
+    id: 'ferramentas_artesao',
+    nome: 'Ferramentas de Artesão',
+    tipo: 'aventura',
+    preco: 30,
+    peso: 4
+  },
+  instrumento_musical: {
+    id: 'instrumento_musical',
+    nome: 'Instrumento Musical',
+    tipo: 'aventura',
+    preco: 30,
+    peso: 1
+  },
+  traje_artista: {
+    id: 'traje_artista',
+    nome: 'Traje de Artista',
+    tipo: 'aventura',
+    preco: 30,
+    peso: 1
+  },
+  balanca: {
+    id: 'balanca',
+    nome: 'Balança',
+    tipo: 'aventura',
+    preco: 2,
+    peso: 0.5
+  },
+  frasco_vazio: {
+    id: 'frasco_vazio',
+    nome: 'Frasco Vazio',
+    tipo: 'aventura',
+    preco: 0.1,
+    peso: 0
+  },
+  bussola: {
+    id: 'bussola',
+    nome: 'Bússola',
+    tipo: 'aventura',
+    preco: 10,
+    peso: 0.1
+  },
+  pe_de_cabra: {
+    id: 'pe_de_cabra',
+    nome: 'Pé de Cabra',
+    tipo: 'aventura',
+    preco: 2,
+    peso: 1.5
+  },
+  algemas: {
+    id: 'algemas',
+    nome: 'Algemas',
+    tipo: 'aventura',
+    preco: 15,
+    peso: 1
+  },
+  kit_disfarce: {
+    id: 'kit_disfarce',
+    nome: 'Kit de Disfarce',
+    tipo: 'aventura',
+    preco: 50,
+    peso: 4
+  },
+  dados_viciados: {
+    id: 'dados_viciados',
+    nome: 'Dados Viciados',
+    tipo: 'aventura',
+    preco: 0.5,
+    peso: 0
+  },
+  traje_colorido: {
+    id: 'traje_colorido',
+    nome: 'Traje Colorido',
+    tipo: 'aventura',
+    preco: 1,
+    peso: 1
+  },
+  gazua: {
+    id: 'gazua',
+    nome: 'Gazua',
+    tipo: 'aventura',
+    preco: 2,
+    peso: 0
+  },
+  item_misterioso: {
+    id: 'item_misterioso',
+    nome: 'Item Misterioso',
+    tipo: 'aventura',
+    preco: 0,
+    peso: 0
+  },
+  simbolo_sagrado: {
+    id: 'simbolo_sagrado',
+    nome: 'Símbolo Sagrado',
+    tipo: 'aventura',
+    preco: 40,
+    peso: 0.5
+  },
 
   // PERGAMINHOS
   pergaminho_cura: {

@@ -15,10 +15,10 @@ const PM_ATTR_MAP = {
 };
 
 const CLASS_WEALTH = {
-  arcanista: '2d4', barbaro: '2d4', bardo: '2d6', bucaneiro: '2d6',
-  cacador: '4d6', cavaleiro: '4d6', clerigo: '2d6', druida: '2d4',
-  guerreiro: '4d6', inventor: '4d6', ladino: '4d6', lutador: '2d4',
-  nobre: '6d6', paladino: '4d6'
+  arcanista: '4d6', barbaro: '4d6', bardo: '4d6', bucaneiro: '4d6',
+  cacador: '4d6', cavaleiro: '4d6', clerigo: '4d6', druida: '4d6',
+  guerreiro: '4d6', inventor: '4d6', ladino: '4d6', lutador: '4d6',
+  nobre: '4d6', paladino: '4d6', padrao: '4d6'
 };
 
 function attrPointCost(v) { return ATTR_TOTAL_COST[String(v)] ?? 0; }
@@ -150,7 +150,8 @@ export function computeStats(char) {
     pontosDisponiveis: POINT_POOL - pontosGastos,
     languages: languages,
     totalLangsCount: totalLangsCount,
-    startingWealth: CLASS_WEALTH[char.classe?.toLowerCase()] || '2d4'
+    startingWealth: CLASS_WEALTH[char.classe?.toLowerCase()] || CLASS_WEALTH.padrao,
+    maxLoad: 10 + (2 * (attrs.FOR || 0))
   };
 }
 
