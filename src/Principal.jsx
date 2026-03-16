@@ -1,4 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "./core/store";
 import { useAuthStore } from "./store/useAuthStore";
 import { AuthOverlay } from "./components/auth/AuthOverlay";
