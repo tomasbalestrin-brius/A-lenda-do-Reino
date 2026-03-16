@@ -29,9 +29,27 @@ export function CharacterLibrary({ characters, onPlay, onDelete, onNew, loading 
 
       <div className="w-full max-w-6xl relative z-10">
         {loading ? (
-          <div className="text-center py-20 flex flex-col items-center gap-4">
-            <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-            <p className="text-slate-500 font-black uppercase tracking-[0.2em] text-xs">Convocando heróis...</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-gray-900/40 border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 animate-pulse">
+                <div className="flex items-center gap-5">
+                  <div className="w-20 h-20 rounded-3xl bg-gray-800" />
+                  <div className="flex-1 space-y-3">
+                    <div className="h-6 bg-gray-800 rounded-full w-3/4" />
+                    <div className="h-3 bg-gray-800 rounded-full w-1/2" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 2, 3, 4].map(j => (
+                    <div key={j} className="bg-gray-950/80 rounded-2xl h-14 border border-gray-800/50" />
+                  ))}
+                </div>
+                <div className="flex gap-3 mt-auto">
+                  <div className="flex-[3] h-12 bg-gray-800 rounded-2xl" />
+                  <div className="flex-1 h-12 bg-gray-800 rounded-2xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : characters.length === 0 ? (
           <div className="text-center py-20 bg-gray-900/20 border border-dashed border-gray-800 rounded-[3rem]">

@@ -85,6 +85,8 @@ export function StepRace({ onNext }) {
                 <img 
                   src={RACE_IMAGES[id] || '/assets/images/placeholder.png'} 
                   alt="" 
+                  loading="lazy"
+                  decoding="async"
                   className={`w-full h-full object-cover transition-all duration-700 opacity-20 group-hover:opacity-40 group-hover:scale-110 ${isSelected ? 'opacity-50' : ''}`}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
