@@ -1,3 +1,5 @@
+import CLASSES from '../../data/classes';
+import RACES from '../../data/races';
 import { ORIGENS } from '../../data/origins';
 import ITENS from '../../data/items';
 import { MATERIAIS } from '../../data/modificacoes';
@@ -72,6 +74,7 @@ export function computeStats(char) {
   const hasVontadeFerro = allPowers.has("Vontade de Ferro");
   const hasEsquiva = allPowers.has("Esquiva");
   const hasPeleFerro = allPowers.has("Pele de Ferro") && char.classe === 'barbaro';
+  const hasEncouracado = allPowers.has("Encouraçado");
 
   // PV
   let pv = (cls?.vidaInicial || 10) + CON;
@@ -104,6 +107,16 @@ export function computeStats(char) {
   });
   if (hasEsquiva) def += 2;
   if (hasPeleFerro) def += 2;
+
+  // Encouraçado: +2 Defesa se usar armadura pesada
+  const equippedArmor = (char.equipamento || []).find(e => {
+    const id = typeof e === 'string' ? e : e.id;
+    return ITENS[id]?.tipo === 'armadura';
+  });
+  const armorId = typeof equippedArmor === 'string' ? equippedArmor : equippedArmor?.id;
+  if (hasEncouracado && ITENS[armorId]?.categoria === 'pesada') {
+    def += 2;
+  }
 
   // ATK
   const isRanged = char.classe === 'cacador';
@@ -240,6 +253,11 @@ export function calculateDetailedAttacks(char, stats) {
     }
     if (allPowers.has('Armas da Ambição')) bonusAtk += 1;
 
+    // Ataque Poderoso: -2 ataque / +5 dano (apenas corpo a corpo)
+    if (allPowers.has('Ataque Poderoso') && !base.distancia) {
+      bonusAtk -= 2;
+    }
+
     // 2. Damage
     let damage = base.dano;
     let damageBonus = 0;
@@ -265,6 +283,11 @@ export function calculateDetailedAttacks(char, stats) {
     if (mods.includes('atroz')) damageBonus += 2;
     if (allPowers.has('Estilo de Duas Mãos') && base.empunhadura === 'duas_maos') damageBonus += 5;
     if (allPowers.has('Estilo de Arremesso') && base.arremessavel) damageBonus += 2;
+
+    // Ataque Poderoso: +5 dano (apenas corpo a corpo)
+    if (allPowers.has('Ataque Poderoso') && !base.distancia) {
+      damageBonus += 5;
+    }
 
     // 3. Critical
     let critMargin = base.critico || 20;
