@@ -207,35 +207,83 @@ export function StepReview({ stats, onSave, onPlay }) {
             </div>
           </div>
 
-          {/* Card: Perícias */}
-          <div className="bg-gray-950/60 rounded-[3.5rem] border border-white/10 p-10 shadow-2xl flex flex-col gap-8 relative group/pericias">
-            <div className="relative z-10 flex items-center gap-4">
-              <span className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,1)]" />
-              <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Perícias Treinadas</p>
-            </div>
-            <div className="relative z-10 flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-3 max-h-[450px]">
-              {[...allPericias].sort().map(p => {
-                const mod = getSkillModifier(p);
-                return (
-                  <motion.button 
-                    key={p} 
-                    whileHover={{ x: 8, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                    onClick={() => startTest(p, mod)}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-blue-500/40 transition-all group shadow-inner"
-                  >
-                    <span className="text-xs font-black text-slate-300 uppercase tracking-wide group-hover:text-blue-300 transition-colors">{p}</span>
-                    <div className="flex items-center gap-4">
-                      <span className="text-lg font-black text-white drop-shadow-md">{(mod >= 0 ? '+' : '') + mod}</span>
-                      <span className="text-xl opacity-0 group-hover:opacity-100 transition-opacity -rotate-12 group-hover:rotate-0 inline-block">🎲</span>
-                    </div>
-                  </motion.button>
-                );
-              })}
+            {/* Card: Perícias */}
+            <div className="bg-gray-950/60 rounded-[3.5rem] border border-white/10 p-10 shadow-2xl flex flex-col gap-8 relative group/pericias">
+              <div className="relative z-10 flex items-center gap-4">
+                <span className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,1)]" />
+                <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Perícias Treinadas</p>
+              </div>
+              <div className="relative z-10 flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-3 max-h-[450px]">
+                {[...allPericias].sort().map(p => {
+                  const mod = getSkillModifier(p);
+                  return (
+                    <motion.button 
+                      key={p} 
+                      whileHover={{ x: 8, backgroundColor: 'rgba(255,255,255,0.05)' }}
+                      onClick={() => startTest(p, mod)}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-blue-500/40 transition-all group shadow-inner"
+                    >
+                      <span className="text-xs font-black text-slate-300 uppercase tracking-wide group-hover:text-blue-300 transition-colors">{p}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-black text-white drop-shadow-md">{(mod >= 0 ? '+' : '') + mod}</span>
+                        <span className="text-xl opacity-0 group-hover:opacity-100 transition-opacity -rotate-12 group-hover:rotate-0 inline-block">🎲</span>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* ATAQUES DETALHADOS */}
+          {(stats.detailedAttacks || []).length > 0 && (
+            <div className="lg:col-span-3 bg-gray-950/60 rounded-[3.5rem] border border-white/10 p-10 shadow-2xl flex flex-col gap-8 relative group/attacks">
+              <div className="relative z-10 flex items-center gap-4">
+                <span className="w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,1)]" />
+                <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Arsenal de Combate</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {stats.detailedAttacks.map(atk => (
+                  <motion.div 
+                    key={atk.uid}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 relative overflow-hidden group hover:border-orange-500/30 transition-all shadow-inner"
+                  >
+                    <div className="absolute top-0 right-0 p-6 opacity-5 text-4xl group-hover:scale-110 transition-transform">⚔️</div>
+                    <div className="mb-4">
+                      <h4 className="text-lg font-black text-white uppercase tracking-tight truncate">{atk.nome}</h4>
+                      {atk.material && (
+                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{atk.material}</span>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
+                        <span className="text-[8px] font-black text-slate-500 uppercase">Ataque</span>
+                        <span className="text-xl font-black text-orange-400">{atk.bonusAtk}</span>
+                      </div>
+                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center border border-white/5">
+                        <span className="text-[8px] font-black text-slate-500 uppercase">Dano</span>
+                        <span className="text-xl font-black text-white">{atk.dano}</span>
+                      </div>
+                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
+                        <span className="text-[8px] font-black text-slate-500 uppercase">Crítico</span>
+                        <span className="text-xs font-black text-rose-400">{atk.critico}</span>
+                      </div>
+                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
+                        <span className="text-[8px] font-black text-slate-500 uppercase">Alcance</span>
+                        <span className="text-[10px] font-black text-slate-400">{atk.alcance}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            {/* Card: Poderes */}
            <div className="bg-gray-950/60 rounded-[3rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-6 group hover:border-blue-500/20 transition-all">
               <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">

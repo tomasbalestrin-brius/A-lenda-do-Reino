@@ -1,20 +1,7 @@
 import CLASSES from '../../data/classes';
 import { ORIGENS } from '../../data/origins';
 
-import { getAllTrainedSkills } from './characterStats';
-
-/**
- * Retorna um Set com o nome de todos os poderes que o personagem possui
- */
-export function getAllOwnedPowers(char) {
-  const generic = (char.poderesGerais || []).map(p => typeof p === 'string' ? p : p.nome);
-  const classPowers = (char.poderes || []).map(p => typeof p === 'string' ? p : p.nome);
-  const progressionPowers = Object.values(char.poderesProgressao || {}).filter(Boolean).map(p => typeof p === 'string' ? p : p.nome);
-  const granted = (char.crencasBeneficios || []).map(p => typeof p === 'string' ? p : p.nome);
-  const heranca = char.choices?.herancaPower ? [char.choices.herancaPower.nome] : [];
-
-  return new Set([...generic, ...classPowers, ...progressionPowers, ...granted, ...heranca]);
-}
+import { getAllTrainedSkills, getAllOwnedPowers } from './characterStats';
 
 /**
  * Verifica se um personagem atende a todos os pré-requisitos de um poder.
