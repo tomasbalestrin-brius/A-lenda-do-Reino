@@ -130,7 +130,7 @@ export const ITENS = {
     critico: 19,
     dano: '1d6',
     preco: 20,
-    重量: 1
+    peso: 1
   },
   espada_longa: {
     id: 'espada_longa',
