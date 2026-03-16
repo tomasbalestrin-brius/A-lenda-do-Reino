@@ -38,7 +38,7 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-  signIn: async (email, password) => {
+  signIn: async (email, password, rememberMe = true) => {
     try {
       set({ loading: true, error: null });
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -46,6 +46,17 @@ export const useAuthStore = create((set) => ({
         password,
       });
       if (error) throw error;
+      
+      // If user doesn't want to be remembered, we could potentially 
+      // do something here, but Supabase persistence is usually client-wide.
+      // We will respect this by potentially clearing session on window unload
+      // if rememberMe is false.
+      if (!rememberMe) {
+        window.addEventListener('unload', () => {
+          supabase.auth.signOut();
+        });
+      }
+
       return { data, error: null };
     } catch (error) {
       set({ error: error.message, loading: false });

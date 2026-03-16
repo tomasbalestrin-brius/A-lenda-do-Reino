@@ -6,12 +6,13 @@ export function AuthOverlay() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const { signIn, signUp, loading, error, setError } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (isLogin) {
-      await signIn(email, password);
+      await signIn(email, password, rememberMe);
     } else {
       const { error: signUpErr } = await signUp(email, password);
       if (!signUpErr) {
@@ -70,7 +71,28 @@ export function AuthOverlay() {
                 className="w-full bg-black/40 border border-white/5 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 rounded-2xl px-6 py-4 text-white placeholder-slate-600 transition-all outline-none"
               />
             </div>
-
+  
+            {isLogin && (
+              <div className="flex items-center gap-3 px-2">
+                <button 
+                  type="button"
+                  onClick={() => setRememberMe(!rememberMe)}
+                  className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${
+                    rememberMe ? 'bg-amber-500 border-amber-500' : 'bg-black/40 border-white/10'
+                  }`}
+                >
+                  {rememberMe && (
+                    <svg className="w-3 h-3 text-gray-950" fill="none" viewBox="0 0 24 24" stroke="currentColor font-black">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 cursor-pointer" onClick={() => setRememberMe(!rememberMe)}>
+                  Lembrar-me neste Reino
+                </label>
+              </div>
+            )}
+  
             <AnimatePresence mode='wait'>
               {error && (
                 <motion.p 
