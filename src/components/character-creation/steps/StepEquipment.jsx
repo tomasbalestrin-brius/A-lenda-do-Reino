@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { ITENS } from '../../../data/items';
 import { ORIGENS } from '../../../data/origins';
 import { CLASSES } from '../../../data/classes';
+import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../data/modificacoes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +12,7 @@ export function StepEquipment() {
   const [category, setCategory] = useState('arma');
   const stats = useMemo(() => computeStats(char), [char]);
   const [setupPhase, setSetupPhase] = useState(!char.choices?.claimedStartingKit);
+  const [customizingItem, setCustomizingItem] = useState(null); // { uid, id, mods: [], material: null }
 
   // Auto-claim static items once
   useEffect(() => {
@@ -20,15 +22,15 @@ export function StepEquipment() {
       const originItensNames = ORIGENS[char.origem?.toLowerCase()]?.itens || [];
       const staticIds = ['mochila', 'saco_dormir', 'traje_viajante'];
       
-      // Match origin item names to IDs in ITENS
       const matchedOriginIds = originItensNames.map(name => {
         const entry = Object.entries(ITENS).find(([id, item]) => item.nome.toLowerCase() === name.toLowerCase());
         return entry ? entry[0] : null;
       }).filter(Boolean);
 
-      updateChar({ 
-        equipamento: [...new Set([...(char.equipamento || []), ...staticIds, ...matchedOriginIds])]
-      });
+      const allInitialIds = [...new Set([...staticIds, ...matchedOriginIds])];
+      const initialEquip = allInitialIds.map(id => ({ id, uid: `${id}_${Math.random().toString(36).substr(2, 9)}`, mods: [], material: null }));
+
+      updateChar({ equipamento: initialEquip });
     }
   }, [char.choices?.claimedStartingKit, char.origem, updateChar]);
 
@@ -64,16 +66,20 @@ export function StepEquipment() {
   });
 
   const toggleItem = (item) => {
-    const isOwned = (char.equipamento || []).includes(item.id);
-    if (isOwned) {
+    const equip = char.equipamento || [];
+    const existingIndex = equip.findIndex(e => (typeof e === 'string' ? e : e.id) === item.id && (!e.mods || e.mods.length === 0) && !e.material);
+    
+    if (existingIndex > -1) {
+      const newEquip = [...equip];
+      newEquip.splice(existingIndex, 1);
       updateChar({ 
-        equipamento: char.equipamento.filter(id => id !== item.id),
+        equipamento: newEquip,
         dinheiro: (char.dinheiro || 0) + (item.preco || 0)
       });
     } else {
       if ((char.dinheiro || 0) >= item.preco) {
         updateChar({ 
-          equipamento: [...(char.equipamento || []), item.id],
+          equipamento: [...equip, { id: item.id, uid: `${item.id}_${Math.random().toString(36).substr(2, 9)}`, mods: [], material: null }],
           dinheiro: (char.dinheiro || 0) - (item.preco || 0)
         });
       }
@@ -101,12 +107,10 @@ export function StepEquipment() {
       const current = char.choices?.freeEquipment || {};
       const oldId = current[slot];
       
-      // Update choices
       const nextChoices = { ...(char.choices || {}), freeEquipment: { ...current, [slot]: itemId } };
       
-      // Update equipment list
-      let newEquip = (char.equipamento || []).filter(id => id !== oldId);
-      if (itemId) newEquip.push(itemId);
+      let newEquip = (char.equipamento || []).filter(e => (typeof e === 'string' ? e : e.id) !== oldId);
+      if (itemId) newEquip.push({ id: itemId, uid: `${itemId}_free_${slot}`, mods: [], material: null });
       
       updateChar({ choices: nextChoices, equipamento: newEquip });
     };
@@ -228,13 +232,19 @@ export function StepEquipment() {
             </div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pr-4 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              Carga: {(char.equipamento || []).reduce((acc, id) => {
-                const item = ITENS[id];
+              Carga: {(char.equipamento || []).reduce((acc, e) => {
+                const item = ITENS[typeof e === 'string' ? e : e.id];
                 if (!item) return acc + 1;
-                if (item.id === 'placas' || item.id === 'placas_completa' || item.id === 'peitoral') return acc + 5;
-                if (item.tipo === 'armadura' || (item.tipo === 'arma' && item.categoria === 'duas_maos') || item.id === 'escudo_pesado') return acc + 2;
-                if (['consumivel', 'pergaminho'].includes(item.tipo)) return acc + 0.5;
-                return acc + 1;
+                // Mods effect on load
+                const isMitral = e.material === 'mitral';
+                const isDiscreto = e.mods?.includes('discreto');
+                let weight = 1;
+                if (item.id === 'placas' || item.id === 'placas_completa' || item.id === 'peitoral') weight = 5;
+                else if (item.tipo === 'armadura' || (item.tipo === 'arma' && item.categoria === 'duas_maos') || item.id === 'escudo_pesado') weight = 2;
+                else if (['consumivel', 'pergaminho', 'alquimico'].includes(item.tipo)) weight = 0.5;
+
+                if (isMitral || isDiscreto) weight = Math.max(1, weight - 1);
+                return acc + weight;
               }, 0)} / {stats.maxLoad} espaços
             </div>
         </div>
@@ -245,21 +255,25 @@ export function StepEquipment() {
            <h3 className="text-xl font-black text-indigo-400 uppercase tracking-tighter mb-4 flex items-center gap-3">
              <span className="text-3xl">⚙️</span> Protótipo do Inventor
            </h3>
-           <p className="text-slate-400 text-sm mb-6 leading-relaxed">Escolha um item do seu equipamento para ser seu protótipo (recebe uma modificação gratuita).</p>
+           <p className="text-slate-400 text-sm mb-6 leading-relaxed">Escolha um item do seu equipamento para ser seu protótipo (recebe modificações mais facilmente).</p>
            <div className="flex flex-wrap gap-3">
-              {(char.equipamento || []).map(itemId => (
-                <button
-                  key={itemId}
-                  onClick={() => updateChar({ choices: { ...(char.choices || {}), prototipo: itemId } })}
-                  className={`px-6 py-3 rounded-2xl border-2 transition-all font-bold text-sm ${
-                    char.choices?.prototipo === itemId 
-                      ? 'bg-indigo-600 border-indigo-400 text-white' 
-                      : 'bg-gray-900/40 border-slate-700 text-slate-400 hover:border-slate-500'
-                  }`}
-                >
-                  {ITENS[itemId]?.nome || itemId}
-                </button>
-              ))}
+              {(char.equipamento || []).map(e => {
+                const item = ITENS[typeof e === 'string' ? e : e.id];
+                const uid = typeof e === 'string' ? e : e.uid;
+                return (
+                  <button
+                    key={uid}
+                    onClick={() => updateChar({ choices: { ...(char.choices || {}), prototipoUid: uid } })}
+                    className={`px-6 py-3 rounded-2xl border-2 transition-all font-bold text-sm ${
+                      char.choices?.prototipoUid === uid 
+                        ? 'bg-indigo-600 border-indigo-400 text-white' 
+                        : 'bg-gray-900/40 border-slate-700 text-slate-400 hover:border-slate-500'
+                    }`}
+                  >
+                    {item?.nome || 'Item Desconhecido'}
+                  </button>
+                );
+              })}
               {(char.equipamento || []).length === 0 && <p className="text-slate-600 italic text-xs">Compre um item primeiro.</p>}
            </div>
         </div>
@@ -285,41 +299,201 @@ export function StepEquipment() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <AnimatePresence>
           {filteredItems.map(item => {
-            const isOwned = (char.equipamento || []).includes(item.id);
+            const ownedInstances = (char.equipamento || []).filter(e => (typeof e === 'string' ? e : e.id) === item.id);
+            const isOwned = ownedInstances.length > 0;
             const canAfford = (char.dinheiro || 0) >= item.preco;
+            
             return (
-              <motion.div 
-                layout
-                key={item.id}
-                onClick={() => toggleItem(item)}
-                className={`group p-4 rounded-3xl border transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden ${
-                  isOwned 
-                    ? 'bg-amber-900/10 border-amber-500/50 shadow-lg shadow-amber-900/10' 
-                    : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'
-                } ${!isOwned && !canAfford ? 'opacity-50 grayscale' : ''}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-2xl">{category === 'arma' ? '⚔️' : category === 'armadura' ? '🛡️' : '📦'}</span>
-                  <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase ${isOwned ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-500'}`}>
-                    {isOwned ? 'Comprado' : `T$ ${item.preco}`}
-                  </span>
-                </div>
-                <div>
-                  <p className="font-bold text-white text-sm">{item.nome}</p>
-                  <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
-                    {item.dano && `Dano: ${item.dano} `}
-                    {item.def && `Defesa: +${item.def} `}
-                    {item.peso && `Peso: ${item.peso}kg`}
-                  </p>
-                </div>
-                {item.efeito && (
-                  <p className="text-[9px] text-amber-500/80 italic font-medium">✦ {item.efeito}</p>
+              <div key={item.id} className="flex flex-col gap-2">
+                <motion.div 
+                  layout
+                  onClick={() => toggleItem(item)}
+                  className={`group p-4 rounded-3xl border transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden ${
+                    isOwned 
+                      ? 'bg-amber-900/10 border-amber-500/50 shadow-lg shadow-amber-900/10' 
+                      : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'
+                  } ${!isOwned && !canAfford ? 'opacity-50 grayscale' : ''}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">{category === 'arma' ? '⚔️' : category === 'armadura' ? '🛡️' : '📦'}</span>
+                    <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase ${isOwned ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-500'}`}>
+                      {isOwned ? `${ownedInstances.length}x Possuído` : `T$ ${item.preco}`}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-bold text-white text-sm">{item.nome}</p>
+                    <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
+                      {item.dano && `Dano: ${item.dano} `}
+                      {item.def && `Defesa: +${item.def} `}
+                      {item.peso && `Peso: ${item.peso}kg`}
+                    </p>
+                  </div>
+                </motion.div>
+
+                {isOwned && (
+                  <div className="flex flex-col gap-1 px-2">
+                    {ownedInstances.map((inst, idx) => (
+                      <div key={inst.uid} className="flex items-center justify-between bg-gray-900/60 p-2 rounded-xl border border-white/5">
+                        <div className="flex flex-col">
+                           <span className="text-[9px] font-bold text-slate-400">Instância {idx + 1}</span>
+                           <div className="flex flex-wrap gap-1">
+                              {inst.mods?.map(m => (
+                                <span key={m} className="text-[8px] bg-amber-500/20 text-amber-500 px-1 rounded border border-amber-500/30">
+                                  {MELHORIAS.armas.concat(MELHORIAS.armaduras_escudos, MELHORIAS.esotericos, MELHORIAS.geral, MELHORIAS.ferramentas_vestuario).find(mod => mod.id === m)?.nome || m}
+                                </span>
+                              ))}
+                              {inst.material && (
+                                <span className="text-[8px] bg-indigo-500/20 text-indigo-300 px-1 rounded border border-indigo-500/30">
+                                  {MATERIAIS[inst.material]?.nome}
+                                </span>
+                              )}
+                           </div>
+                        </div>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); setCustomizingItem(inst); }}
+                          className="p-1 px-2 bg-amber-600/20 hover:bg-amber-600/40 text-amber-500 text-[9px] font-black rounded-lg transition-colors border border-amber-500/20"
+                        >
+                          CUSTOMIZAR
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </motion.div>
+              </div>
             );
           })}
         </AnimatePresence>
       </div>
+
+      {/* Customization Modal */}
+      <AnimatePresence>
+        {customizingItem && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => setCustomizingItem(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative w-full max-w-2xl bg-gray-950 border border-amber-500/30 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              <div className="p-8 border-b border-white/5 bg-gradient-to-r from-amber-950/20 to-transparent">
+                <h3 className="text-2xl font-black text-white italic tracking-tighter">Customizar: {ITENS[customizingItem.id]?.nome}</h3>
+                <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mt-1">Melhorias e Materiais Especiais</p>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Mejoras */}
+                  <div className="flex flex-col gap-4">
+                    <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2 px-2">Melhorias Disponíveis</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                       {Object.values(MELHORIAS).flat().filter(m => {
+                         const item = ITENS[customizingItem.id];
+                         if (m.categoria === 'disparo' && !item?.distancia) return false;
+                         if (m.categoria === 'pesada' && item?.categoria !== 'pesada') return false;
+                         // Specific weapon/armor checks can be added here
+                         return true;
+                       }).map(mod => {
+                         const isSelected = (customizingItem.mods || []).includes(mod.id);
+                         const isPrototype = char.choices?.prototipoUid === customizingItem.uid && (customizingItem.mods || []).length === 0;
+                         const cost = isPrototype ? 0 : CUSTOS_MELHORIAS[(customizingItem.mods || []).length + (isSelected ? 0 : 1)] || 300;
+
+                         return (
+                           <button
+                             key={mod.id}
+                             disabled={isSelected}
+                             onClick={() => {
+                               if ((char.dinheiro || 0) < cost && !isPrototype) return;
+                               const newMods = [...(customizingItem.mods || []), mod.id];
+                               const newEquip = char.equipamento.map(e => e.uid === customizingItem.uid ? { ...e, mods: newMods } : e);
+                               updateChar({ 
+                                 equipamento: newEquip,
+                                 dinheiro: (char.dinheiro || 0) - (isPrototype ? 0 : cost)
+                               });
+                               setCustomizingItem({ ...customizingItem, mods: newMods });
+                             }}
+                             className={`p-3 rounded-2xl border transition-all text-left flex justify-between items-center group ${
+                               isSelected ? 'bg-amber-500/20 border-amber-500/50 opacity-100' : 'bg-gray-900 border-white/5 hover:border-amber-500/30'
+                             }`}
+                           >
+                             <div>
+                               <p className={`text-xs font-bold ${isSelected ? 'text-amber-500' : 'text-white'}`}>{mod.nome}</p>
+                               <p className="text-[9px] text-slate-500">{mod.efeito}</p>
+                             </div>
+                             {!isSelected && (
+                               <span className="text-[10px] font-black text-amber-600 bg-amber-600/10 px-2 py-1 rounded-lg">
+                                 {isPrototype ? 'GRÁTIS' : `T$ ${cost}`}
+                               </span>
+                             )}
+                           </button>
+                         );
+                       })}
+                    </div>
+                  </div>
+
+                  {/* Material Especiais */}
+                  <div className="flex flex-col gap-4">
+                    <h4 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 px-2">Materiais Especiais</h4>
+                    <div className="grid grid-cols-1 gap-2">
+                       {Object.entries(MATERIAIS).map(([id, mat]) => {
+                         const isSelected = customizingItem.material === id;
+                         const item = ITENS[customizingItem.id];
+                         let type = 'arma';
+                         if (item.tipo === 'armadura') type = item.categoria === 'pesada' ? 'armadura_pesada' : 'armadura_leve';
+                         else if (item.tipo === 'escudo') type = 'escudo';
+                         else if (item.tipo === 'esoterico') type = 'esoterico';
+                         
+                         const cost = mat.precos[type] || 0;
+                         if (cost === 0 && type.startsWith('armadura')) return null;
+
+                         return (
+                           <button
+                             key={id}
+                             disabled={isSelected}
+                             onClick={() => {
+                               if ((char.dinheiro || 0) < cost) return;
+                               const newEquip = char.equipamento.map(e => e.uid === customizingItem.uid ? { ...e, material: id } : e);
+                               updateChar({ 
+                                 equipamento: newEquip,
+                                 dinheiro: (char.dinheiro || 0) - cost
+                               });
+                               setCustomizingItem({ ...customizingItem, material: id });
+                             }}
+                             className={`p-3 rounded-2xl border transition-all text-left flex justify-between items-center ${
+                               isSelected ? 'bg-indigo-500/20 border-indigo-500/50' : 'bg-gray-900 border-white/5 hover:border-indigo-500/30'
+                             }`}
+                           >
+                             <div>
+                               <p className={`text-xs font-bold ${isSelected ? 'text-indigo-400' : 'text-white'}`}>{mat.nome}</p>
+                               <p className="text-[9px] text-slate-500 line-clamp-1">{mat.efeito}</p>
+                             </div>
+                             {!isSelected && (
+                               <span className="text-[10px] font-black text-indigo-500 bg-indigo-500/10 px-2 py-1 rounded-lg">
+                                 T$ {cost}
+                               </span>
+                             )}
+                           </button>
+                         );
+                       })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-8 border-t border-white/5 flex justify-end">
+                <button 
+                  onClick={() => setCustomizingItem(null)}
+                  className="px-10 py-3 bg-white hover:bg-slate-100 text-gray-950 rounded-2xl font-black uppercase tracking-widest text-xs transition-all"
+                >
+                  Fechar
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

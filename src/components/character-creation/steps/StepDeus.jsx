@@ -6,11 +6,11 @@ import { DeityModal } from '../modals/DeityModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 
 const DEITY_ICONS = {
-  azgher: '☀️', aharadak: '👁️', allihanna: '🌿', arsenal: '⚔️',
-  kallyadranoch: '🐉', khalmyr: '⚖️', lena: '🌸', linwuh: '🗡️',
-  megalokk: '🦖', marid: '🌊', nimb: '🎲', oceano: '🌊',
-  sszzas: '🐍', tanna_toh: '📖', tenebra: '🌑', thwor: '🥊',
-  valkaria: '🗽', wynna: '✨',
+  aharadak: '👁️', allihanna: '🌿', arsenal: '⚔️', azgher: '☀️',
+  hyninn: '🎭', kallyadranoch: '🐉', khalmyr: '⚖️', lena: '🌸',
+  lin_wu: '🗡️', marah: '🕊️', megalokk: '🦖', nimb: '🎲',
+  oceano: '🌊', sszzaas: '🐍', tanna_toh: '📖', tenebra: '🌑',
+  thwor: '🥊', thyatis: '🔥', valkaria: '🗽', wynna: '✨',
 };
 
 export function StepDeus() {

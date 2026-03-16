@@ -4,6 +4,19 @@ import { ORIGENS } from '../../data/origins';
 import { getAllTrainedSkills } from './characterStats';
 
 /**
+ * Retorna um Set com o nome de todos os poderes que o personagem possui
+ */
+export function getAllOwnedPowers(char) {
+  const generic = (char.poderesGerais || []).map(p => typeof p === 'string' ? p : p.nome);
+  const classPowers = (char.poderes || []).map(p => typeof p === 'string' ? p : p.nome);
+  const progressionPowers = Object.values(char.poderesProgressao || {}).filter(Boolean).map(p => typeof p === 'string' ? p : p.nome);
+  const granted = (char.crencasBeneficios || []).map(p => typeof p === 'string' ? p : p.nome);
+  const heranca = char.choices?.herancaPower ? [char.choices.herancaPower.nome] : [];
+
+  return new Set([...generic, ...classPowers, ...progressionPowers, ...granted, ...heranca]);
+}
+
+/**
  * Verifica se um personagem atende a todos os pré-requisitos de um poder.
  */
 export function meetsRequirement(req, char, stats) {
@@ -23,17 +36,58 @@ export function meetsRequirement(req, char, stats) {
       if (!trained.has(p)) return false;
     }
   }
+
+  // OU Perícias
+  if (req.orPericia) {
+    const trained = getAllTrainedSkills(char);
+    if (!req.orPericia.some(p => trained.has(p))) return false;
+  }
   
   // Poderes Anteriores
+  const allPowers = getAllOwnedPowers(char);
   if (req.poder) {
-    const owned = char.poderes || [];
     for (const p of req.poder) {
-      if (!owned.includes(p)) return false;
+      if (!allPowers.has(p)) return false;
     }
+  }
+
+  // OU Poderes
+  if (req.orPoder) {
+    if (!req.orPoder.some(p => allPowers.has(p))) return false;
   }
   
   // Nível Mínimo
-  if (req.nivel && char.level < req.nivel) return false;
+  const characterLevel = char.level || 1;
+  if (req.nivel && characterLevel < req.nivel) return false;
+  if (req.level && characterLevel < req.level) return false;
+
+  // Habilidade de Classe
+  if (req.habilidade && !char.classeHabilidades?.includes(req.habilidade)) {
+    // Nota: classeHabilidades precisa ser preenchido no store ao selecionar classe
+    // Por enquanto, checamos se a classe é mística se pedir "Magias"
+    if (req.habilidade === "Magias") {
+      const mysticalClasses = ["arcanista", "bardo", "clerigo", "druida"];
+      if (!mysticalClasses.includes(char.classe)) return false;
+    }
+  }
+
+  // Círculo de Magia
+  if (req.circulo) {
+    // Lógica simplificada: nível 6 = 2º círculo, nível 10 = 3º círculo
+    const maxCirculo = characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1);
+    if (maxCirculo < req.circulo) return false;
+  }
+
+  // Poderes da Tormenta
+  if (req.poderTormenta) {
+    const tormentaCount = Array.from(allPowers).filter(pName => {
+      // Aqui teríamos que cruzar com GENERAL_POWERS.tormenta ou checar se o poder foi marcado
+      // Por simplicidade, vamos assumir que o sistema de contagem será implementado
+      // ou apenas checar se o número de poderes da tormenta no generic powers bate.
+      return (char.poderesGerais || []).some(pg => pg.nome === pName && pg.tipo === 'tormenta');
+    }).length;
+    if (tormentaCount < req.poderTormenta) return false;
+  }
   
   // Condição Especial (Lefou, Humano, Deuses)
   if (req.custom) {
@@ -50,9 +104,11 @@ export function meetsRequirement(req, char, stats) {
 export function checkPowerEligibility(power, char, stats) {
   if (!power.requisitos) return { ok: true };
 
+  const req = power.requisitos;
+
   // Atributos
-  if (power.requisitos.attr) {
-    for (const [attr, min] of Object.entries(power.requisitos.attr)) {
+  if (req.attr) {
+    for (const [attr, min] of Object.entries(req.attr)) {
       if ((stats.attrs?.[attr] || 0) < min) {
         return { ok: false, reason: `${attr} ${min}` };
       }
@@ -60,27 +116,58 @@ export function checkPowerEligibility(power, char, stats) {
   }
 
   // Nível
-  if (power.requisitos.nivel && char.level < power.requisitos.nivel) {
-    return { ok: false, reason: `Nível ${power.requisitos.nivel}` };
+  const characterLevel = char.level || 1;
+  const targetLevel = req.nivel || req.level;
+  if (targetLevel && characterLevel < targetLevel) {
+    return { ok: false, reason: `Nível ${targetLevel}` };
   }
 
   // Perícias
-  if (power.requisitos.pericia) {
+  if (req.pericia) {
     const trained = getAllTrainedSkills(char);
-    for (const p of power.requisitos.pericia) {
+    for (const p of req.pericia) {
       if (!trained.has(p)) {
         return { ok: false, reason: `${p} Treinada` };
       }
     }
   }
 
+  if (req.orPericia) {
+    const trained = getAllTrainedSkills(char);
+    if (!req.orPericia.some(p => trained.has(p))) {
+      return { ok: false, reason: `${req.orPericia.join(' ou ')}` };
+    }
+  }
+
   // Poderes
-  if (power.requisitos.poder) {
-    const owned = char.poderes || [];
-    for (const pName of power.requisitos.poder) {
-      if (!owned.includes(pName)) {
+  const allPowers = getAllOwnedPowers(char);
+  if (req.poder) {
+    for (const pName of req.poder) {
+      if (!allPowers.has(pName)) {
         return { ok: false, reason: `Poder ${pName}` };
       }
+    }
+  }
+
+  if (req.orPoder) {
+    if (!req.orPoder.some(p => allPowers.has(p))) {
+      return { ok: false, reason: `Requer ${req.orPoder.join(' ou ')}` };
+    }
+  }
+
+  // Habilidade
+  if (req.habilidade === "Magias") {
+    const mysticalClasses = ["arcanista", "bardo", "clerigo", "druida"];
+    if (!mysticalClasses.includes(char.classe)) {
+      return { ok: false, reason: "Habilidade de lançar magias" };
+    }
+  }
+
+  // Círculo
+  if (req.circulo) {
+    const maxCirculo = characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1);
+    if (maxCirculo < req.circulo) {
+      return { ok: false, reason: `${req.circulo}º Círculo` };
     }
   }
 

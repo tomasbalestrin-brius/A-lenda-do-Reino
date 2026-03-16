@@ -198,11 +198,14 @@ export function CharacterPreview({ char, stats }) {
         <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
           <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Equipamento</p>
           <div className="flex flex-wrap gap-1">
-            {char.equipamento.map(id => (
-              <span key={id} className="text-[9px] bg-gray-900 text-gray-400 border border-gray-700 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                📦 {ITENS[id]?.nome}
-              </span>
-            ))}
+            {char.equipamento.map(e => {
+              const id = typeof e === 'string' ? e : e.id;
+              return (
+                <span key={typeof e === 'string' ? e : e.uid} className="text-[9px] bg-gray-900 text-gray-400 border border-gray-700 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                  📦 {ITENS[id]?.nome}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}

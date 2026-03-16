@@ -46,12 +46,11 @@ const CLASS_ICONS = {
 };
 
 const DEITY_ICONS = {
-  allihanna: '🌿', azgher: '☀️', hyninn: '📖', khalmyr: '⚖️',
-  lena: '❤️', linwu: '🎐', marah: '🕊️', megalokk: '👹',
-  nimb: '🎭', oceano: '🌊', sszzaas: '🐍', tanna_toh: '🌙',
-  tenebra: '💀', thyatis: '💰', valkaria: '⚔️', wynna: '🔮',
-  ragnar: '🪓', keenn: '🌇', arsenal: '🛡️', grande_oceano: '🌀',
-  aharadak: '👁️', kallyadranoch: '🐉', marid: '🌊', thwor: '🥊'
+  aharadak: '👁️', allihanna: '🌿', arsenal: '⚔️', azgher: '☀️',
+  hyninn: '🎭', kallyadranoch: '🐉', khalmyr: '⚖️', lena: '🌸',
+  lin_wu: '🗡️', marah: '🕊️', megalokk: '🦖', nimb: '🎲',
+  oceano: '🌊', sszzaas: '🐍', tanna_toh: '📖', tenebra: '🌑',
+  thwor: '🥊', thyatis: '🔥', valkaria: '🗽', wynna: '✨',
 };
 
 export function StepReview({ stats, onSave, onPlay }) {
@@ -172,14 +171,21 @@ export function StepReview({ stats, onSave, onPlay }) {
                   { label: 'Origem', val: orig?.nome, sub: '📜' },
                   { label: 'Divindade', val: deus?.nome || 'Ateu', sub: DEITY_ICONS[char.deus] || '🚫' },
                 ].map(item => (
-                  <div key={item.label} className="group flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-3xl bg-gray-950 border border-white/10 flex items-center justify-center text-3xl shadow-2xl group-hover:border-amber-500/30 transition-all group-hover:scale-110">
-                      <span className="relative z-10">{item.sub}</span>
+                  <div key={item.label} className="group flex flex-col gap-1">
+                    <div className="flex items-center gap-6">
+                      <div className="w-16 h-16 rounded-3xl bg-gray-950 border border-white/10 flex items-center justify-center text-3xl shadow-2xl group-hover:border-amber-500/30 transition-all group-hover:scale-110">
+                        <span className="relative z-10">{item.sub}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] uppercase tracking-widest font-black text-slate-600 block mb-1">{item.label}</span>
+                        <span className="text-2xl font-black text-white truncate drop-shadow-md">{item.val}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-[10px] uppercase tracking-widest font-black text-slate-600 block mb-1">{item.label}</span>
-                      <span className="text-2xl font-black text-white truncate drop-shadow-md">{item.val}</span>
-                    </div>
+                    {item.label === 'Divindade' && deus?.devoto?.restricoes && (
+                      <p className="text-[9px] text-amber-500/60 font-medium ml-22 max-w-xs leading-tight italic">
+                        "{deus.devoto.restricoes}"
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -251,11 +257,23 @@ export function StepReview({ stats, onSave, onPlay }) {
                  <span className="w-2 h-2 bg-amber-400 rounded-full" /> Arsenal da Jornada
               </p>
               <div className="flex flex-wrap gap-3">
-                {(char.equipamento || []).map(id => (
-                  <span key={id} className="px-5 py-3 bg-amber-900/10 border border-amber-500/20 rounded-2xl text-[11px] font-black text-amber-500 uppercase tracking-wider flex items-center gap-3 hover:bg-amber-500/20 transition-colors">
-                    <span className="text-base text-amber-500/60">📦</span> {ITENS[id]?.nome || id}
-                  </span>
-                ))}
+              {(char.equipamento || []).map(e => {
+                const id = typeof e === 'string' ? e : e.id;
+                const item = ITENS[id];
+                return (
+                  <div key={typeof e === 'string' ? e : e.uid} className="flex flex-col gap-1">
+                    <span className="px-5 py-3 bg-amber-900/10 border border-amber-500/20 rounded-2xl text-[11px] font-black text-amber-500 uppercase tracking-wider flex items-center gap-3 hover:bg-amber-500/20 transition-colors">
+                      <span className="text-base text-amber-500/60">📦</span> {item?.nome || id}
+                    </span>
+                    {typeof e !== 'string' && (e.mods?.length > 0 || e.material) && (
+                      <div className="flex flex-wrap gap-1 px-2">
+                        {e.mods?.map(m => <span key={m} className="text-[7px] text-amber-600 font-bold uppercase">+{m}</span>)}
+                        {e.material && <span className="text-[7px] text-indigo-400 font-bold uppercase">{e.material}</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
                 {(char.equipamento || []).length === 0 && <span className="text-[11px] text-slate-700 italic font-medium">Seu herói inicia a jornada de mãos vazias.</span>}
               </div>
            </div>

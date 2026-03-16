@@ -1,791 +1,424 @@
 // ===================================
-// TORMENTA 20 - M�DULO DE DIVINDADES
+// TORMENTA 20 - MÓDULO DE DIVINDADES
 // ===================================
 
 export const divindades = {
+  aharadak: {
+    nome: "Aharadak",
+    titulo: "O Deus da Tormenta",
+    alinhamento: "Caótico e Mau",
+    portfolio: "Tormenta, corrupção, transcendência",
+    simbolo: "Olho em um cristal rubro",
+    cores: "Rubro e preto",
+    arma: "Corrente de espinhos",
+    devoto: {
+      poderes: [
+        { nome: "Afinidade com a Tormenta", deus: "Aharadak", descricao: "Você é considerado uma criatura da Tormenta e recebe +2 em testes de resistência contra efeitos da Tormenta." },
+        { nome: "Percepção Temporal", deus: "Aharadak", descricao: "Você recebe +2 em Iniciativa e Reflexos." },
+        { nome: "Rejeição da Realidade", deus: "Aharadak", descricao: "Gasta 2 PM para receber RD 5 contra danos não mágicos por uma cena." }
+      ],
+      restricoes: "Deve realizar um sacrifício de sangue (1d6 PV) toda vez que rezar por PM e nunca pode ajudar a combater a Tormenta.",
+      magiasConcedidas: { 1: "Desespero esmagador", 2: "Névoa", 3: "Tentáculos de Trevas" }
+    },
+    descricao: "O Deus da Tormenta, senhor da corrupção que ameaça toda Arton.",
+    dogma: "Aceite a transcendência rubra."
+  },
   allihanna: {
     nome: "Allihanna",
-    titulo: "M�e Natureza",
+    titulo: "A Deusa da Natureza",
     alinhamento: "Neutro e Bom",
     portfolio: "Natureza, animais, plantas",
     simbolo: "Folha de carvalho",
     cores: "Verde e marrom",
-    arma: "Lan�a",
+    arma: "Lança",
     devoto: {
       poderes: [
-        {
-          nome: "Empatia Selvagem",
-          descricao:
-            "Voc� pode se comunicar com animais e recebe +2 em Adestramento.",
-        },
-        {
-          nome: "Caminho das �rvores",
-          nivel: 2,
-          descricao:
-            "Voc� pode atravessar vegeta��o densa sem redu��o de movimento.",
-        },
-        {
-          nome: "Forma Selvagem",
-          nivel: 5,
-          descricao:
-            "Voc� pode se transformar em um animal por cena, um n�mero de vezes por dia igual ao seu modificador de Sabedoria.",
-        },
+        { nome: "Compreender os Ermos", deus: "Allihanna", descricao: "Recebe +2 em Sobrevivência e usa Sabedoria para Adestramento." },
+        { nome: "Dedo Verde", deus: "Allihanna", descricao: "Aprende e pode lançar Controlar Plantas." },
+        { nome: "Descanso Natural", deus: "Allihanna", descricao: "Dormir ao relento conta como descanso em lugar confortável." },
+        { nome: "Voz da Natureza", deus: "Allihanna", descricao: "Pode falar com animais e aprende a magia Acalmar Animal." }
       ],
-      restricoes: "N�o pode usar armaduras de metal",
-      magiasConcedidas: {
-        1: "Controlar Plantas",
-        2: "Pele de Pedra",
-        3: "Invocar Animais",
-      },
+      restricoes: "Não pode usar armaduras de metal, nem descansar em cidades ou locais civilizados (exceto em emergências).",
+      magiasConcedidas: { 1: "Acalmar Animal", 2: "Caminhar na Floresta", 3: "Invocar Animais" }
     },
-    descricao:
-      "Deusa da natureza, protetora das florestas e dos animais. Seus devotos s�o druidas, rangers e todos que vivem em harmonia com a natureza.",
-    dogma:
-      "Proteja a natureza, viva em harmonia com os animais, respeite o ciclo da vida.",
+    descricao: "A mãe de todas as criaturas selvagens.",
+    dogma: "Respeite a vida natural."
   },
-
-  azgher: {
-    nome: "Azgher",
-    titulo: "Sol Ardente",
-    alinhamento: "Leal e Bom",
-    portfolio: "Sol, verdade, honra",
-    simbolo: "Sol flamejante",
-    cores: "Dourado e laranja",
-    arma: "Espada longa",
-    devoto: {
-      poderes: [
-        {
-          nome: "Luz Solar",
-          descricao:
-            "Voc� pode criar luz intensa como o sol em 9m, cegando inimigos (CD Sab).",
-        },
-        {
-          nome: "Destruir Mortos-Vivos",
-          nivel: 2,
-          descricao:
-            "+2 em testes para expulsar mortos-vivos e causa +1d6 de dano de luz contra eles.",
-        },
-        {
-          nome: "Chamas Purificadoras",
-          nivel: 5,
-          descricao:
-            "Suas armas corpo a corpo causam +1d6 de dano de fogo e luz.",
-        },
-      ],
-      restricoes: "Nunca pode mentir ou trair aliados",
-      magiasConcedidas: {
-        1: "Raio Solar",
-        2: "Curar Ferimentos Graves",
-        3: "Coluna de Chamas",
-      },
-    },
-    descricao:
-      "Deus do sol, da verdade e da honra. Inimigo da mentira e das trevas.",
-    dogma:
-      "Seja honesto, proteja os fracos, destrua mortos-vivos e cultistas das trevas.",
-  },
-
-  hyninn: {
-    nome: "Hyninn",
-    titulo: "Deus do Conhecimento",
-    alinhamento: "Neutro",
-    portfolio: "Conhecimento, magia, sabedoria",
-    simbolo: "Livro aberto",
-    cores: "Azul e prata",
-    arma: "Bord�o",
-    devoto: {
-      poderes: [
-        {
-          nome: "Conhecimento Arcano",
-          descricao:
-            "+2 em Misticismo e Conhecimento. Voc� pode identificar magias ao v�-las.",
-        },
-        {
-          nome: "Mestre dos Magos",
-          nivel: 2,
-          descricao: "Voc� aprende uma magia arcana adicional a cada n�vel.",
-        },
-        {
-          nome: "Sabedoria Ancestral",
-          nivel: 5,
-          descricao:
-            "Uma vez por dia, voc� pode fazer um teste de Conhecimento como se tivesse treinamento m�ximo.",
-        },
-      ],
-      restricoes: "Deve buscar e preservar conhecimento",
-      magiasConcedidas: {
-        1: "Identificar Magia",
-        2: "Compreens�o",
-        3: "Vid�ncia",
-      },
-    },
-    descricao:
-      "Deus do conhecimento, da magia e da sabedoria. Patrono de magos e estudiosos.",
-    dogma: "Busque conhecimento, preserve a sabedoria, domine a magia.",
-  },
-
-  khalmyr: {
-    nome: "Khalmyr",
-    titulo: "Deus da Justi�a",
-    alinhamento: "Leal e Bom",
-    portfolio: "Justi�a, ordem, disciplina",
-    simbolo: "Martelo e balan�a",
-    cores: "Prata e azul",
+  arsenal: {
+    nome: "Arsenal",
+    titulo: "O Deus da Guerra",
+    alinhamento: "Leal e Neutro",
+    portfolio: "Guerra, tática, conquista",
+    simbolo: "Martelo e bigorna",
+    cores: "Cinza e vermelho",
     arma: "Martelo de guerra",
     devoto: {
       poderes: [
-        {
-          nome: "Aura de Justi�a",
-          descricao:
-            "Aliados em 9m recebem +2 em testes contra medo e efeitos mentais.",
-        },
-        {
-          nome: "Golpe Justo",
-          nivel: 2,
-          descricao:
-            "Uma vez por rodada, voc� pode rolar novamente uma jogada de ataque e usar o melhor resultado.",
-        },
-        {
-          nome: "Julgamento Divino",
-          nivel: 5,
-          descricao:
-            "Voc� pode declarar um alvo como criminoso. Voc� recebe +4 em ataques contra ele at� o fim da cena.",
-        },
+        { nome: "Conjurar Arma", deus: "Arsenal", descricao: "Gasta 1 PM para criar uma arma mística em sua mão." },
+        { nome: "Coragem Total", deus: "Arsenal", descricao: "Você é imune a medo." },
+        { nome: "Sangue de Ferro", deus: "Arsenal", descricao: "Gasta 2 PM para receber RD 5 por uma cena." },
+        { nome: "Tático", deus: "Arsenal", descricao: "Você pode usar Inteligência para testes de Iniciativa e Guerra." }
       ],
-      restricoes: "Deve sempre seguir as leis e c�digos de honra",
-      magiasConcedidas: {
-        1: "Detectar Mentiras",
-        2: "Arma Sagrada",
-        3: "Marca da Justi�a",
-      },
+      restricoes: "Nunca pode recusar um desafio de combate e deve sempre portar uma arma.",
+      magiasConcedidas: { 1: "Arma Mágica", 2: "Cegueira/Surdez", 3: "Vestimenta de Fé" }
     },
-    descricao: "Deus da justi�a, ordem e disciplina. O Grande Juiz de Arton.",
-    dogma: "Siga as leis, puna criminosos, mantenha a ordem.",
+    descricao: "O sumo-sacerdote que ascendeu à divindade da guerra.",
+    dogma: "A vitória justifica tudo."
   },
-
-  lena: {
-    nome: "Lena",
-    titulo: "Deusa da Vida",
-    alinhamento: "Neutro e Bom",
-    portfolio: "Vida, cura, compaix�o",
-    simbolo: "Cora��o com asas",
-    cores: "Rosa e branco",
-    arma: "Mangual",
-    devoto: {
-      poderes: [
-        {
-          nome: "Curandeiro Devoto",
-          descricao:
-            "Suas magias de cura recuperam +2 PV por c�rculo da magia.",
-        },
-        {
-          nome: "Toque da Vida",
-          nivel: 2,
-          descricao:
-            "Voc� pode curar 1d6 PV com um toque, um n�mero de vezes por dia igual ao seu modificador de Sabedoria.",
-        },
-        {
-          nome: "Aura Curativa",
-          nivel: 5,
-          descricao: "Aliados em 6m recuperam 1 PV por rodada.",
-        },
-      ],
-      restricoes: "Nunca pode recusar ajuda a feridos ou doentes",
-      magiasConcedidas: {
-        1: "Curar Ferimentos",
-        2: "Restaura��o Menor",
-        3: "Cura Completa",
-      },
-    },
-    descricao: "Deusa da vida, cura e compaix�o. A Grande Curadora.",
-    dogma: "Cure os feridos, alivie o sofrimento, preserve a vida.",
-  },
-
-  linwu: {
-    nome: "Lin-Wu",
-    titulo: "Senhora dos Ventos",
-    alinhamento: "Ca�tico e Neutro",
-    portfolio: "Ar, liberdade, viagens",
-    simbolo: "Nuvem estilizada",
-    cores: "Branco e azul claro",
+  azgher: {
+    nome: "Azgher",
+    titulo: "O Deus do Sol",
+    alinhamento: "Leal e Bom",
+    portfolio: "Sol, verdade, viagens",
+    simbolo: "Sol flamejante",
+    cores: "Dourado e laranja",
     arma: "Cimitarra",
     devoto: {
       poderes: [
-        {
-          nome: "Velocidade dos Ventos",
-          descricao: "Seu deslocamento aumenta em +3m.",
-        },
-        {
-          nome: "Levita��o",
-          nivel: 2,
-          descricao:
-            "Voc� pode levitar por 1 minuto, um n�mero de vezes por dia igual ao seu modificador de Sabedoria.",
-        },
-        {
-          nome: "Sopro Divino",
-          nivel: 5,
-          descricao:
-            "Voc� pode criar um vendaval que empurra todos em um cone de 9m.",
-        },
+        { nome: "Espada Solar", deus: "Azgher", descricao: "Gasta 1 PM para fazer sua espada causar +1d6 dano de fogo." },
+        { nome: "Fulgor Solar", deus: "Azgher", descricao: "Recebe RD 10 a fogo e pode ofuscar atacantes com um reflexo solar." },
+        { nome: "Habitante do Deserto", deus: "Azgher", descricao: "Recebe RD 10 a fogo e pode criar água com 1 PM." },
+        { nome: "Inimigo de Tenebra", deus: "Azgher", descricao: "Causa +1d6 de dano contra mortos-vivos." }
       ],
-      restricoes: "Nunca pode ser aprisionado voluntariamente",
-      magiasConcedidas: {
-        1: "Levita��o",
-        2: "Voo",
-        3: "Controlar Ventos",
-      },
+      restricoes: "Deve cobrir o rosto em público e doar parte de suas riquezas em ouro para o templo.",
+      magiasConcedidas: { 1: "Luz", 2: "Consagrar", 3: "Coluna de Chamas" }
     },
-    descricao:
-      "Deusa do ar, da liberdade e das viagens. Protetora de viajantes e n�mades.",
-    dogma: "Seja livre, nunca se prenda a um lugar, respeite os ventos.",
+    descricao: "O sol que tudo vê.",
+    dogma: "A verdade prevalecerá sob a luz."
   },
-
-  marah: {
-    nome: "Marah",
-    titulo: "Deusa da Paz",
-    alinhamento: "Leal e Bom",
-    portfolio: "Paz, harmonia, fam�lia",
-    simbolo: "Pomba branca",
-    cores: "Branco e dourado",
-    arma: "Chicote",
-    devoto: {
-      poderes: [
-        {
-          nome: "Aura de Paz",
-          descricao:
-            "Inimigos em 9m devem fazer um teste de Vontade ou n�o podem atacar voc�.",
-        },
-        {
-          nome: "Palavras de Conforto",
-          nivel: 2,
-          descricao:
-            "+4 em Diplomacia e pode acalmar conflitos com sucesso autom�tico em testes.",
-        },
-        {
-          nome: "Harmonia Divina",
-          nivel: 5,
-          descricao:
-            "Voc� pode encerrar um combate, fazendo todos os combatentes pararem (CD Sab).",
-        },
-      ],
-      restricoes: "Nunca pode iniciar combate",
-      magiasConcedidas: {
-        1: "Acalmar Emo��es",
-        2: "Santu�rio",
-        3: "Coluna de Luz",
-      },
-    },
-    descricao: "Deusa da paz, harmonia e fam�lia. A M�e de Todos.",
-    dogma: "Busque a paz, proteja fam�lias, evite conflitos desnecess�rios.",
-  },
-
-  megalokk: {
-    nome: "Megalokk",
-    titulo: "Senhor dos Monstros",
-    alinhamento: "Ca�tico e Mau",
-    portfolio: "Monstros, destrui��o, selvageria",
-    simbolo: "Garra de besta",
-    cores: "Vermelho e preto",
-    arma: "Machado grande",
-    devoto: {
-      poderes: [
-        {
-          nome: "Aspecto Monstruoso",
-          descricao:
-            "Voc� recebe +2 em Intimida��o e ataques desarmados causam 1d6 de dano.",
-        },
-        {
-          nome: "F�ria Selvagem",
-          nivel: 2,
-          descricao: "Quando entra em f�ria, causa +1d6 de dano adicional.",
-        },
-        {
-          nome: "Forma Bestial",
-          nivel: 5,
-          descricao:
-            "Voc� pode se transformar em um monstro por uma cena, ganhando +4 For e +2 armadura natural.",
-        },
-      ],
-      restricoes: "Deve destruir civiliza��o sempre que poss�vel",
-      magiasConcedidas: {
-        1: "Pele de Pedra",
-        2: "Crescer",
-        3: "Forma Monstruosa",
-      },
-    },
-    descricao: "Deus dos monstros e da selvageria. O Grande Predador.",
-    dogma: "Destrua a civiliza��o, libere a besta interior, domine pela for�a.",
-  },
-
-  nimb: {
-    nome: "Nimb",
-    titulo: "O Deus da Ilus�o",
-    alinhamento: "Ca�tico e Neutro",
-    portfolio: "Ilus�o, sorte, caos",
-    simbolo: "M�scara de teatro",
-    cores: "Cores variadas",
+  hyninn: {
+    nome: "Hyninn",
+    titulo: "O Deus da Trapaça",
+    alinhamento: "Caótico e Neutro",
+    portfolio: "Trapaça, ladroagem, engenhosidade",
+    simbolo: "Máscara e adaga",
+    cores: "Preto e prata",
     arma: "Adaga",
     devoto: {
       poderes: [
-        {
-          nome: "Mestre das Ilus�es",
-          descricao: "Magias de ilus�o custam -1 PM e t�m CD +2.",
-        },
-        {
-          nome: "Sorte de Nimb",
-          nivel: 2,
-          descricao:
-            "Uma vez por dia, voc� pode rolar novamente qualquer teste e usar o melhor resultado.",
-        },
-        {
-          nome: "Realidade Distorcida",
-          nivel: 5,
-          descricao: "Voc� pode tornar uma ilus�o real por 1 rodada.",
-        },
+        { nome: "Forma de Macaco", deus: "Hyninn", descricao: "Recebe +2 em Acrobacia e Atletismo." },
+        { nome: "Golpe Baixo", deus: "Hyninn", descricao: "Gasta 2 PM para deixar um alvo desprevenido." },
+        { nome: "Mestre da Fuga", deus: "Hyninn", descricao: "Recebe +5 em Furtividade e Ladinagem." }
       ],
-      restricoes: "Deve sempre criar confus�o e caos",
-      magiasConcedidas: {
-        1: "Imagem Espelhada",
-        2: "Invisibilidade",
-        3: "Ilus�o Programada",
-      },
+      restricoes: "Nunca pode ser preso ou aceitar ordens sem questionar.",
+      magiasConcedidas: { 1: "Disfarce Ilusório", 2: "Invisibilidade", 3: "Salto" }
     },
-    descricao: "Deus da ilus�o, sorte e caos. O Trapaceiro Divino.",
-    dogma: "Engane, trapaceie, espalhe o caos, ria das conven��es.",
+    descricao: "O mestre das loucuras e trapaças.",
+    dogma: "Ser esperto é melhor que ser forte."
   },
-
+  kallyadranoch: {
+    nome: "Kallyadranoch",
+    titulo: "O Deus dos Dragões",
+    alinhamento: "Leal e Mau",
+    portfolio: "Dragões, poder, tirania",
+    simbolo: "Dragão de cinco cabeças",
+    cores: "Dourado e preto",
+    arma: "Lança",
+    devoto: {
+      poderes: [
+        { nome: "Escamas Dracônicas", deus: "Kallyadranoch", descricao: "Recebe +2 na Defesa." },
+        { nome: "Hálito Elemental", deus: "Kallyadranoch", descricao: "Gasta 2 PM para desferir um sopro elemental (2d6)." },
+        { nome: "Servidão Dracônica", deus: "Kallyadranoch", descricao: "Recebe +2 em Diplomacia e Intimidação contra répteis." }
+      ],
+      restricoes: "Deve sempre buscar poder e nunca se submeter a seres inferiores.",
+      magiasConcedidas: { 1: "Aviso", 2: "Resistência a Energia", 3: "Sopro de Fogo" }
+    },
+    descricao: "O senhor de todos os dragões.",
+    dogma: "O poder pertence aos fortes."
+  },
+  khalmyr: {
+    nome: "Khalmyr",
+    titulo: "O Deus da Justiça",
+    alinhamento: "Leal e Bom",
+    portfolio: "Justiça, ordem, civilização",
+    simbolo: "Martelo e balança",
+    cores: "Prata e azul",
+    arma: "Espada bastarda",
+    devoto: {
+      poderes: [
+        { nome: "Coragem Total", deus: "Khalmyr", descricao: "Você é imune a medo." },
+        { nome: "Dom da Verdade", deus: "Khalmyr", descricao: "Recebe +5 em Intuição; gasta 1 PM para discernir mentiras." },
+        { nome: "Espada Justiceira", deus: "Khalmyr", descricao: "Gasta 1 PM para aumentar o dano da espada em um passo." }
+      ],
+      restricoes: "Nunca pode usar itens mágicos que não sejam os seus próprios e deve seguir as leis.",
+      magiasConcedidas: { 1: "Benção", 2: "Arma Mágica", 3: "Oração" }
+    },
+    descricao: "O Grande Juiz.",
+    dogma: "A justiça é cega."
+  },
+  lena: {
+    nome: "Lena",
+    titulo: "A Deusa da Vida",
+    alinhamento: "Neutro e Bom",
+    portfolio: "Vida, fertilidade, cura",
+    simbolo: "Criança sorridente",
+    cores: "Rosa e branco",
+    arma: "Nenhuma (Cajado)",
+    devoto: {
+      poderes: [
+        { nome: "Aura de Vida", deus: "Lena", descricao: "Gasta 2 PM para emanar cura em área." },
+        { nome: "Cura Sagrada", deus: "Lena", descricao: "Soma seu Carisma em curas mágicas." },
+        { nome: "Maternidade", deus: "Lena", descricao: "Gasta 2 PM para remover condições negativas com um abraço." }
+      ],
+      restricoes: "Nunca pode causar dano letal a seres vivos e deve curar quem pedir ajuda.",
+      magiasConcedidas: { 1: "Curar Ferimentos", 2: "Luz", 3: "Restauração" }
+    },
+    descricao: "A mãe da vida.",
+    dogma: "A vida deve ser preservada."
+  },
+  lin_wu: {
+    nome: "Lin-Wu",
+    titulo: "O Deus da Honra",
+    alinhamento: "Leal e Neutro",
+    portfolio: "Honra, coragem, tradição",
+    simbolo: "Dragão oriental",
+    cores: "Vermelho e dourado",
+    arma: "Katana",
+    devoto: {
+      poderes: [
+        { nome: "Coragem de Lin-Wu", deus: "Lin-Wu", descricao: "Você é imune a medo." },
+        { nome: "Grito de Kiai", deus: "Lin-Wu", descricao: "Gasta 2 PM para causar dano máximo em um ataque." },
+        { nome: "Mente Vazia", deus: "Lin-Wu", descricao: "Recebe +2 em Vontade e Iniciativa." }
+      ],
+      restricoes: "Deve seguir o Código de Honra e nunca pode recuar de um combate.",
+      magiasConcedidas: { 1: "Arma Mágica", 2: "Velocidade", 3: "Poder Divino" }
+    },
+    descricao: "Deus da honra de Tamu-ra.",
+    dogma: "Honra acima de tudo."
+  },
+  marah: {
+    nome: "Marah",
+    titulo: "A Deusa da Paz",
+    alinhamento: "Neutro e Bom",
+    portfolio: "Paz, amor, alegria",
+    simbolo: "Pomba branca",
+    cores: "Branco e azul claro",
+    arma: "Nenhuma (Rede)",
+    devoto: {
+      poderes: [
+        { nome: "Aura de Paz", deus: "Marah", descricao: "Gasta 1 PM; criaturas devem passar em Vontade para te atacar." },
+        { nome: "Palavras de Bondade", deus: "Marah", descricao: "Recebe +5 em Diplomacia." },
+        { nome: "Talento Artístico", deus: "Marah", descricao: "Recebe +2 em Atuação e gasta -1 PM em magias de Ilusão." }
+      ],
+      restricoes: "Nunca pode causar dano de qualquer tipo (nem mesmo não letal) a seres vivos.",
+      magiasConcedidas: { 1: "Acalmar Emoções", 2: "Enfeitiçar", 3: "Santuário" }
+    },
+    descricao: "A deusa da paz e do amor.",
+    dogma: "A paz é o único caminho."
+  },
+  megalokk: {
+    nome: "Megalokk",
+    titulo: "O Deus dos Monstros",
+    alinhamento: "Caótico e Mau",
+    portfolio: "Monstros, feras, destruição",
+    simbolo: "Garra de besta",
+    cores: "Verde e preto",
+    arma: "Clava grande",
+    devoto: {
+      poderes: [
+        { nome: "Olhar Aterrorizante", deus: "Megalokk", descricao: "Recebe +2 em Intimidação." },
+        { nome: "Presas Primordiais", deus: "Megalokk", descricao: "Gasta 1 PM para ganhar um ataque de mordida por uma cena." },
+        { nome: "Urros Selvagens", deus: "Megalokk", descricao: "Gasta 2 PM para atordoar inimigos próximos." }
+      ],
+      restricoes: "Não pode usar itens tecnológicos ou civilizados e deve caçar regularmente.",
+      magiasConcedidas: { 1: "Amedrontar", 2: "Crescer", 3: "Forma Monstruosa" }
+    },
+    descricao: "O pai dos monstros.",
+    dogma: "O forte devora o fraco."
+  },
+  nimb: {
+    nome: "Nimb",
+    titulo: "O Deus do Caos",
+    alinhamento: "Caótico e Neutro",
+    portfolio: "Caos, sorte, azar, loucura",
+    simbolo: "Dado de seis faces",
+    cores: "Todas",
+    arma: "Adaga",
+    devoto: {
+      poderes: [
+        { nome: "O Dado Vicia", deus: "Nimb", descricao: "Gasta 1 PM para rolar novamente um teste, mas o mestre ganha 1 PM." },
+        { nome: "Poder Oculto", deus: "Nimb", descricao: "Recebe +1 em um atributo aleatório a cada cena." },
+        { nome: "Sorte de Nimb", deus: "Nimb", descricao: "Pode rolar novamente qualquer dado que resulte em 1." }
+      ],
+      restricoes: "Deve tomar decisões importantes com lançamentos de dados e nunca seguir planos rígidos.",
+      magiasConcedidas: { 1: "Confusão", 2: "Sorte/Azar", 3: "Metamorfose" }
+    },
+    descricao: "O senhor da sorte e do caos.",
+    dogma: "Nada é certo."
+  },
   oceano: {
     nome: "Oceano",
-    titulo: "O Rei dos Mares",
+    titulo: "O Deus dos Mares",
     alinhamento: "Neutro",
-    portfolio: "�gua, mares, navega��o",
+    portfolio: "Mares, rios, criaturas marinhas",
     simbolo: "Tridente",
     cores: "Azul e verde",
     arma: "Tridente",
     devoto: {
       poderes: [
-        {
-          nome: "Filho dos Mares",
-          descricao:
-            "Voc� pode respirar �gua e ganha deslocamento de nata��o igual ao seu deslocamento terrestre.",
-        },
-        {
-          nome: "Controlar Mar�s",
-          nivel: 2,
-          descricao: "Voc� pode controlar �gua em um raio de 9m.",
-        },
-        {
-          nome: "Forma Aqu�tica",
-          nivel: 5,
-          descricao:
-            "Voc� pode se transformar em �gua por uma cena, tornando-se imune a dano f�sico.",
-        },
+        { nome: "Anfibio", deus: "Oceano", descricao: "Você pode respirar na água e tem deslocamento de natação." },
+        { nome: "Arsenal das Marés", deus: "Oceano", descricao: "Recebe +1 em ataques com tridente ou lança." },
+        { nome: "Mestre das Águas", deus: "Oceano", descricao: "Pode conjurar magias de água com -1 PM." }
       ],
-      restricoes: "Deve proteger os oceanos",
-      magiasConcedidas: {
-        1: "Controlar �gua",
-        2: "Respirar na �gua",
-        3: "Invocar Monstro Marinho",
-      },
+      restricoes: "Nunca pode poluir as águas e deve retornar ao mar regularmente.",
+      magiasConcedidas: { 1: "Controlar Água", 2: "Respirar na Água", 3: "Tempestade" }
     },
-    descricao: "Deus dos oceanos, mares e navega��o. Senhor das �guas.",
-    dogma: "Respeite os mares, proteja as �guas, navegue com coragem.",
+    descricao: "O Rei dos Mares.",
+    dogma: "O mar é soberano."
   },
-
   sszzaas: {
     nome: "Sszzaas",
-    titulo: "A Serpente",
-    alinhamento: "Ca�tico e Mau",
-    portfolio: "Trai��o, veneno, assassinato",
+    titulo: "O Deus da Traição",
+    alinhamento: "Caótico e Mau",
+    portfolio: "Traição, venenos, intriga",
     simbolo: "Serpente enrolada",
     cores: "Verde escuro e preto",
     arma: "Adaga",
     devoto: {
       poderes: [
-        {
-          nome: "Veneno Divino",
-          descricao:
-            "Seus ataques podem envenenar (CD Sab, 1d6 de dano por rodada).",
-        },
-        {
-          nome: "Sussurros da Serpente",
-          nivel: 2,
-          descricao: "+4 em Engana��o e Furtividade. Voc� pode ver no escuro.",
-        },
-        {
-          nome: "Abra�o Mortal",
-          nivel: 5,
-          descricao:
-            "Voc� pode se transformar em uma serpente gigante por uma cena.",
-        },
+        { nome: "Língua de Serpente", deus: "Sszzaas", descricao: "Recebe +5 em Enganação." },
+        { nome: "Mestre de Venenos", deus: "Sszzaas", descricao: "Você é imune a venenos e causa +1d6 dano de veneno." },
+        { nome: "Sussurros da Traição", deus: "Sszzaas", descricao: "Gasta 2 PM para compelir alguém a mentir." }
       ],
-      restricoes: "Deve sempre agir com trai��o quando poss�vel",
-      magiasConcedidas: {
-        1: "Envenenar",
-        2: "Forma de Serpente",
-        3: "Nuvem Venenosa",
-      },
+      restricoes: "Deve sempre agir em segredo e nunca revelar ser devoto de Sszzaas.",
+      magiasConcedidas: { 1: "Enfeitiçar", 2: "Sugestão", 3: "Veneno" }
     },
-    descricao: "Deus da trai��o, veneno e assassinato. A Grande Serpente.",
-    dogma: "Traia quando necess�rio, use veneno, elimine inimigos nas sombras.",
+    descricao: "O Grande Corruptor.",
+    dogma: "A traição é a maior virtude."
   },
-
   tanna_toh: {
     nome: "Tanna-Toh",
-    titulo: "A Deusa da Noite",
-    alinhamento: "Neutro",
-    portfolio: "Noite, sonhos, mist�rios",
-    simbolo: "Lua crescente",
-    cores: "Negro e prata",
-    arma: "Foice",
+    titulo: "A Deusa do Conhecimento",
+    alinhamento: "Leal e Neutra",
+    portfolio: "Conhecimento, escrita, artes",
+    simbolo: "Livro e pena",
+    cores: "Azul e branco",
+    arma: "Bordão",
     devoto: {
       poderes: [
-        {
-          nome: "Vis�o nas Trevas",
-          descricao:
-            "Voc� enxerga perfeitamente no escuro e recebe +2 em Furtividade � noite.",
-        },
-        {
-          nome: "Caminhar nos Sonhos",
-          nivel: 2,
-          descricao:
-            "Voc� pode entrar nos sonhos de outras pessoas enquanto dorme.",
-        },
-        {
-          nome: "Manto da Noite",
-          nivel: 5,
-          descricao: "Voc� pode criar uma �rea de escurid�o total em 9m.",
-        },
+        { nome: "Conhecimento de Lenda", deus: "Tanna-Toh", descricao: "Recebe +5 em todos os testes de Conhecimento." },
+        { nome: "Mente Analítica", deus: "Tanna-Toh", descricao: "Recebe +2 em Inteligência para propósitos de perícias." },
+        { nome: "Voz do Saber", deus: "Tanna-Toh", descricao: "Gasta 1 PM para entender qualquer idioma falado." }
       ],
-      restricoes: "Deve descansar apenas � noite",
-      magiasConcedidas: {
-        1: "Escurid�o",
-        2: "Sono",
-        3: "Pesadelo",
-      },
+      restricoes: "Nunca pode recusar-se a responder uma pergunta honesta nem destruir conhecimento (livros, etc).",
+      magiasConcedidas: { 1: "Compreensão", 2: "Identificar", 3: "Lendas e Histórias" }
     },
-    descricao: "Deusa da noite, sonhos e mist�rios. Senhora das Sombras.",
-    dogma: "Abrace a noite, explore sonhos, guarde segredos.",
+    descricao: "A Guardiã do Conhecimento.",
+    dogma: "A ignorância é a maior doença."
   },
-
   tenebra: {
     nome: "Tenebra",
-    titulo: "A Rainha dos Mortos",
-    alinhamento: "Leal e Mau",
-    portfolio: "Morte, mortos-vivos, fim",
-    simbolo: "Cr�nio",
-    cores: "Preto e vermelho",
+    titulo: "A Deusa da Noite",
+    alinhamento: "Neutra e Má",
+    portfolio: "Noite, escuridão, mortos-vivos",
+    simbolo: "Lua negra",
+    cores: "Preto e roxo",
     arma: "Foice",
     devoto: {
       poderes: [
-        {
-          nome: "Toque da Morte",
-          descricao:
-            "Seus ataques causam +1d6 de dano de trevas contra criaturas vivas.",
-        },
-        {
-          nome: "Comandar Mortos-Vivos",
-          nivel: 2,
-          descricao:
-            "Voc� pode controlar mortos-vivos como um cl�rigo de n�vel +4.",
-        },
-        {
-          nome: "Forma Morta-Viva",
-          nivel: 5,
-          descricao:
-            "Voc� se torna meio-morto: imune a veneno, doen�as, mas sofre dano de luz.",
-        },
+        { nome: "Manto da Noite", deus: "Tenebra", descricao: "Recebe +5 em Furtividade à noite." },
+        { nome: "Visão nas Trevas", deus: "Tenebra", descricao: "Você enxerga perfeitamente na escuridão." },
+        { nome: "Zumbi de Estimação", deus: "Tenebra", descricao: "Você recebe um parceiro zumbi." }
       ],
-      restricoes: "Deve criar ou controlar mortos-vivos sempre que poss�vel",
-      magiasConcedidas: {
-        1: "Raio G�lido",
-        2: "Animar Mortos",
-        3: "C�rculo da Morte",
-      },
+      restricoes: "Deve evitar a luz do sol e realizar rituais apenas à noite.",
+      magiasConcedidas: { 1: "Escuridão", 2: "Infligir Ferimentos", 3: "Animação de Mortos" }
     },
-    descricao: "Deusa da morte e dos mortos-vivos. A Grande Ceifadora.",
-    dogma: "Abrace a morte, crie mortos-vivos, espalhe o fim.",
+    descricao: "A Rainha da Noite.",
+    dogma: "A noite é o descanso final."
   },
-
+  thwor: {
+    nome: "Thwor",
+    titulo: "O Deus da Unificação",
+    alinhamento: "Leal e Mau",
+    portfolio: "Unificação, força, estratégia",
+    simbolo: "Mão fechada",
+    cores: "Cinza e verde",
+    arma: "Machado de batalha",
+    devoto: {
+      poderes: [
+        { nome: "Brutalidade", deus: "Thwor", descricao: "Aumenta o multiplicador de crítico da sua arma em +1." },
+        { nome: "Fúria de Thwor", deus: "Thwor", descricao: "Entra em fúria como um bárbaro." },
+        { nome: "Unidade do Povo", deus: "Thwor", descricao: "Recebe +2 em ataques quando flanqueando." }
+      ],
+      restricoes: "Deve sempre buscar a união de sua raça/grupo sob uma liderança forte.",
+      magiasConcedidas: { 1: "Auxílio Divino", 2: "Braço de Ferro", 3: "Grito de Guerra" }
+    },
+    descricao: "O Deus dos Goblins e da Aliança Negra.",
+    dogma: "Juntos somos um."
+  },
   thyatis: {
     nome: "Thyatis",
-    titulo: "A Senhora da Ambi��o",
-    alinhamento: "Neutro e Mau",
-    portfolio: "Ambi��o, gan�ncia, poder",
-    simbolo: "Moeda de ouro",
+    titulo: "O Deus da Ressurreição",
+    alinhamento: "Neutro e Bom",
+    portfolio: "Ressurreição, profecia, segundas chances",
+    simbolo: "Fênix",
     cores: "Dourado e vermelho",
     arma: "Espada curta",
     devoto: {
       poderes: [
-        {
-          nome: "Ambi��o Divina",
-          descricao:
-            "Voc� recebe +2 em Diplomacia e Engana��o para ganhar riqueza ou poder.",
-        },
-        {
-          nome: "Toque de Midas",
-          nivel: 2,
-          descricao:
-            "Uma vez por dia, voc� pode transformar um objeto em ouro (at� 1kg).",
-        },
-        {
-          nome: "Corrompido pela Gan�ncia",
-          nivel: 5,
-          descricao:
-            "Voc� pode dominar a mente de algu�m oferecendo riquezas (CD Car).",
-        },
+        { nome: "Dons da Profecia", deus: "Thyatis", descricao: "Recebe +2 em Iniciativa e Percepção." },
+        { nome: "Imortalidade", deus: "Thyatis", descricao: "Se morrer, você ressuscita em 1d4 dias (uma vez por nível)." },
+        { nome: "Toque Restaurador", deus: "Thyatis", descricao: "Gasta 2 PM para curar condições negativas." }
       ],
-      restricoes: "Deve sempre buscar riqueza e poder",
-      magiasConcedidas: {
-        1: "Enfeiti�ar Pessoa",
-        2: "Dominar Pessoa",
-        3: "Desejo Menor",
-      },
+      restricoes: "Nunca pode matar um ser inteligente que possa ser redimido.",
+      magiasConcedidas: { 1: "Aviso", 2: "Consagrar", 3: "Ressurreição" }
     },
-    descricao: "Deusa da ambi��o, gan�ncia e poder. A Grande Manipuladora.",
-    dogma: "Busque poder, acumule riquezas, domine os fracos.",
+    descricao: "O senhor das fênix e das segundas chances.",
+    dogma: "Sempre há esperança."
   },
-
   valkaria: {
     nome: "Valkaria",
-    titulo: "A Deusa da Humanidade",
-    alinhamento: "Neutro e Bom",
-    portfolio: "Humanidade, bravura, prote��o",
-    simbolo: "Espada em chamas",
-    cores: "Vermelho e dourado",
-    arma: "Espada longa",
+    titulo: "A Deusa da Ambição",
+    alinhamento: "Caótica e Boa",
+    portfolio: "Ambição, aventura, liberdade",
+    simbolo: "Mulher quebrando correntes",
+    cores: "Vermelho e branco",
+    arma: "Chicote",
     devoto: {
       poderes: [
-        {
-          nome: "Campe� da Humanidade",
-          descricao:
-            "Voc� recebe +2 em testes de ataque e dano contra criaturas n�o humanoides.",
-        },
-        {
-          nome: "Bravura Inabal�vel",
-          nivel: 2,
-          descricao:
-            "Voc� � imune a medo e aliados em 9m recebem +4 contra medo.",
-        },
-        {
-          nome: "F�ria Sagrada",
-          nivel: 5,
-          descricao:
-            "Uma vez por dia, voc� pode entrar em f�ria sagrada por 3 rodadas, ganhando +4 For e +4 Des.",
-        },
+        { nome: "Coragem Total", deus: "Valkaria", descricao: "Você é imune a medo." },
+        { nome: "Espírito Escolhido", deus: "Valkaria", descricao: "Recebe +1 ponto de mana por nível." },
+        { nome: "Liberdade", deus: "Valkaria", descricao: "Recebe +5 em testes para escapar de imobilização." }
       ],
-      restricoes: "Deve sempre proteger humanos",
-      magiasConcedidas: {
-        1: "Hero�smo",
-        2: "Arma M�gica",
-        3: "B�n��o da Batalha",
-      },
+      restricoes: "Nunca pode recusar uma aventura e deve sempre seguir em frente.",
+      magiasConcedidas: { 1: "Arma Mágica", 2: "Salto", 3: "Velocidade" }
     },
-    descricao: "Deusa da humanidade, bravura e prote��o. A Grande Protetora.",
-    dogma: "Proteja humanos, seja corajoso, lute contra monstros.",
+    descricao: "A deusa dos aventureiros.",
+    dogma: "O mundo é pequeno demais."
   },
-
   wynna: {
     nome: "Wynna",
     titulo: "A Deusa da Magia",
-    alinhamento: "Neutro",
-    portfolio: "Magia, feiti�aria, mist�rio",
+    alinhamento: "Neutra",
+    portfolio: "Magia, arcano, mistério",
     simbolo: "Pentagrama",
     cores: "Roxo e prateado",
-    arma: "Bord�o",
+    arma: "Bordão",
     devoto: {
       poderes: [
-        {
-          nome: "Mestra da Magia",
-          descricao:
-            "Voc� aprende uma magia adicional a cada n�vel e magias custam -1 PM (m�nimo 1).",
-        },
-        {
-          nome: "Poder Arcano",
-          nivel: 2,
-          descricao: "Voc� recebe +2 nas CDs de suas magias.",
-        },
-        {
-          nome: "Fonte de Mana",
-          nivel: 5,
-          descricao:
-            "Voc� recupera 1d6 PM quando lan�a uma magia de 3� c�rculo ou superior.",
-        },
+        { nome: "Benção de Wynna", deus: "Wynna", descricao: "Você pode lançar magias arcanas mesmo sendo devoto divino." },
+        { nome: "Centelha Mística", deus: "Wynna", descricao: "Gasta -1 PM em todas as magias (mínimo 1)." },
+        { nome: "Escudo Místico", deus: "Wynna", descricao: "Gasta 1 PM para receber RD 5 contra magias." }
       ],
-      restricoes: "Deve sempre buscar e estudar magia",
-      magiasConcedidas: {
-        1: "Dissipar Magia",
-        2: "Contra-Magia",
-        3: "Desejo Limitado",
-      },
+      restricoes: "Nunca pode recusar-se a ensinar magia nem matar um ser puramente mágico.",
+      magiasConcedidas: { 1: "Armadura Arcana", 2: "Dissipar Magia", 3: "Fluxo de Mana" }
     },
-    descricao: "Deusa da magia, feiti�aria e mist�rio. A Grande Feiticeira.",
-    dogma:
-      "Domine a magia, busque conhecimento arcano, quebre os limites do poss�vel.",
-  },
-
-  ragnar: {
-    nome: "Ragnar",
-    titulo: "O Deus da Morte Honrada",
-    alinhamento: "Ca�tico e Neutro",
-    portfolio: "Guerra, honra, morte em batalha",
-    simbolo: "Machado de guerra cruzado",
-    cores: "Vermelho sangue e preto",
-    arma: "Machado de batalha",
-    devoto: {
-      poderes: [
-        {
-          nome: "Guerreiro Feroz",
-          descricao: "Voc� recebe +2 em jogadas de dano corpo a corpo.",
-        },
-        {
-          nome: "Morte Honrada",
-          nivel: 2,
-          descricao:
-            "Quando reduzido a 0 PV, voc� pode fazer um ataque final antes de cair.",
-        },
-        {
-          nome: "F�ria de Ragnar",
-          nivel: 5,
-          descricao:
-            "Quando entra em f�ria, voc� recebe +4 For e +4 Con, mas -2 Defesa.",
-        },
-      ],
-      restricoes: "Nunca pode recusar um desafio de combate",
-      magiasConcedidas: {
-        1: "Arma Afiada",
-        2: "Velocidade",
-        3: "Poder Heroico",
-      },
-    },
-    descricao: "Deus da guerra, honra e morte em batalha. O Grande Guerreiro.",
-    dogma: "Lute com honra, morra em combate, respeite advers�rios dignos.",
-  },
-
-  keenn: {
-    nome: "Keenn",
-    titulo: "O Deus do Sol Poente",
-    alinhamento: "Ca�tico e Bom",
-    portfolio: "Crep�sculo, equil�brio, transi��o",
-    simbolo: "Sol com metade em sombras",
-    cores: "Laranja e roxo",
-    arma: "Espada bastarda",
-    devoto: {
-      poderes: [
-        {
-          nome: "Guardi�o do Crep�sculo",
-          descricao:
-            "Voc� enxerga normalmente em penumbra e recebe +2 em Percep��o.",
-        },
-        {
-          nome: "Equil�brio Perfeito",
-          nivel: 2,
-          descricao: "Voc� pode usar Sab ou Car para testes sociais.",
-        },
-        {
-          nome: "Luz e Sombra",
-          nivel: 5,
-          descricao:
-            "Voc� pode alternar entre bonus de luz (+1d6 luz) ou sombra (+1d6 trevas) em seus ataques.",
-        },
-      ],
-      restricoes: "Deve manter equil�brio entre luz e trevas",
-      magiasConcedidas: {
-        1: "Luz e Trevas",
-        2: "Crep�sculo",
-        3: "Equil�brio",
-      },
-    },
-    descricao:
-      "Deus do crep�sculo, equil�brio e transi��o. O Guardi�o do Por do Sol.",
-    dogma: "Mantenha o equil�brio, proteja o crep�sculo, aceite mudan�as.",
-  },
-
-  arsenal: {
-    nome: "Arsenal",
-    titulo: "O Deus da Guerra",
-    alinhamento: "Leal e Neutro",
-    portfolio: "Guerra, estrat�gia, armas",
-    simbolo: "Espadas cruzadas",
-    cores: "Cinza e vermelho",
-    arma: "Qualquer",
-    devoto: {
-      poderes: [
-        {
-          nome: "Mestre de Armas",
-          descricao:
-            "Voc� � proficiente com todas as armas e recebe +1 em ataques.",
-        },
-        {
-          nome: "Estrategista",
-          nivel: 2,
-          descricao:
-            "+2 em testes de Guerra e voc� pode rolar Iniciativa duas vezes e usar o melhor.",
-        },
-        {
-          nome: "Arsenal Divino",
-          nivel: 5,
-          descricao: "Voc� pode convocar uma arma m�gica +2 como a��o livre.",
-        },
-      ],
-      restricoes: "Deve sempre buscar conflito",
-      magiasConcedidas: {
-        1: "Arma M�gica",
-        2: "Arma Espiritual",
-        3: "L�minas Dan�antes",
-      },
-    },
-    descricao: "Deus da guerra, estrat�gia e armas. O Grande Estrategista.",
-    dogma: "Domine todas as armas, ven�a batalhas, planeje estrat�gias.",
-  },
-
-  grande_oceano: {
-    nome: "Grande Oceano",
-    titulo: "O Deus Primordial",
-    alinhamento: "Neutro",
-    portfolio: "Cria��o, elementos, natureza primordial",
-    simbolo: "Ondas infinitas",
-    cores: "Azul profundo",
-    arma: "Nenhuma",
-    devoto: {
-      poderes: [
-        {
-          nome: "Toque Primordial",
-          descricao:
-            "Voc� pode conjurar magias de qualquer elemento (fogo, �gua, ar, terra).",
-        },
-        {
-          nome: "Ess�ncia da Cria��o",
-          nivel: 2,
-          descricao: "Voc� recebe resist�ncia 5 a todos os elementos.",
-        },
-        {
-          nome: "Forma Elemental",
-          nivel: 5,
-          descricao: "Voc� pode se transformar em um elemental por uma cena.",
-        },
-      ],
-      restricoes: "Nunca usar itens de metal",
-      magiasConcedidas: {
-        1: "Controlar Elementos",
-        2: "Invocar Elemental",
-        3: "Tempestade Elemental",
-      },
-    },
-    descricao: "Deus primordial da cria��o e dos elementos. A Fonte de Tudo.",
-    dogma: "Respeite os elementos, mantenha o equil�brio primordial.",
-  },
+    descricao: "A Deusa de toda a magia.",
+    dogma: "A magia é o ar que Arton respira."
+  }
 };
 
-// Fun��o para buscar divindade
+// Função para buscar divindade
 export function buscarDivindade(nome) {
-  return divindades[nome.toLowerCase().replace(/[^a-z]/g, "")] || null;
+  if (!nome) return null;
+  const key = nome.toLowerCase().replace(/[^a-z_]/g, "");
+  return divindades[key] || null;
 }
 
 // Listar divindades por alinhamento
 export function divindadesPorAlinhamento(alinhamento) {
   return Object.values(divindades).filter((d) =>
-    d.alinhamento.includes(alinhamento),
+    d.alinhamento.includes(alinhamento)
   );
 }
 
@@ -798,5 +431,3 @@ export function divindadesBondosas() {
 export function divindadesMalignas() {
   return divindadesPorAlinhamento("Mau");
 }
-
-export default divindades;

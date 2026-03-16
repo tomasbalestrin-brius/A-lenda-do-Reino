@@ -16,12 +16,13 @@ export function StepPowers({ stats }) {
     { id: 'concedidos', label: 'Concedidos', icon: '🙏' },
   ];
 
-  const togglePower = (power) => {
+  const togglePower = (power, category) => {
+    const powerWithCategory = { ...power, tipo: category };
     const isOwned = (char.poderesGerais || []).some(p => p.nome === power.nome);
     if (isOwned) {
       updateChar({ poderesGerais: char.poderesGerais.filter(p => p.nome !== power.nome) });
     } else {
-      updateChar({ poderesGerais: [...(char.poderesGerais || []), power] });
+      updateChar({ poderesGerais: [...(char.poderesGerais || []), powerWithCategory] });
     }
   };
 
@@ -56,6 +57,12 @@ export function StepPowers({ stats }) {
           ? Object.values(GENERAL_POWERS).flat()
           : (GENERAL_POWERS[activeTab] || [])
         ).map(p => {
+          // Identify category for the power
+          let category = activeTab;
+          if (activeTab === 'todos') {
+             category = Object.keys(GENERAL_POWERS).find(cat => GENERAL_POWERS[cat].some(sub => sub.nome === p.nome));
+          }
+
           const isOwned = (char.poderesGerais || []).some(owned => owned.nome === p.nome);
           const eligibility = checkPowerEligibility(p, char, stats || {});
           const canSelect = eligibility.ok || isOwned;
@@ -63,7 +70,7 @@ export function StepPowers({ stats }) {
           return (
             <div 
               key={p.nome}
-              onClick={() => canSelect && togglePower(p)}
+              onClick={() => canSelect && togglePower(p, category)}
               className={`group p-5 rounded-3xl border transition-all cursor-pointer flex flex-col gap-2 relative overflow-hidden ${
                 isOwned 
                   ? 'bg-blue-900/10 border-blue-500/50 shadow-lg shadow-blue-900/10' 
