@@ -157,7 +157,7 @@ export function computeStats(char) {
 
 export function getAllTrainedSkills(char) {
   const cls = CLASSES[char.classe?.toLowerCase()];
-  if (!cls) return [];
+  if (!cls) return new Set();
   
   const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
   
