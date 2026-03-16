@@ -48,9 +48,13 @@ export function StepEquipment() {
     { id: 'arma', label: 'Armas', icon: '⚔️' },
     { id: 'armadura', label: 'Armaduras', icon: '🛡️' },
     { id: 'escudo', label: 'Escudos', icon: '🛡️' },
-    { id: 'acessorio', label: 'Acessórios', icon: '💍' },
-    { id: 'consumivel', label: 'Poções', icon: '🧪' },
+    { id: 'vestuario', label: 'Vestuário', icon: '👕' },
+    { id: 'esoterico', label: 'Esotéricos', icon: '🔮' },
+    { id: 'alquimico', label: 'Alquímicos', icon: '🧪' },
+    { id: 'ferramenta', label: 'Ferramentas', icon: '⚒️' },
+    { id: 'comida', label: 'Alimentação', icon: '🍲' },
     { id: 'aventura', label: 'Aventura', icon: '🎒' },
+    { id: 'animal', label: 'Animais', icon: '🐎' },
   ];
 
   const filteredItems = Object.values(ITENS).filter(item => {

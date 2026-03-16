@@ -151,7 +151,7 @@ export function computeStats(char) {
     languages: languages,
     totalLangsCount: totalLangsCount,
     startingWealth: CLASS_WEALTH[char.classe?.toLowerCase()] || CLASS_WEALTH.padrao,
-    maxLoad: 10 + (2 * (attrs.FOR || 0))
+    maxLoad: (10 + (2 * (attrs.FOR || 0))) + ((char.equipamento || []).includes('mochila_aventureiro') ? 2 : 0)
   };
 }
 
