@@ -250,7 +250,8 @@ export function getAllTrainedSkills(char) {
   const cls = CLASSES[char.classe?.toLowerCase()];
   if (!cls) return new Set();
   
-  const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
+  const currentOrigem = ORIGENS[char.origem?.toLowerCase()];
+  const originPericias = (char.origemBeneficios || []).filter(b => currentOrigem?.pericias?.includes(b));
   
   const rawObrig = cls.periciasObrigatorias || [];
   const fixedObrig = rawObrig.filter(s => typeof s === 'string');

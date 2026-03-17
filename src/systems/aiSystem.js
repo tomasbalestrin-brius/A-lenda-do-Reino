@@ -3,7 +3,7 @@ class AISystem {
     this.updateInterval = 1000 / 60; // 60 FPS
   }
 
-  update(enemies, player, dt) {
+  update(enemies = [], player, dt) {
     return enemies.map(enemy => {
       if (enemy.defeated) return enemy;
 

@@ -15,6 +15,7 @@ class ActionCombat {
 
   // Cria um ataque na área (corpo-a-corpo)
   createAttack(attacker, type = 'melee', isSpecial = false) {
+    if (!attacker) return null;
     const { x, y, width, height, facing, class: heroClass } = attacker;
 
     // Bárbaro tem ataques maiores por padrão (Machado)
