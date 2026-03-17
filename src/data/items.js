@@ -315,6 +315,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'leve',
     def: 2,
+    penalidade: 0,
     preco: 20,
     peso: 5
   },
@@ -324,6 +325,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'leve',
     def: 3,
+    penalidade: 1,
     preco: 50,
     peso: 7
   },
@@ -333,6 +335,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'leve',
     def: 4,
+    penalidade: 2,
     preco: 40,
     peso: 10
   },
@@ -344,6 +347,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'media',
     def: 6,
+    penalidade: 2,
     preco: 150,
     peso: 20
   },
@@ -353,6 +357,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'media',
     def: 5,
+    penalidade: 2,
     preco: 50,
     peso: 15
   },
@@ -364,6 +369,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'pesada',
     def: 7,
+    penalidade: 2,
     preco: 500,
     peso: 15
   },
@@ -373,6 +379,7 @@ export const ITENS = {
     tipo: 'armadura',
     categoria: 'pesada',
     def: 10,
+    penalidade: 5,
     preco: 1500,
     peso: 25
   },
@@ -383,6 +390,7 @@ export const ITENS = {
     nome: 'Escudo Leve',
     tipo: 'escudo',
     def: 1,
+    penalidade: 1,
     preco: 15,
     peso: 1
   },
@@ -391,6 +399,7 @@ export const ITENS = {
     nome: 'Escudo Pesado',
     tipo: 'escudo',
     def: 2,
+    penalidade: 2,
     preco: 30,
     peso: 2
   },

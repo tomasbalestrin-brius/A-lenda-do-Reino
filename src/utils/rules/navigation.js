@@ -116,19 +116,57 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : 'Seu dinheiro não pode ser negativo.' };
     }
 
-    case 12: { // Poderes Iniciais
-      const lvl = char.level || 1;
-      const isHumano = char.raca?.toLowerCase() === 'humano';
-      if (lvl === 1 && !isHumano) return { ok: true, reason: null };
-      const ok = lvl > 1 ? (char.poderesGerais || []).length >= 1 : true;
-      return { ok, reason: ok ? null : 'Selecione ao menos um poder geral.' };
+    case 12: { // Poderes Iniciais (Progressão)
+      const level = char.level || 1;
+      const requiredGerais = Math.max(0, 0); // O sistema mudou: gerais são no StepPowers, 
+                                            // Progressão é para níveis > 1
+      
+      // StepPowers é o passo 12 atual nas STEP_LABELS de CharacterCreation.jsx
+      // Vou renomear para ficar claro no CharacterCreation.
+      return { ok: true, reason: null };
     }
 
-    case 13: { // Identidade
+    case 13: { // Poderes por Nível (Progressão)
+       const currentNum = Object.keys(char.poderesProgressao || {}).length;
+       const needed = (char.level || 1) - 1;
+       const ok = currentNum >= needed;
+       return { ok, reason: ok ? null : `Escolha seus poderes para os níveis extras (Pendente: ${needed - currentNum}).` };
+    }
+
+    case 14: { // Identidade
       const ok = !!char.nome?.trim?.();
       return { ok, reason: ok ? null : 'Dê um nome ao seu herói para continuar.' };
     }
 
     default: return { ok: true, reason: null };
+  }
+}
+
+/**
+ * Determina se um passo deve ser pulado.
+ */
+export function shouldSkipStep(step, char, stats) {
+  const r = char.raca?.toLowerCase();
+  const cls = char.classe?.toLowerCase();
+
+  switch (step) {
+    case 1: // Herança
+      return !['humano', 'lefou', 'osteon', 'sereia', 'silfide', 'kliren', 'qareen', 'suraggel'].includes(r);
+
+    case 3: // Especialização de Classe
+      return !['arcanista', 'bardo', 'druida'].includes(cls);
+
+    case 7: // Magias
+      return !['arcanista', 'bardo', 'clerigo', 'druida'].includes(cls);
+
+    case 10: // Perícias de Inteligência
+      return (stats.attrs?.INT || 0) <= 0;
+
+    case 13: // Progressão de Nível
+      // No CharacterCreation, "Progressão" é o passo 13.
+      return (char.level || 1) <= 1;
+
+    default:
+      return false;
   }
 }

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { useCharacterStore } from '../store/useCharacterStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
-import { canGoNext } from '../utils/rules/navigation';
+import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
 import { buildHeroData } from '../utils/rules/buildHeroData';
 
 // Modals
@@ -48,8 +48,9 @@ const STEP_LABELS = [
   "Perícias (Int)",   // 10
   "Equipamento",      // 11
   "Poderes Iniciais", // 12
-  "Identidade",       // 13
-  "Revisão"           // 14
+  "Progressão",       // 13
+  "Identidade",       // 14
+  "Revisão"           // 15
 ];
 const MAX_STEPS = STEP_LABELS.length;
 
@@ -165,13 +166,24 @@ export default function CharacterCreation({ onComplete }) {
 
   function handleNext() {
     if (step < MAX_STEPS - 1 && canGoNext(step, char, stats).ok) {
-      setStep(s => s + 1);
+      let nextStep = step + 1;
+      while (nextStep < MAX_STEPS - 1 && shouldSkipStep(nextStep, char, stats)) {
+        nextStep++;
+      }
+      setStep(nextStep);
     }
   }
 
   function handlePrev() {
-    if (step > 0) setStep(s => s - 1);
-    else setView('library');
+    if (step > 0) {
+      let prevStep = step - 1;
+      while (prevStep > 0 && shouldSkipStep(prevStep, char, stats)) {
+        prevStep--;
+      }
+      setStep(prevStep);
+    } else {
+      setView('library');
+    }
   }
 
   if (view === 'library') {
@@ -203,6 +215,8 @@ export default function CharacterCreation({ onComplete }) {
 
         <div className="flex-1 flex flex-col gap-1 px-3 md:px-6 pb-6">
           {STEP_LABELS.map((label, i) => {
+            if (shouldSkipStep(i, char, stats)) return null;
+            
             const isCurrent = i === step;
             const isCompleted = i < step;
             return (
@@ -284,8 +298,9 @@ export default function CharacterCreation({ onComplete }) {
                 {step === 10 && <StepIntPericias stats={stats} />}
                 {step === 11 && <StepEquipment />}
                 {step === 12 && <StepPowers stats={stats} />}
-                {step === 13 && <StepIdentity />}
-                {step === 14 && (
+                {step === 13 && <StepProgression stats={stats} />}
+                {step === 14 && <StepIdentity />}
+                {step === 15 && (
                   <StepReview 
                     stats={stats} 
                     onSave={handleSave} 

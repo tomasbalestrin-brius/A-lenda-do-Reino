@@ -68,12 +68,18 @@ export function meetsRequirement(req, char, stats) {
   // Poderes da Tormenta
   if (req.poderTormenta) {
     const tormentaCount = Array.from(allPowers).filter(pName => {
-      // Aqui teríamos que cruzar com GENERAL_POWERS.tormenta ou checar se o poder foi marcado
-      // Por simplicidade, vamos assumir que o sistema de contagem será implementado
-      // ou apenas checar se o número de poderes da tormenta no generic powers bate.
       return (char.poderesGerais || []).some(pg => pg.nome === pName && pg.tipo === 'tormenta');
     }).length;
     if (tormentaCount < req.poderTormenta) return false;
+  }
+
+  // Proficiências
+  if (req.proficiencia) {
+    const { getAllProficiencies } = require('./characterStats'); // Lazy import if needed or use from top
+    const profs = getAllProficiencies(char);
+    for (const p of req.proficiencia) {
+      if (!profs.has(p)) return false;
+    }
   }
   
   // Condição Especial (Lefou, Humano, Deuses)
@@ -155,6 +161,17 @@ export function checkPowerEligibility(power, char, stats) {
     const maxCirculo = characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1);
     if (maxCirculo < req.circulo) {
       return { ok: false, reason: `${req.circulo}º Círculo` };
+    }
+  }
+
+  // Proficiências
+  if (req.proficiencia) {
+    const { getAllProficiencies } = require('./characterStats');
+    const profs = getAllProficiencies(char);
+    for (const p of req.proficiencia) {
+      if (!profs.has(p)) {
+        return { ok: false, reason: `Proficiência em ${p}` };
+      }
     }
   }
 

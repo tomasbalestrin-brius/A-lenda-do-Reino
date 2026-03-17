@@ -51,7 +51,7 @@ export const useAuthStore = create((set) => ({
       // do something here, but Supabase persistence is usually client-wide.
       // We will respect this by potentially clearing session on window unload
       // if rememberMe is false.
-      if (!rememberMe) {
+      if (rememberMe === false) {
         window.addEventListener('unload', () => {
           supabase.auth.signOut();
         });

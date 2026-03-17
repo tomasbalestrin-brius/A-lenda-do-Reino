@@ -195,6 +195,11 @@ export const GENERAL_POWERS = {
       nome: "Vitalidade",
       descricao: "Você recebe +1 PV por nível de personagem e +2 em Fortitude.",
       requisitos: { attr: { CON: 1 } }
+    },
+    {
+      nome: "Aumento de Atributo",
+      descricao: "Você recebe +1 em um atributo a sua escolha. Você pode escolher este poder várias vezes para atributos diferentes, ou até duas vezes para o mesmo atributo.",
+      requisitos: {}
     }
   ],
   destino: [

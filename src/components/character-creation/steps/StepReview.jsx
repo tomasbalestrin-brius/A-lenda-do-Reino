@@ -5,11 +5,14 @@ import RACES from '../../../data/races';
 import { ORIGENS } from '../../../data/origins';
 import { divindades as DEUSES } from '../../../data/gods';
 import { ITENS } from '../../../data/items';
+import { MELHORIAS, MATERIAIS } from '../../../data/modificacoes';
 import DiceRollerBG3 from '../../DiceRollerBG3';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { getAllTrainedSkills } from '../../../utils/rules/characterStats';
 
 import { exportToMarkdown } from '../../../utils/exportCharacter';
+import { LevelUpModal } from '../modals/LevelUpModal';
+import CombatRollerBG3 from './CombatRollerBG3';
 
 const RACE_ICONS = {
   humano: '🧑', anao: '⛏️', elfo: '🌟', dahllan: '🌺',
@@ -61,6 +64,8 @@ export function StepReview({ stats, onSave, onPlay }) {
   const deus = DEUSES[char.deus] || {};
   const allPericias = getAllTrainedSkills(char);
   const [rollTest, setRollTest] = useState(null);
+  const [levelUpOpen, setLevelUpOpen] = useState(false);
+  const [rollCombat, setRollCombat] = useState(null);
 
   const getSkillModifier = (skillName) => {
     const halfLevel = Math.floor((char.level || 1) / 2);
@@ -72,7 +77,17 @@ export function StepReview({ stats, onSave, onPlay }) {
     if (['Atuação', 'Diplomacia', 'Enganação', 'Intimidação'].includes(skillName)) attrKey = 'CAR';
     
     const isTrained = (char.pericias || []).includes(skillName) || allPericias.has(skillName);
-    return halfLevel + (stats?.attrs?.[attrKey] || 0) + (isTrained ? 2 : 0); 
+    let total = halfLevel + (stats?.attrs?.[attrKey] || 0) + (isTrained ? 2 : 0);
+    
+    if (stats?.armorPenalty && stats?.armorPenaltyPericias?.includes(skillName)) {
+      total -= stats.armorPenalty;
+    }
+
+    if (skillName === 'Furtividade' && stats?.sizeModFurtividade) {
+      total += stats.sizeModFurtividade;
+    }
+    
+    return total;
   };
 
   const startTest = (name, modifier) => {
@@ -132,7 +147,15 @@ export function StepReview({ stats, onSave, onPlay }) {
               value={char.nome || ''}
               onChange={e => updateChar({ nome: e.target.value })}
             />
-            <div className="absolute right-10 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100 transition-opacity text-2xl">🖋️</div>
+            <div className="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-4">
+              <button
+                onClick={() => setLevelUpOpen(true)}
+                className="px-6 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 hover:text-gray-950 transition-all shadow-lg"
+              >
+                Subir de Nível (Lvl {char.level || 1})
+              </button>
+              <div className="opacity-30 group-focus-within:opacity-100 transition-opacity text-2xl">🖋️</div>
+            </div>
           </div>
         </motion.div>
 
@@ -205,6 +228,34 @@ export function StepReview({ stats, onSave, onPlay }) {
                 </div>
               ))}
             </div>
+
+            <div className="relative z-10 mt-6 flex flex-wrap gap-4">
+               <div className="bg-amber-950/30 border border-amber-500/20 px-6 py-3 rounded-2xl flex items-center gap-3">
+                  <span className="text-xl">🏃</span>
+                  <div>
+                    <p className="text-[8px] uppercase font-black text-amber-500/60 leading-none mb-1">Deslocamento</p>
+                    <p className="text-sm font-black text-white leading-none">{stats?.deslocamento}m</p>
+                  </div>
+               </div>
+               
+               {stats?.spellDC > 10 && (
+                 <div className="bg-purple-950/30 border border-purple-500/20 px-6 py-3 rounded-2xl flex items-center gap-3">
+                    <span className="text-xl">🔮</span>
+                    <div>
+                      <p className="text-[8px] uppercase font-black text-purple-500/60 leading-none mb-1">CD de Magia</p>
+                      <p className="text-sm font-black text-white leading-none">{stats?.spellDC}</p>
+                    </div>
+                 </div>
+               )}
+
+               <div className="bg-slate-900/40 border border-white/5 px-6 py-3 rounded-2xl flex items-center gap-3">
+                  <span className="text-xl">⚖️</span>
+                  <div>
+                    <p className="text-[8px] uppercase font-black text-slate-500/60 leading-none mb-1">Carga Máxima</p>
+                    <p className="text-sm font-black text-white leading-none">{stats?.maxLoad}kg</p>
+                  </div>
+               </div>
+            </div>
           </div>
 
             {/* Card: Perícias */}
@@ -249,14 +300,26 @@ export function StepReview({ stats, onSave, onPlay }) {
                     key={atk.uid}
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 relative overflow-hidden group hover:border-orange-500/30 transition-all shadow-inner"
+                    onClick={() => setRollCombat(atk)}
+                    className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 relative overflow-hidden group hover:border-orange-500/50 hover:bg-orange-500/5 transition-all shadow-inner cursor-pointer"
                   >
+                    <div className="absolute top-4 right-4 text-orange-500 opacity-0 group-hover:opacity-100 transition-all transform scale-50 group-hover:scale-100">🎲</div>
                     <div className="absolute top-0 right-0 p-6 opacity-5 text-4xl group-hover:scale-110 transition-transform">⚔️</div>
                     <div className="mb-4">
                       <h4 className="text-lg font-black text-white uppercase tracking-tight truncate">{atk.nome}</h4>
-                      {atk.material && (
-                         <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{atk.material}</span>
-                      )}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {atk.material && (
+                           <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{atk.material}</span>
+                        )}
+                        {atk.melhorias?.map(m => {
+                          const mod = Object.values(MELHORIAS).flat().find(mod => mod.id === m);
+                          return (
+                            <span key={m} className="text-[8px] font-black text-amber-500 uppercase tracking-widest">
+                              {mod?.nome || m}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -315,8 +378,15 @@ export function StepReview({ stats, onSave, onPlay }) {
                     </span>
                     {typeof e !== 'string' && (e.mods?.length > 0 || e.material) && (
                       <div className="flex flex-wrap gap-1 px-2">
-                        {e.mods?.map(m => <span key={m} className="text-[7px] text-amber-600 font-bold uppercase">+{m}</span>)}
-                        {e.material && <span className="text-[7px] text-indigo-400 font-bold uppercase">{e.material}</span>}
+                        {e.mods?.map(m => {
+                          const mod = Object.values(MELHORIAS).flat().find(mod => mod.id === m);
+                          return <span key={m} className="text-[7px] text-amber-600 font-bold uppercase">{mod?.nome || m}</span>;
+                        })}
+                        {e.material && (
+                          <span className="text-[7px] text-indigo-400 font-bold uppercase">
+                            {MATERIAIS[e.material]?.nome || e.material}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -364,6 +434,21 @@ export function StepReview({ stats, onSave, onPlay }) {
           </motion.button>
         </div>
       </div>
+
+      <LevelUpModal 
+        isOpen={levelUpOpen} 
+        onClose={() => setLevelUpOpen(false)}
+        char={char}
+        stats={stats}
+        onConfirm={() => updateChar({ level: (char.level || 1) + 1 })}
+      />
+
+      {rollCombat && (
+        <CombatRollerBG3 
+          weapon={rollCombat}
+          onClose={() => setRollCombat(null)}
+        />
+      )}
     </div>
   );
 }

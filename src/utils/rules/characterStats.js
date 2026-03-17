@@ -54,9 +54,17 @@ export function computeStats(char) {
   const origem = ORIGENS[char.origem?.toLowerCase()] || null;
   const raceBonus = getRaceAttrBonus(raceData, char.racaEscolha, char.racaVariante);
 
+  // Atributos Base + Modificadores de Poderes (Aumento de Atributo)
+  const baseAttrsWithPowers = { ...char.atributos };
+  (char.poderesGerais || []).forEach(p => {
+    if (p.nome === 'Aumento de Atributo' && p.escolha) {
+       baseAttrsWithPowers[p.escolha] = (baseAttrsWithPowers[p.escolha] || 0) + 1;
+    }
+  });
+
   const attrs = {};
   ATTR_KEYS.forEach(k => {
-    let val = (char.atributos?.[k] || 0) + (raceBonus?.[k] || 0);
+    let val = (baseAttrsWithPowers?.[k] || 0) + (raceBonus?.[k] || 0);
     if (origem?.atributos?.[k]) val += origem.atributos[k];
     attrs[k] = val;
   });
@@ -76,8 +84,10 @@ export function computeStats(char) {
   const hasPeleFerro = allPowers.has("Pele de Ferro") && char.classe === 'barbaro';
   const hasEncouracado = allPowers.has("Encouraçado");
 
-  // PV
-  let pv = (cls?.vidaInicial || 10) + CON;
+  // PV - JDA: vidaInicial + Atributo INTEIRO (não modificador)
+  // Atributo Inteiro = Modificador * 2 + 10
+  const conScore = CON * 2 + 10;
+  let pv = (cls?.vidaInicial || 10) + conScore;
   if (level > 1) {
     pv += ((cls?.vidaPorNivel || 3) + CON) * (level - 1);
   }
@@ -87,42 +97,86 @@ export function computeStats(char) {
   if (origem?.beneficio?.includes('+2 PV')) pv += 2;
   if (hasVitalidade) pv += level;
 
-  // PM
+  // PM - JDA: (Base * nível) + Modificador de Atributo
   let pmKey = PM_ATTR_MAP[char.classe] || null;
   if (char.classe === 'arcanista' && char.choices?.caminhoArcanista === 'feiticeiro') {
     pmKey = 'CAR';
   }
-  
   const pmBase = cls?.pm || 3;
-  const pmBonus = pmKey ? (attrs[pmKey] || 0) : 0;
-  let pm = (pmBase + pmBonus) * level;
+  const pmMod = pmKey ? (attrs[pmKey] || 0) : 0;
+  let pm = (pmBase * level) + pmMod;
 
   if (raceData?.habilidades?.some(h => h.nome === 'Sangue Mágico')) pm += level;
   if (hasVontadeFerro) pm += level;
 
-  // DEF
-  let def = 10 + halfLevel + DES;
-  raceData?.habilidades?.forEach(h => {
-    if (h.bonus?.def) def += h.bonus.def; 
-  });
-  if (hasEsquiva) def += 2;
-  if (hasPeleFerro) def += 2;
-
-  // Encouraçado: +2 Defesa se usar armadura pesada
-  const equippedArmor = (char.equipamento || []).find(e => {
+  // Defesa & Penalidade
+  const equipped = (char.equipamento || []).map(e => {
     const id = typeof e === 'string' ? e : e.id;
-    return ITENS[id]?.tipo === 'armadura';
-  });
-  const armorId = typeof equippedArmor === 'string' ? equippedArmor : equippedArmor?.id;
-  if (hasEncouracado && ITENS[armorId]?.categoria === 'pesada') {
-    def += 2;
+    return ITENS[id];
+  }).filter(Boolean);
+
+  const armorData = equipped.find(e => e.tipo === 'armadura');
+  const shieldData = equipped.find(e => e.tipo === 'escudo');
+  const isHeavyArmor = armorData?.categoria === 'pesada';
+
+  let def = 10;
+  let armorPenalty = 0;
+
+  if (armorData) {
+    def += (armorData.def || 0);
+    armorPenalty += (armorData.penalidade || 0);
   }
+  if (shieldData) {
+    def += (shieldData.def || 0);
+    armorPenalty += (shieldData.penalidade || 0);
+  }
+
+  // Atributo de Defesa (DEX por padrão, INT com Cérebro sobre Músculos, etc.)
+  // Regra: A troca é opcional (usa-se o maior)
+  const hasBrainOverBrawn = (char.poderesGerais || []).some(p => p.nome === 'Cérebro sobre Músculos');
+  const availableAttrs = [attrs.DES];
+  if (hasBrainOverBrawn) availableAttrs.push(attrs.INT || 0);
+  
+  const defMod = Math.max(...availableAttrs);
+
+  // JDA: Ignore positive bonus for heavy armor, but keep negative penalties
+  const effectiveMod = (isHeavyArmor && defMod > 0) ? 0 : defMod;
+  def += effectiveMod;
+
+  // Bonus Racial
+  if (raceData?.bonus?.def) {
+    def += raceData.bonus.def;
+  }
+
+  // Class Abilities (Limited by Level in JDA)
+  if (char.classe === 'nobre' && !isHeavyArmor) {
+    def += Math.min(attrs.CAR || 0, level);
+  }
+  if (char.classe === 'bucaneiro' && !isHeavyArmor) {
+    def += Math.min(attrs.CAR || 0, level);
+  }
+  if (char.classe === 'lutador') {
+    if (!isHeavyArmor) def += Math.min(attrs.CON || 0, level);
+    if (!armorData) def += Math.min(attrs.FOR || 0, level);
+  }
+
+  // Powers
+  if (hasEsquiva) def += 2;
+  if (hasPeleFerro && !isHeavyArmor) def += 2;
+  if (hasEncouracado && isHeavyArmor) def += 2;
+  
+  if (allPowers.has('Estilo de Arma e Escudo') && shieldData) def += 2;
+  if (allPowers.has('Estilo de Uma Arma') && !shieldData && armorData?.categoria !== 'pesada') def += 2;
+  if (allPowers.has('Escudo da Fé')) def += 2;
+
+  // Penalidade de Armadura aplicada a perícias específicas
+  const armorPenaltyPericias = ['Acrobacia', 'Atletismo', 'Furtividade', 'Ladinagem', 'Iniciativa', 'Reflexos'];
 
   // ATK
   const isRanged = char.classe === 'cacador';
-  const pericias = char.pericias || [];
-  const hasLuta = pericias.includes?.('Luta');
-  const hasPontaria = pericias.includes?.('Pontaria');
+  const periciasTrained = getAllTrainedSkills(char);
+  const hasLuta = periciasTrained.has('Luta');
+  const hasPontaria = periciasTrained.has('Pontaria');
   const atk = (isRanged ? (attrs.DES || 0) : (attrs.FOR || 0)) + halfLevel + ((isRanged ? hasPontaria : hasLuta) ? 2 : 0);
   
   // Saves
@@ -149,13 +203,41 @@ export function computeStats(char) {
   const extraLangs = (raceLangs[char.raca?.toLowerCase()] || []);
   extraLangs.forEach(l => { if (!languages.includes(l)) languages.push(l); });
   
-  const intLangs = Math.max(0, attrs.INT);
-  const totalLangsCount = languages.length + intLangs;
+  // Deslocamento
+  let baseSpeed = raceData.deslocamento || 9;
+  const isDwarf = char.raca?.toLowerCase() === 'anao';
+  const isGolem = char.raca?.toLowerCase() === 'golem';
+  
+  // Penalidade de armadura no deslocamento (JDA: -3m para média/pesada)
+  let speedPenalty = 0;
+  if (armorData?.categoria === 'media' || armorData?.categoria === 'pesada') {
+    if (!isDwarf && !isGolem) {
+       speedPenalty = 3;
+    }
+  }
+  const deslocamento = Math.max(1.5, baseSpeed - speedPenalty);
+
+  // CD de Magia: 10 + metado do nível + atributo-chave
+  const spellAttrMap = {
+    arcanista: (char.choices?.caminhoArcanista === 'feiticeiro' ? 'CAR' : (char.choices?.caminhoArcanista === 'bruxo' ? 'INT' : 'INT')),
+    bardo: 'CAR', clérigo: 'SAB', druida: 'SAB', nobre: 'CAR', paladino: 'CAR'
+  };
+  const spellAttrKey = spellAttrMap[char.classe?.toLowerCase()];
+  const spellDC = 10 + halfLevel + (spellAttrKey ? (attrs[spellAttrKey] || 0) : 0);
+
+  // Modificadores de Tamanho (Furtividade)
+  // Minúsculo (Silfide): +5, Pequeno (Hynne, Goblin): +2
+  let sizeModFurtividade = 0;
+  if (char.raca?.toLowerCase() === 'silfide') sizeModFurtividade = 5;
+  if (char.raca?.toLowerCase() === 'hynne' || char.raca?.toLowerCase() === 'goblin') sizeModFurtividade = 2;
 
   return {
     attrs, raceBonus,
     pv: Math.max(1, pv), pm: Math.max(0, pm),
     def, atk, ini, fort, ref, von,
+    deslocamento, spellDC,
+    armorPenalty, armorPenaltyPericias,
+    sizeModFurtividade,
     pontosDisponiveis: POINT_POOL - pontosGastos,
     languages: languages,
     totalLangsCount: totalLangsCount,
@@ -164,7 +246,6 @@ export function computeStats(char) {
     detailedAttacks: calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini, fort, ref, von })
   };
 }
-
 export function getAllTrainedSkills(char) {
   const cls = CLASSES[char.classe?.toLowerCase()];
   if (!cls) return new Set();
@@ -179,6 +260,19 @@ export function getAllTrainedSkills(char) {
   const intExtras = char.pericias || [];
   
   return new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras]);
+}
+
+export function getAllProficiencies(char) {
+  const cls = CLASSES[char.classe?.toLowerCase()];
+  const base = cls?.proficiencias || [];
+  
+  const fromPowers = (char.poderesGerais || [])
+    .filter(p => p.nome === 'Proficiência')
+    .map(p => p.escolha); // Assuming Proficiência power stores choice in 'escolha'
+
+  // Some races or origins might grant proficiencies too
+  // For now, class base + power-gained
+  return new Set([...base, ...fromPowers]);
 }
 
 /**
@@ -217,13 +311,31 @@ export function calculateDetailedAttacks(char, stats) {
     return ITENS[id]?.tipo === 'arma';
   });
 
-  return weapons.map(e => {
-    const isCustom = typeof e !== 'string';
-    const id = isCustom ? e.id : e;
-    const base = ITENS[id];
+  // JDA: Lutador e todos os personagens podem lutar desarmados
+  const isLutador = char.classe === 'lutador';
+  const unarmedData = {
+    uid: 'unarmed-strike',
+    nome: 'Ataque Desarmado',
+    dano: isLutador ? '1d6' : '1d3',
+    critico: 20,
+    multiplicador: 2,
+    empunhadura: 'leve',
+    tipo: 'arma',
+    subtipo: 'corpo_a_corpo'
+  };
+
+  const finalWeapons = weapons.length > 0 ? weapons : [unarmedData];
+  // Adiciona soco sempre para Lutador mesmo se tiver arma
+  if (isLutador && weapons.length > 0) finalWeapons.push(unarmedData);
+
+  return finalWeapons.map(e => {
+    const isCustom = typeof e !== 'string' && e.id;
+    const isUnarmed = (typeof e !== 'string' && e.uid === 'unarmed-strike');
+    const id = isCustom ? e.id : (isUnarmed ? null : e);
+    const base = isUnarmed ? e : ITENS[id];
     if (!base) return null;
 
-    const mods = isCustom ? (e.melhorias || []) : [];
+    const mods = isCustom ? (e.mods || []) : [];
     const material = isCustom ? MATERIAIS[e.material] : null;
 
     // 1. Attack Bonus
@@ -304,7 +416,7 @@ export function calculateDetailedAttacks(char, stats) {
       uid: isCustom ? e.uid : id,
       nome: base.nome,
       material: material?.nome,
-      melhorias: mods.length,
+      melhorias: mods,
       bonusAtk: (bonusAtk >= 0 ? '+' : '') + bonusAtk,
       dano: `${damage}${damageBonus !== 0 ? (damageBonus > 0 ? '+' : '') + damageBonus : ''}`,
       critico: `${critMargin}/x${critMult}`,
