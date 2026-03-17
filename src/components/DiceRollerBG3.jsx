@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 
 // BG3 Inspired Dice Roller
 export default function DiceRollerBG3({ skillName, modifier, onClose }) {
@@ -129,7 +129,7 @@ export default function DiceRollerBG3({ skillName, modifier, onClose }) {
           showResult && isCritFail ? 'opacity-100 translate-y-0 text-red-500 font-black tracking-widest uppercase text-xl' :
           'opacity-0 translate-y-4'
         }`}>
-          {isCritSuccess ? 'Sucesso Crítico!' : isCritFail ? 'Falha Crítica!' : ''}
+          {isCritSuccess ? 'Sucesso Cr├¡tico!' : isCritFail ? 'Falha Cr├¡tica!' : ''}
         </div>
       </div>
 
