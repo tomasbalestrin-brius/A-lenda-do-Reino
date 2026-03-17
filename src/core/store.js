@@ -1,9 +1,10 @@
-﻿import { createStore } from 'zustand/vanilla';
+import { createStore } from 'zustand/vanilla';
 import { useStore } from 'zustand';
-import { getSkillData } from '../combat/skills';
 import { MAPS, TILE_SIZE } from '../data/maps';
-import { enemyUpdateTick } from '../canvas/world/enemyAI';
 import { saveSystem } from './save';
+
+// Stub: skills system was purged (turn-based legacy)
+const getSkillData = (id) => ({ name: id, mpCost: 0, cooldown: 0, execute: () => ({ damage: 0, effects: [], message: `${id} usado` }) });
 
 // Cria store vanilla para evitar problemas com bundling de `create`
 const gameStoreInternal = createStore((set, get) => ({
@@ -489,7 +490,7 @@ const gameStoreInternal = createStore((set, get) => ({
 
   spawnEnemies: (roomId) => set(() => ({ enemies: (MAPS[roomId]?.spawns || []).map((s, i) => ({ id: `${roomId}-${i}`, x: s.x * TILE_SIZE, y: s.y * TILE_SIZE, speed: 1.1, sprite: s.sprite })) })),
 
-  updateEnemies: () => set((state) => ({ enemies: enemyUpdateTick(state.enemies, state.playerPos, 16) })),
+  // updateEnemies using enemyAI removed (legacy)
 
   // ===== Sistema de Perícias =====
   fazerTestePericia: (pericia, cd, modificadores = 0) => {
