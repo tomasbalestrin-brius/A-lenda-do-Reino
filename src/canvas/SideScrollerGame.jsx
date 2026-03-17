@@ -215,7 +215,7 @@ export function SideScrollerGame() {
       }
 
       // Enemies
-      enemies.forEach(e => {
+      updatedEnemies.forEach(e => {
         if (!e.defeated) {
           ctx.fillStyle = e.flash ? '#fff' : '#ef4444';
           ctx.beginPath();

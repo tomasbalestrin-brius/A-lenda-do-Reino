@@ -98,8 +98,8 @@ export function computeStats(char) {
   if (hasVitalidade) pv += level;
 
   // PM - JDA: (Base * nível) + Modificador de Atributo
-  let pmKey = PM_ATTR_MAP[char.classe] || null;
-  if (char.classe === 'arcanista' && char.choices?.caminhoArcanista === 'feiticeiro') {
+  let pmKey = PM_ATTR_MAP[char.classe?.toLowerCase()] || null;
+  if (char.classe?.toLowerCase() === 'arcanista' && char.choices?.caminhoArcanista === 'feiticeiro') {
     pmKey = 'CAR';
   }
   const pmBase = cls?.pm || 3;
@@ -240,7 +240,7 @@ export function computeStats(char) {
     sizeModFurtividade,
     pontosDisponiveis: POINT_POOL - pontosGastos,
     languages: languages,
-    totalLangsCount: totalLangsCount,
+    totalLangsCount: languages.length,
     startingWealth: CLASS_WEALTH[char.classe?.toLowerCase()] || CLASS_WEALTH.padrao,
     maxLoad: (10 + (2 * (attrs.FOR || 0))) + ((char.equipamento || []).some(e => (typeof e === 'string' ? e : e.id) === 'mochila_aventureiro') ? 2 : 0),
     detailedAttacks: calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini, fort, ref, von })
