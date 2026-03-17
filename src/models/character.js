@@ -1,5 +1,7 @@
-// Modelo de ficha de personagem (Tormenta 20 – estrutura abrangente)
 // Mantém compatibilidade com o estado atual de `player` do jogo.
+import CLASSES from "../data/classes";
+import RACAS from "../data/races";
+import ORIGENS from "../data/origins";
 
 export const ATR_KEYS = ["FOR", "DES", "CON", "INT", "SAB", "CAR"];
 
@@ -42,16 +44,7 @@ export function fromPlayerState(player) {
   const ficha = createEmptyCharacter();
   if (!player) return ficha;
   // Lazy imports para evitar ciclos no build
-  let CLASSES, RACAS, ORIGENS;
-  try {
-    CLASSES = require("../data/classes").default;
-  } catch {}
-  try {
-    RACAS = require("../data/races").default;
-  } catch {}
-  try {
-    ORIGENS = require("../data/origins").default;
-  } catch {}
+  // Omit requirement check if values are already imported
   ficha.nome = player.nome || "";
   ficha.raca = player.raca || "";
   ficha.origem = player.origem || "";

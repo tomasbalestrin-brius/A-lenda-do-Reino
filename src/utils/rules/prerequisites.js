@@ -1,7 +1,7 @@
 import CLASSES from '../../data/classes';
 import { ORIGENS } from '../../data/origins';
 
-import { getAllTrainedSkills, getAllOwnedPowers } from './characterStats';
+import { getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from './characterStats';
 
 /**
  * Verifica se um personagem atende a todos os pré-requisitos de um poder.
@@ -75,7 +75,6 @@ export function meetsRequirement(req, char, stats) {
 
   // Proficiências
   if (req.proficiencia) {
-    const { getAllProficiencies } = require('./characterStats'); // Lazy import if needed or use from top
     const profs = getAllProficiencies(char);
     for (const p of req.proficiencia) {
       if (!profs.has(p)) return false;
@@ -166,7 +165,6 @@ export function checkPowerEligibility(power, char, stats) {
 
   // Proficiências
   if (req.proficiencia) {
-    const { getAllProficiencies } = require('./characterStats');
     const profs = getAllProficiencies(char);
     for (const p of req.proficiencia) {
       if (!profs.has(p)) {
