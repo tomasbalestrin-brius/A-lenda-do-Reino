@@ -204,7 +204,7 @@ export function computeStats(char) {
   extraLangs.forEach(l => { if (!languages.includes(l)) languages.push(l); });
   
   // Deslocamento
-  let baseSpeed = raceData.deslocamento || 9;
+  let baseSpeed = raceData?.deslocamento || 9;
   const isDwarf = char.raca?.toLowerCase() === 'anao';
   const isGolem = char.raca?.toLowerCase() === 'golem';
   
