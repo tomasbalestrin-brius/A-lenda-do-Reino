@@ -107,7 +107,7 @@ export default function CombatRollerBG3({ weapon, onClose }) {
                 {stage === 'resultAtk' && (
                   <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="absolute left-full ml-6 flex items-center gap-4 bg-gray-900 border border-white/10 p-4 rounded-2xl shadow-2xl">
                     <span className="text-2xl font-black text-slate-500">+</span>
-                    <span className="text-3xl font-black text-slate-300">{weapon.bonusAtk}</span>
+                    <span className="text-3xl font-black text-slate-300">{weapon.bonusAtk >= 0 ? '+' : ''}{weapon.bonusAtk}</span>
                     <div className="h-10 w-px bg-white/10 mx-2" />
                     <span className="text-5xl font-black text-amber-500">{atkRoll + weapon.bonusAtk}</span>
                   </motion.div>

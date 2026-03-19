@@ -11,18 +11,7 @@ export const ORIGENS = {
       descricao: 'Você recebe hospedagem e informação gratuitamente em templos de sua divindade.'
     }
   },
-  amigo_dos_animais: {
-    id: 'amigo_dos_animais',
-    nome: 'Amigo dos Animais',
-    descricao: 'Você tem uma afinidade natural com animais e criaturas selvagens.',
-    itens: ['Ração para animais (uma semana)', 'Flauta ou pequeno instrumento'],
-    pericias: ['Adestramento', 'Cavalgar'],
-    poderes: ['Amigo Especial'],
-    poderUnico: {
-      nome: 'Amigo Especial (Poder Único)',
-      descricao: '+5 em Adestramento e você possui um animal parceiro (+2 em uma perícia à sua escolha).'
-    }
-  },
+
   amnesico: {
     id: 'amnesico',
     nome: 'Amnésico',

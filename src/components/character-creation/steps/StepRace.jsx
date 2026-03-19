@@ -114,7 +114,7 @@ export function StepRace({ onNext }) {
         onConfirm={() => {
           const id = char.modalRace;
           const hasEscolhaRule = RACES[id]?.atributos?.escolha;
-          updateChar({ raca: id, modalRace: null, racaEscolha: ['FOR', 'DES', 'CON'] });
+          updateChar({ raca: id, modalRace: null, racaEscolha: [] });
           if (!hasEscolhaRule && onNext) onNext();
         }}
         isSelected={char.raca === char.modalRace}

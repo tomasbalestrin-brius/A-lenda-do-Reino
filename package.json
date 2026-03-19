@@ -10,8 +10,10 @@
     "framer-motion": "^12.23.24",
     "howler": "^2.2.4",
     "lucide-react": "^0.545.0",
+    "pdfjs-dist": "^5.5.207",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-pdf": "^10.4.1",
     "vite": "^7.1.10",
     "zustand": "^5.0.11"
   },
@@ -22,9 +24,11 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",
+    "pdf-parse": "^2.4.5",
     "postcss": "^8.4.38",
     "puppeteer": "^24.39.1",
-    "tailwindcss": "^3.4.13"
+    "tailwindcss": "^3.4.13",
+    "vite-plugin-pwa": "^1.2.0"
   },
   "browserslist": {
     "production": [

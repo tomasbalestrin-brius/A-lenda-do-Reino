@@ -388,49 +388,90 @@ export function StepEquipment() {
                   {/* Mejoras */}
                   <div className="flex flex-col gap-4">
                     <h4 className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2 px-2">Melhorias Disponíveis</h4>
-                    <div className="grid grid-cols-1 gap-2">
-                       {Object.values(MELHORIAS).flat().filter(m => {
-                         const item = ITENS[customizingItem.id];
-                         if (m.categoria === 'disparo' && !item?.distancia) return false;
-                         if (m.categoria === 'pesada' && item?.categoria !== 'pesada') return false;
-                         // Specific weapon/armor checks can be added here
-                         return true;
-                       }).map(mod => {
-                         const isSelected = (customizingItem.mods || []).includes(mod.id);
-                         const isPrototype = char.choices?.prototipoUid === customizingItem.uid && (customizingItem.mods || []).length === 0;
-                         const cost = isPrototype ? 0 : CUSTOS_MELHORIAS[(customizingItem.mods || []).length + (isSelected ? 0 : 1)] || 300;
+                     <div className="grid grid-cols-1 gap-2">
+                        {(() => {
+                           const item = ITENS[customizingItem.id];
+                           let modPool = [];
+                           if (item?.tipo === 'arma') modPool = MELHORIAS.armas;
+                           else if (item?.tipo === 'armadura' || item?.tipo === 'escudo') modPool = MELHORIAS.armaduras_escudos;
+                           else if (item?.tipo === 'esotérico' || item?.tipo === 'esoterico') modPool = MELHORIAS.esotericos;
+                           else if (item?.tipo === 'ferramenta' || item?.tipo === 'vestuario') modPool = MELHORIAS.ferramentas_vestuario;
+                           
+                           // Add general mods
+                           modPool = [...modPool, ...MELHORIAS.geral];
 
-                         return (
-                           <button
-                             key={mod.id}
-                             disabled={isSelected}
-                             onClick={() => {
-                               if ((char.dinheiro || 0) < cost && !isPrototype) return;
-                               const newMods = [...(customizingItem.mods || []), mod.id];
-                               const newEquip = char.equipamento.map(e => e.uid === customizingItem.uid ? { ...e, mods: newMods } : e);
-                               updateChar({ 
-                                 equipamento: newEquip,
-                                 dinheiro: (char.dinheiro || 0) - (isPrototype ? 0 : cost)
-                               });
-                               setCustomizingItem({ ...customizingItem, mods: newMods });
-                             }}
-                             className={`p-3 rounded-2xl border transition-all text-left flex justify-between items-center group ${
-                               isSelected ? 'bg-amber-500/20 border-amber-500/50 opacity-100' : 'bg-gray-900 border-white/5 hover:border-amber-500/30'
-                             }`}
-                           >
-                             <div>
-                               <p className={`text-xs font-bold ${isSelected ? 'text-amber-500' : 'text-white'}`}>{mod.nome}</p>
-                               <p className="text-[9px] text-slate-500">{mod.efeito}</p>
-                             </div>
-                             {!isSelected && (
-                               <span className="text-[10px] font-black text-amber-600 bg-amber-600/10 px-2 py-1 rounded-lg">
-                                 {isPrototype ? 'GRÁTIS' : `T$ ${cost}`}
-                               </span>
-                             )}
-                           </button>
-                         );
-                       })}
-                    </div>
+                           return modPool.filter(m => {
+                             if (m.categoria === 'disparo' && !item?.distancia) return false;
+                             if (m.categoria === 'pesada' && item?.categoria !== 'pesada') return false;
+                             if (m.categoria === 'armadura' && item?.tipo !== 'armadura') return false;
+                             if (m.categoria === 'escudo' && item?.tipo !== 'escudo') return false;
+                             return true;
+                           }).map(mod => {
+                             const isSelected = (customizingItem.mods || []).includes(mod.id);
+                             const currentModCount = (customizingItem.mods || []).length;
+                             const isPrototype = char.choices?.prototipoUid === customizingItem.uid && currentModCount === 0;
+                             
+                             // Calc cost to ADD (price of the NEXT slot)
+                             const nextSlot = currentModCount + 1;
+                             const addCost = isPrototype ? 0 : CUSTOS_MELHORIAS[nextSlot] || 0;
+                             
+                             // Calc refund if REMOVING (price of the CURRENT slot)
+                             const refundCost = isPrototype ? 0 : CUSTOS_MELHORIAS[currentModCount] || 0;
+
+                             // Check requirement (e.g. Pungente requires Certeira)
+                             const hasRequirement = !mod.requisito || (customizingItem.mods || []).includes(mod.requisito);
+                             // Check exclusion (e.g. Maciça excludes Precisa)
+                             const isExcluded = (mod.exclui || []).some(ex => (customizingItem.mods || []).includes(ex));
+
+                             return (
+                               <button
+                                 key={mod.id}
+                                 disabled={(!isSelected && ((char.dinheiro || 0) < addCost || !hasRequirement || isExcluded))}
+                                 onClick={() => {
+                                   let newMods;
+                                   let newMoney = char.dinheiro || 0;
+                                   
+                                   if (isSelected) {
+                                     newMods = (customizingItem.mods || []).filter(mid => mid !== mod.id);
+                                     newMoney += refundCost;
+                                   } else {
+                                     newMods = [...(customizingItem.mods || []), mod.id];
+                                     newMoney -= addCost;
+                                   }
+                                   
+                                   const newEquip = char.equipamento.map(e => e.uid === customizingItem.uid ? { ...e, mods: newMods } : e);
+                                   updateChar({ 
+                                     equipamento: newEquip,
+                                     dinheiro: newMoney
+                                   });
+                                   setCustomizingItem({ ...customizingItem, mods: newMods });
+                                 }}
+                                 className={`p-3 rounded-2xl border transition-all text-left flex justify-between items-center group ${
+                                   isSelected ? 'bg-amber-500/20 border-amber-500/50 opacity-100' : 'bg-gray-900 border-white/5 hover:border-amber-500/30'
+                                 } ${!isSelected && (!hasRequirement || isExcluded) ? 'opacity-30 cursor-not-allowed' : ''}`}
+                               >
+                                 <div>
+                                   <p className={`text-xs font-bold ${isSelected ? 'text-amber-500' : 'text-white'}`}>
+                                     {mod.nome} {isSelected && '✓'}
+                                   </p>
+                                   <p className="text-[9px] text-slate-500">{mod.efeito}</p>
+                                   {!hasRequirement && <p className="text-[8px] text-rose-500 mt-0.5 font-bold uppercase tracking-tighter">Requer: {mod.requisito}</p>}
+                                   {isExcluded && <p className="text-[8px] text-rose-500 mt-0.5 font-bold uppercase tracking-tighter">Incompatível</p>}
+                                 </div>
+                                 {!isSelected ? (
+                                   <span className="text-[10px] font-black text-amber-600 bg-amber-600/10 px-2 py-1 rounded-lg">
+                                     {isPrototype ? 'GRÁTIS' : `T$ ${addCost}`}
+                                   </span>
+                                 ) : (
+                                   <span className="text-[10px] font-black text-rose-500 bg-rose-500/10 px-2 py-1 rounded-lg group-hover:block hidden">
+                                     REMOVER
+                                   </span>
+                                 )}
+                               </button>
+                             );
+                           });
+                        })()}
+                     </div>
                   </div>
 
                   {/* Material Especiais */}

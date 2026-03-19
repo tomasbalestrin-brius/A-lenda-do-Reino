@@ -211,7 +211,7 @@ export const GENERAL_POWERS = {
     {
       nome: "Ao Sabor do Destino",
       descricao: "Abre mão de itens mágicos para receber bônus em perícias, Defesa, dano e atributos de acordo com o nível.",
-      requisitos: { level: 6 }
+      requisitos: { level: 5 }
     },
     {
       nome: "Aparência Inofensiva",

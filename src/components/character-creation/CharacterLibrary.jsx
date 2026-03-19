@@ -9,7 +9,7 @@ const CLASS_ICONS = {
   nobre: '👑', paladino: '⚔️',
 };
 
-export function CharacterLibrary({ characters, onPlay, onDelete, onNew, loading }) {
+export function CharacterLibrary({ characters, onPlay, onDelete, onNew, onCompendium, loading }) {
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Decorative Elements */}
@@ -56,8 +56,11 @@ export function CharacterLibrary({ characters, onPlay, onDelete, onNew, loading 
             <div className="text-7xl mb-6 opacity-30 grayscale saturate-0 backdrop-blur-sm bg-amber-500 w-24 h-24 mx-auto rounded-full flex items-center justify-center">⚔️</div>
             <p className="text-white text-xl font-black uppercase tracking-widest">A taverna está vazia</p>
             <p className="text-gray-500 mt-2">Nenhum herói atendeu ao chamado ainda.</p>
-            <button onClick={onNew} className="mt-8 px-10 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-gray-900 font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+            <button onClick={onNew} className="mt-6 px-10 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-gray-900 font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
               Criar Primeiro Herói
+            </button>
+            <button onClick={onCompendium} className="mt-3 px-8 py-3 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold uppercase tracking-widest text-sm transition-all hover:bg-purple-500/20 active:scale-95">
+              📖 Compêndio
             </button>
           </div>
         ) : (
@@ -117,11 +120,15 @@ export function CharacterLibrary({ characters, onPlay, onDelete, onNew, loading 
         )}
 
         {characters.length > 0 && (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-4">
              <button onClick={onNew} className="group relative flex items-center gap-4 px-12 py-5 rounded-full bg-white text-gray-950 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="relative z-10 text-xl">+</span>
                 <span className="relative z-10">Criar Novo Herói</span>
+             </button>
+             <button onClick={onCompendium} className="group relative flex items-center gap-4 px-10 py-5 rounded-full bg-purple-500/10 border-2 border-purple-500/30 text-purple-400 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 overflow-hidden hover:bg-purple-500/20">
+                <span className="text-xl">📖</span>
+                <span>Compêndio</span>
              </button>
           </div>
         )}

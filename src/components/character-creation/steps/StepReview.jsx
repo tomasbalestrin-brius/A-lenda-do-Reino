@@ -56,18 +56,44 @@ const DEITY_ICONS = {
   thwor: '🥊', thyatis: '🔥', valkaria: '🗽', wynna: '✨',
 };
 
+const StatItem = React.memo(({ label, value, detail, color, icon }) => (
+  <div className="bg-gray-950/80 p-6 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all cursor-help min-w-[120px]">
+     <div className={`absolute top-0 inset-x-0 h-1.5 ${color} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />
+     <span className="text-3xl font-black text-white mb-1">{value}</span>
+     <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
+     
+     {/* Detailed Breakdown Tooltip */}
+     <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-56 bg-gray-900/95 border border-white/10 p-4 rounded-3xl opacity-0 group-hover/stat:opacity-100 pointer-events-none transition-all z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3 pb-2 border-b border-white/5">Breakdown: {label}</div>
+        <div className="space-y-2">
+           {detail?.map((d, i) => (
+             <div key={i} className="flex justify-between items-center text-[10px] font-bold">
+               <span className="text-slate-400">{d.label}</span>
+               <span className="text-white bg-white/5 px-2 py-0.5 rounded-lg">{d.value >= 0 ? '+' : ''}{d.value}</span>
+             </div>
+           ))}
+           <div className="pt-2 border-t border-white/5 mt-2 flex justify-between items-center text-[11px] font-black">
+              <span className="text-slate-500 uppercase">Total</span>
+              <span className="text-amber-500">{value}</span>
+           </div>
+        </div>
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-900 rotate-45 border-r border-b border-white/10" />
+     </div>
+  </div>
+));
+
 export function StepReview({ stats, onSave, onPlay }) {
   const { char, updateChar } = useCharacterStore();
   const cls = CLASSES[char.classe] || {};
   const race = RACES[char.raca] || {};
   const orig = ORIGENS[char.origem] || {};
   const deus = DEUSES[char.deus] || {};
-  const allPericias = getAllTrainedSkills(char);
+  const allPericias = React.useMemo(() => getAllTrainedSkills(char), [char]);
   const [rollTest, setRollTest] = useState(null);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [rollCombat, setRollCombat] = useState(null);
 
-  const getSkillModifier = (skillName) => {
+  const getSkillModifier = React.useCallback((skillName) => {
     const halfLevel = Math.floor((char.level || 1) / 2);
     let attrKey = 'INT';
     if (['Acrobacia', 'Furtividade', 'Iniciativa', 'Ladinagem', 'Piloto', 'Pontaria', 'Reflexos'].includes(skillName)) attrKey = 'DES';
@@ -88,7 +114,14 @@ export function StepReview({ stats, onSave, onPlay }) {
     }
     
     return total;
-  };
+  }, [char.level, char.pericias, allPericias, stats?.attrs, stats?.armorPenalty, stats?.armorPenaltyPericias, stats?.sizeModFurtividade]);
+
+  const skillList = React.useMemo(() => {
+    return [...allPericias].sort().map(p => ({
+      name: p,
+      modifier: getSkillModifier(p)
+    }));
+  }, [allPericias, getSkillModifier]);
 
   const startTest = (name, modifier) => {
     setRollTest({ name, modifier });
@@ -215,18 +248,17 @@ export function StepReview({ stats, onSave, onPlay }) {
             </div>
 
             <div className="relative z-10 mt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[
-                { l: 'Vida', v: stats?.pv || 0, bg: 'bg-rose-500', t: 'PV' },
-                { l: 'Mana', v: stats?.pm || 0, bg: 'bg-blue-500', t: 'PM' },
-                { l: 'Defesa', v: stats?.def || 0, bg: 'bg-sky-500', t: 'DEF' },
-                { l: 'Ataque', v: ((stats?.atk || 0) >= 0 ? '+' : '') + (stats?.atk || 0), bg: 'bg-orange-500', t: 'ATK' },
-              ].map(st => (
-                <div key={st.l} className="bg-gray-950/80 p-6 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all">
-                   <div className={`absolute top-0 inset-x-0 h-1.5 ${st.bg} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />
-                   <span className="text-3xl font-black text-white mb-1">{st.v}</span>
-                   <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{st.t}</span>
-                </div>
-              ))}
+              <StatItem label="PV" value={stats?.pv || 0} detail={stats?.details?.pv} color="bg-rose-500" />
+              <StatItem label="PM" value={stats?.pm || 0} detail={stats?.details?.pm} color="bg-blue-500" />
+              <StatItem label="DEF" value={stats?.def || 0} detail={stats?.details?.def} color="bg-sky-500" />
+              <StatItem label="ATK" value={(stats?.atk >= 0 ? '+' : '') + (stats?.atk || 0)} detail={stats?.details?.atk} color="bg-orange-500" />
+            </div>
+
+            {/* Resistências */}
+            <div className="relative z-10 mt-6 grid grid-cols-3 gap-4">
+              <StatItem label="Fort" value={(stats?.fort >= 0 ? '+' : '') + (stats?.fort || 0)} detail={stats?.details?.saves?.fort} color="bg-emerald-500" />
+              <StatItem label="Ref" value={(stats?.ref >= 0 ? '+' : '') + (stats?.ref || 0)} detail={stats?.details?.saves?.ref} color="bg-sky-500" />
+              <StatItem label="Von" value={(stats?.von >= 0 ? '+' : '') + (stats?.von || 0)} detail={stats?.details?.saves?.von} color="bg-purple-500" />
             </div>
 
             <div className="relative z-10 mt-6 flex flex-wrap gap-4">
@@ -234,7 +266,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                   <span className="text-xl">🏃</span>
                   <div>
                     <p className="text-[8px] uppercase font-black text-amber-500/60 leading-none mb-1">Deslocamento</p>
-                    <p className="text-sm font-black text-white leading-none">{stats?.deslocamento}m</p>
+                    <p className="text-sm font-black text-white leading-none">{stats?.deslocamento}m{stats?.armorPenalty > 0 ? <span className="text-[9px] text-rose-400/70 ml-1">(-{stats.armorPenalty}m armadura)</span> : null}</p>
                   </div>
                </div>
                
@@ -255,6 +287,14 @@ export function StepReview({ stats, onSave, onPlay }) {
                     <p className="text-sm font-black text-white leading-none">{stats?.maxLoad}kg</p>
                   </div>
                </div>
+
+               <div className="bg-cyan-950/30 border border-cyan-500/20 px-6 py-3 rounded-2xl flex items-center gap-3">
+                  <span className="text-xl">🗣️</span>
+                  <div>
+                    <p className="text-[8px] uppercase font-black text-cyan-500/60 leading-none mb-1">Idiomas</p>
+                    <p className="text-sm font-black text-white leading-none">{(stats?.languages || ['Comum']).join(', ')}</p>
+                  </div>
+               </div>
             </div>
           </div>
 
@@ -265,23 +305,20 @@ export function StepReview({ stats, onSave, onPlay }) {
                 <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Perícias Treinadas</p>
               </div>
               <div className="relative z-10 flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-3 max-h-[450px]">
-                {[...allPericias].sort().map(p => {
-                  const mod = getSkillModifier(p);
-                  return (
-                    <motion.button 
-                      key={p} 
-                      whileHover={{ x: 8, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                      onClick={() => startTest(p, mod)}
-                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-blue-500/40 transition-all group shadow-inner"
-                    >
-                      <span className="text-xs font-black text-slate-300 uppercase tracking-wide group-hover:text-blue-300 transition-colors">{p}</span>
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-black text-white drop-shadow-md">{(mod >= 0 ? '+' : '') + mod}</span>
-                        <span className="text-xl opacity-0 group-hover:opacity-100 transition-opacity -rotate-12 group-hover:rotate-0 inline-block">🎲</span>
-                      </div>
-                    </motion.button>
-                  );
-                })}
+                {skillList.map(s => (
+                  <motion.button 
+                    key={s.name} 
+                    whileHover={{ x: 8, backgroundColor: 'rgba(255,255,255,0.05)' }}
+                    onClick={() => startTest(s.name, s.modifier)}
+                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-blue-500/40 transition-all group shadow-inner"
+                  >
+                    <span className="text-xs font-black text-slate-300 uppercase tracking-wide group-hover:text-blue-300 transition-colors">{s.name}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-black text-white drop-shadow-md">{(s.modifier >= 0 ? '+' : '') + s.modifier}</span>
+                      <span className="text-xl opacity-0 group-hover:opacity-100 transition-opacity -rotate-12 group-hover:rotate-0 inline-block">🎲</span>
+                    </div>
+                  </motion.button>
+                ))}
               </div>
             </div>
           </div>
@@ -325,7 +362,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
                         <span className="text-[8px] font-black text-slate-500 uppercase">Ataque</span>
-                        <span className="text-xl font-black text-orange-400">{atk.bonusAtk}</span>
+                        <span className="text-xl font-black text-orange-400">{atk.bonusAtk >= 0 ? '+' : ''}{atk.bonusAtk}</span>
                       </div>
                       <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center border border-white/5">
                         <span className="text-[8px] font-black text-slate-500 uppercase">Dano</span>

@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 
-const POINT_POOL = 20;
-const ATTR_MIN = -2;
+const POINT_POOL = 10;
+const ATTR_MIN = -1;
 const ATTR_MAX = 4;
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 const ATTR_TRANSLATION = {
@@ -38,53 +38,199 @@ function signStr(num) {
   return num > 0 ? `+${num}` : num;
 }
 
+const AttributeRow = React.memo(({ 
+  attrKey, 
+  base, 
+  bonus, 
+  total, 
+  remaining, 
+  isBuy, 
+  char, 
+  assignRoll, 
+  onChange 
+}) => {
+  const ATTR_TRANSLATION = {
+    FOR: 'Força', DES: 'Destreza', CON: 'Constituição',
+    INT: 'Inteligência', SAB: 'Sabedoria', CAR: 'Carisma'
+  };
+  
+  const PM_ATTR_MAP = {
+    arcanista: 'INT', bardo: 'CAR', clerigo: 'SAB', druida: 'SAB', inventor: 'INT', paladino: 'CAR'
+  };
+
+  const ATTR_MIN = -1;
+  const ATTR_MAX = 4;
+
+  const costToIncrease = (currentValue) => {
+    if (currentValue < 0) return 1;
+    if (currentValue === 0) return 1;
+    if (currentValue === 1) return 1;
+    if (currentValue === 2) return 2;
+    if (currentValue === 3) return 3;
+    return Infinity;
+  };
+
+  const signStr = (num) => num > 0 ? `+${num}` : num;
+
+  const increaseCost = costToIncrease(base);
+  const canIncrease = isBuy && base < ATTR_MAX && increaseCost <= remaining;
+  const canDecrease = isBuy && base > ATTR_MIN;
+  const isPmAttr = PM_ATTR_MAP[char.classe] === attrKey;
+  const isAtkAttr = (char.classe === 'cacador' && attrKey === 'DES') || (char.classe !== 'cacador' && attrKey === 'FOR');
+
+  return (
+    <motion.div
+      layout
+      className={`relative overflow-hidden group bg-gray-900/60 backdrop-blur-md border-2 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500 ${
+        isAtkAttr ? 'border-orange-500/20 bg-orange-950/5' :
+        isPmAttr ? 'border-blue-500/20 bg-blue-950/5' :
+        'border-white/5 hover:border-white/10'
+      }`}
+    >
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+        <div className="w-full md:w-64 shrink-0">
+           <div className="flex items-center gap-3 mb-1">
+              <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] ${
+                isAtkAttr ? 'text-orange-400' : isPmAttr ? 'text-blue-400' : 'text-slate-500'
+              }`}>{ATTR_TRANSLATION[attrKey]}</span>
+              {(isAtkAttr || isPmAttr) && (
+                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
+                  isAtkAttr ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'
+                }`}>
+                  {isAtkAttr ? 'Ataque' : 'Mana'}
+                </span>
+              )}
+           </div>
+           <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-1">{attrKey}</h3>
+           <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                 <span className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase">Base</span>
+                 <span className="text-xs font-black text-slate-300">{signStr(base)}</span>
+              </div>
+              {bonus !== 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/20">
+                   <span className="text-[10px] font-black text-emerald-500/60 uppercase">Raça</span>
+                   <span className="text-xs font-black text-emerald-400">{signStr(bonus)}</span>
+                </div>
+              )}
+           </div>
+        </div>
+
+        <div className="flex-1 flex items-center justify-center md:justify-start">
+           <div className="relative group/total">
+              <div className={`text-7xl md:text-8xl font-black italic tracking-tighter leading-none transition-all ${
+                total > 0 ? 'text-white' : total < 0 ? 'text-rose-500' : 'text-slate-700'
+              }`}>
+                {signStr(total)}
+              </div>
+              <div className="absolute -bottom-2 -right-4 w-12 h-px bg-white/10" />
+           </div>
+        </div>
+
+        <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-4 min-w-[200px]">
+          {isBuy ? (
+            <div className="flex items-center gap-3 bg-gray-950 p-2 rounded-3xl border border-white/5 shadow-inner">
+              <button
+                onClick={() => onChange(attrKey, -1)}
+                disabled={!canDecrease}
+                className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
+                  canDecrease ? 'bg-gray-900 hover:bg-gray-800 text-white' : 'text-gray-800 opacity-20'
+                }`}
+              >-</button>
+              <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-white/5 flex items-center justify-center shadow-inner">
+                <span className={`text-2xl font-black ${base > 0 ? 'text-amber-500' : base < 0 ? 'text-red-500' : 'text-white'}`}>
+                  {signStr(base)}
+                </span>
+              </div>
+              <button
+                onClick={() => onChange(attrKey, +1)}
+                disabled={!canIncrease}
+                className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
+                  canIncrease 
+                    ? 'bg-amber-600 hover:bg-amber-500 text-gray-900 shadow-xl shadow-amber-900/20' 
+                    : 'bg-gray-900/50 text-gray-700 border border-white/5 opacity-50 cursor-not-allowed'
+                }`}
+              >+</button>
+            </div>
+           ) : (
+            <div className="flex-1 flex justify-end">
+               <div className="flex flex-wrap gap-2 justify-end">
+                  {(char.rolagens || []).map((r, ri) => (
+                    <button
+                      key={ri}
+                      onClick={() => assignRoll(attrKey, ri)}
+                      className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
+                        r.assignedTo === attrKey
+                          ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg'
+                          : r.assignedTo 
+                            ? 'hidden'
+                            : 'bg-gray-950 border-gray-800 text-amber-500 hover:border-amber-500/50'
+                      }`}
+                    >
+                       {signStr(r.modifier)}
+                    </button>
+                  ))}
+               </div>
+            </div>
+           )}
+
+          <div className="min-w-[60px] flex flex-col items-center">
+            <span className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter mb-1">Total</span>
+            <div className={`w-14 h-14 rounded-2xl bg-gray-950 border-2 flex items-center justify-center shadow-inner transition-colors ${
+              total > 0 ? 'border-amber-500/20 text-amber-500' : total < 0 ? 'border-red-500/20 text-red-500' : 'border-gray-800 text-white'
+            }`}>
+               <span className="text-xl font-black leading-none">{signStr(total)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+});
+
 export function StepAttributes({ stats }) {
   const { char, updateChar } = useCharacterStore();
   const [rolling, setRolling] = useState(false);
   const remaining = stats.pontosDisponiveis || 0;
   const isBuy = (char.attrMethod || 'buy') === 'buy';
 
-  function handleChange(key, delta) {
+  const handleChange = React.useCallback((key, delta) => {
     if (!isBuy) return;
     const current = char.atributos[key] || 0;
     const next = current + delta;
     if (next < ATTR_MIN || next > ATTR_MAX) return;
     if (delta > 0 && costToIncrease(current) > remaining) return;
     updateChar({ atributos: { ...char.atributos, [key]: next } });
-  }
+  }, [char.atributos, char.attrMethod, remaining, updateChar]);
 
-  function handleRoll() {
+  const handleRoll = React.useCallback(() => {
     setRolling(true);
     const newRolls = [];
     for (let i = 0; i < 6; i++) {
         newRolls.push(rollAttribute());
     }
-    // Artificial delay for "premium" feel
     setTimeout(() => {
         updateChar({ rolagens: newRolls, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 } });
         setRolling(false);
     }, 800);
-  }
+  }, [updateChar]);
 
-  function assignRoll(attrKey, rollIdx) {
+  const assignRoll = React.useCallback((attrKey, rollIdx) => {
     const roll = (char.rolagens || [])[rollIdx];
     if (!roll) return;
 
     const newAttrs = { ...char.atributos, [attrKey]: roll.modifier };
     const newRolls = [...char.rolagens];
 
-    // 1. If attrKey already has a roll assigned, find that roll and unassign it.
     newRolls.forEach((r, idx) => {
         if (r.assignedTo === attrKey) {
             newRolls[idx] = { ...r, assignedTo: null };
         }
     });
 
-    // 2. Assign the new roll.
     newRolls[rollIdx] = { ...roll, assignedTo: attrKey };
-
     updateChar({ atributos: newAttrs, rolagens: newRolls });
-  }
+  }, [char.atributos, char.rolagens, updateChar]);
 
   return (
     <div className="flex flex-col gap-10">
@@ -97,7 +243,7 @@ export function StepAttributes({ stats }) {
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed max-w-lg font-medium">
             {isBuy
-              ? `Distribua seus ${POINT_POOL} pontos. Todos os atributos começam em 0. O custo aumenta conforme o valor sobe.`
+              ? `Distribua seus ${POINT_POOL} pontos. Todos os atributos começam em 0. O custo para aumentar um atributo é progressivo conforme a tabela oficial do T20.`
               : "Defina o potencial de seu herói através da sorte. Role 4 dados de 6 faces, descarte o menor e atribua aos atributos."}
           </p>
         </div>
@@ -200,127 +346,20 @@ export function StepAttributes({ stats }) {
 
       {/* Attributes Grid */}
       <div className="grid grid-cols-1 gap-4">
-        {ATTR_KEYS.map(key => {
-          const base = char.atributos[key] || 0;
-          const bonus = stats.raceBonus[key] || 0;
-          const total = stats.attrs[key];
-          const increaseCost = costToIncrease(base);
-          const canIncrease = isBuy && base < ATTR_MAX && increaseCost <= remaining;
-          const canDecrease = isBuy && base > ATTR_MIN;
-          const isPmAttr = PM_ATTR_MAP[char.classe] === key;
-          const isAtkAttr = (char.classe === 'cacador' && key === 'DES') || (char.classe !== 'cacador' && key === 'FOR');
-
-          return (
-            <motion.div
-              key={key}
-              layout
-              className={`relative overflow-hidden group bg-gray-900/60 backdrop-blur-md border-2 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 transition-all duration-500 ${
-                isAtkAttr ? 'border-orange-500/20 bg-orange-950/5' :
-                isPmAttr ? 'border-blue-500/20 bg-blue-950/5' :
-                'border-white/5 hover:border-white/10'
-              }`}
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
-                {/* Stats Info */}
-                <div className="w-full md:w-64 shrink-0">
-                   <div className="flex items-center gap-3 mb-1">
-                      <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] ${
-                        isAtkAttr ? 'text-orange-400' : isPmAttr ? 'text-blue-400' : 'text-slate-500'
-                      }`}>{ATTR_TRANSLATION[key]}</span>
-                      {(isAtkAttr || isPmAttr) && (
-                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${
-                          isAtkAttr ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'
-                        }`}>
-                          {isAtkAttr ? 'Ataque' : 'Mana'}
-                        </span>
-                      )}
-                   </div>
-                   <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-1">{key}</h3>
-                   <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/5 border border-white/5">
-                         <span className="text-[9px] md:text-[10px] font-black text-slate-500 uppercase">Base</span>
-                         <span className="text-xs font-black text-slate-300">{signStr(base)}</span>
-                      </div>
-                      {bonus !== 0 && (
-                        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/20">
-                           <span className="text-[10px] font-black text-emerald-500/60 uppercase">Raça</span>
-                           <span className="text-xs font-black text-emerald-400">{signStr(bonus)}</span>
-                        </div>
-                      )}
-                   </div>
-                </div>
-
-                {/* Main Total Display */}
-                <div className="flex-1 flex items-center justify-center md:justify-start">
-                   <div className="relative group/total">
-                      <div className={`text-7xl md:text-8xl font-black italic tracking-tighter leading-none transition-all ${
-                        total > 0 ? 'text-white' : total < 0 ? 'text-rose-500' : 'text-slate-700'
-                      }`}>
-                        {signStr(total)}
-                      </div>
-                      <div className="absolute -bottom-2 -right-4 w-12 h-px bg-white/10" />
-                   </div>
-                </div>
-
-                {/* Controls Area */}
-                <div className="w-full md:w-auto flex flex-col items-center md:items-end gap-4 min-w-[200px]">
-                  {isBuy ? (
-                    <div className="flex items-center gap-3 bg-gray-950 p-2 rounded-3xl border border-white/5 shadow-inner">
-                      <button
-                        onClick={() => handleChange(key, -1)}
-                        disabled={!canDecrease}
-                        className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
-                          canDecrease ? 'bg-gray-900 hover:bg-gray-800 text-white' : 'text-gray-800 opacity-20'
-                        }`}
-                      >-</button>
-                      <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-white/5 flex items-center justify-center shadow-inner">
-                        <span className={`text-2xl font-black ${base > 0 ? 'text-amber-500' : base < 0 ? 'text-red-500' : 'text-white'}`}>
-                          {signStr(base)}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleChange(key, +1)}
-                        disabled={!canIncrease}
-                        className={`w-11 h-11 rounded-xl font-black text-xl flex items-center justify-center transition-all ${
-                          canIncrease ? 'bg-amber-600 hover:bg-amber-500 text-gray-900 shadow-xl shadow-amber-900/20' : 'text-gray-800 opacity-20'
-                        }`}
-                      >+</button>
-                    </div>
-                   ) : (
-                    <div className="flex-1 flex justify-end">
-                       <div className="flex flex-wrap gap-2 justify-end">
-                          {(char.rolagens || []).map((r, ri) => (
-                            <button
-                              key={ri}
-                              onClick={() => assignRoll(key, ri)}
-                              className={`px-4 py-2 rounded-xl text-xs font-black transition-all border ${
-                                r.assignedTo === key
-                                  ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg'
-                                  : r.assignedTo 
-                                    ? 'hidden' // Oculta se já atribuído a outro
-                                    : 'bg-gray-950 border-gray-800 text-amber-500 hover:border-amber-500/50'
-                              }`}
-                            >
-                               {signStr(r.modifier)}
-                            </button>
-                          ))}
-                       </div>
-                    </div>
-                   )}
-
-                  <div className="min-w-[60px] flex flex-col items-center">
-                    <span className="text-[10px] text-gray-600 font-bold uppercase tracking-tighter mb-1">Total</span>
-                    <div className={`w-14 h-14 rounded-2xl bg-gray-950 border-2 flex items-center justify-center shadow-inner transition-colors ${
-                      total > 0 ? 'border-amber-500/20 text-amber-500' : total < 0 ? 'border-red-500/20 text-red-500' : 'border-gray-800 text-white'
-                    }`}>
-                       <span className="text-xl font-black leading-none">{signStr(total)}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+        {ATTR_KEYS.map(key => (
+          <AttributeRow
+            key={key}
+            attrKey={key}
+            base={char.atributos[key] || 0}
+            bonus={stats.raceBonus[key] || 0}
+            total={stats.attrs[key]}
+            remaining={remaining}
+            isBuy={isBuy}
+            char={char}
+            assignRoll={assignRoll}
+            onChange={handleChange}
+          />
+        ))}
       </div>
     </div>
   );

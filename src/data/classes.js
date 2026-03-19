@@ -568,7 +568,7 @@ export const CLASSES = {
     pericias: 4,
     periciasObrigatorias: [['Diplomacia', 'Intimidação'], 'Vontade'],
     periciasClasse: ["Adestramento", "Atuação", "Cavalgar", "Conhecimento", "Enganação", "Fortitude", "Guerra", "Iniciativa", "Intuição", "Investigação", "Jogatina", "Luta", "Nobreza", "Ofício", "Percepção", "Pontaria", "Reflexos"],
-    proficiencias: ["Armas Simples", "Armaduras Leves"],
+    proficiencias: ["Armas Marciais", "Armaduras Pesadas", "Escudos"],
     atributoChave: "Carisma",
     habilidades: {
       1: [

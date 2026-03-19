@@ -17,7 +17,8 @@ export const MELHORIAS = {
     { id: "ajustada", nome: "Ajustada", efeito: "-1 penalidade de armadura", preco: 300 },
     { id: "sob_medida", nome: "Sob Medida", efeito: "-2 penalidade de armadura", preco: 3000, requisito: "ajustada" },
     { id: "delicada", nome: "Delicada", efeito: "Aplica 1 ponto de Des na Defesa em pesadas", preco: 300, exclui: ["reforcada"] },
-    { id: "espinhosa", nome: "Espinhosa", efeito: "Causa dano com agarrar", preco: 300 },
+    { id: "espinhosa", nome: "Espinhosa", efeito: "Causa dano com agarrar", preco: 300, categoria: "armadura" },
+    { id: "espinhoso", nome: "Espinhoso", efeito: "Aumenta o dano do escudo em um passo", preco: 300, categoria: "escudo" },
     { id: "polida", nome: "Polida", efeito: "+5 Defesa na primeira rodada", preco: 300 },
     { id: "reforcada", nome: "Reforçada", efeito: "+1 na Defesa, +1 na penalidade", preco: 300, exclui: ["delicada"] },
     { id: "selada", nome: "Selada", efeito: "+1 nos testes de resistência", preco: 300, categoria: "pesada" }
@@ -48,27 +49,27 @@ export const MATERIAIS = {
   },
   adamante: {
     nome: "Adamante",
-    precos: { arma: 6000, armadura_leve: 3000, armadura_pesada: 6000, escudo: 3000, esoterico: 6000 },
+    precos: { arma: 3000, armadura_leve: 6000, armadura_pesada: 18000, escudo: 6000, esoterico: 3000 },
     efeito: "Dano em um passo (arma) / RD (armadura)"
   },
   gelo_eterno: {
     nome: "Gelo Eterno",
-    precos: { arma: 1500, armadura_leve: 1500, armadura_pesada: 1500, escudo: 1500, esoterico: 1500 },
+    precos: { arma: 600, armadura_leve: 1500, armadura_pesada: 3000, escudo: 1500, esoterico: 3000 },
     efeito: "+2 dano frio / Resistência a fogo"
   },
   madeira_tollon: {
     nome: "Madeira Tollon",
-    precos: { arma: 1500, armadura_leve: 0, armadura_pesada: 0, escudo: 1500, esoterico: 1500 },
+    precos: { arma: 600, armadura_leve: 0, armadura_pesada: 0, escudo: 1500, esoterico: 1500 },
     efeito: "-1 PM em habilidades de ataque / Res mística +2"
   },
   materia_vermelha: {
     nome: "Matéria Vermelha",
-    precos: { arma: 1500, armadura_leve: 1500, armadura_pesada: 1500, escudo: 1500, esoterico: 1500 },
+    precos: { arma: 1500, armadura_leve: 6000, armadura_pesada: 18000, escudo: 6000, esoterico: 3000 },
     efeito: "+1d6 dano (arma) / Chance de falha (armadura) / Penalidade sociais"
   },
   mitral: {
     nome: "Mitral",
-    precos: { arma: 6000, armadura_leve: 12000, armadura_pesada: 18000, escudo: 6000, esoterico: 3000 },
+    precos: { arma: 1500, armadura_leve: 1500, armadura_pesada: 12000, escudo: 1500, esoterico: 3000 },
     efeito: "+1 margem ameaça (arma) / -2 penalidade e +Des (armadura)"
   }
 };

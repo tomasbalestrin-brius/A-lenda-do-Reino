@@ -89,7 +89,10 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : `Selecione ${limit} magias para continuar.` };
     }
 
-    case 8: { // Atributos
+    case 8: // Nível
+      return { ok: true, reason: null };
+
+    case 9: { // Atributos
       if (char.attrMethod === 'buy') {
         const ok = (stats.pontosDisponiveis || 0) >= 0;
         return { ok, reason: ok ? null : 'Você gastou mais pontos do que o permitido.' };
@@ -98,7 +101,7 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : 'Distribua todos os valores nos atributos.' };
     }
 
-    case 9: { // Classe Pericias
+    case 10: { // Classe Pericias
       const cls = CLASSES[char.classe?.toLowerCase()];
       if (!cls) return { ok: false, reason: 'Selecione uma classe primeiro.' };
       const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
@@ -107,33 +110,30 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : 'Selecione todas as perícias de classe obrigatórias.' };
     }
 
-    case 10: { // Int Pericias
+    case 11: { // Int Pericias
       return { ok: true, reason: null }; // Non-blocking
     }
 
-    case 11: { // Equipamento
+    case 12: { // Equipamento
       const ok = (char.dinheiro || 0) >= 0;
       return { ok, reason: ok ? null : 'Seu dinheiro não pode ser negativo.' };
     }
 
-    case 12: { // Poderes Iniciais (Progressão)
-      const level = char.level || 1;
-      const requiredGerais = Math.max(0, 0); // O sistema mudou: gerais são no StepPowers, 
-                                            // Progressão é para níveis > 1
-      
-      // StepPowers é o passo 12 atual nas STEP_LABELS de CharacterCreation.jsx
-      // Vou renomear para ficar claro no CharacterCreation.
+    case 13: // Aliados
+      return { ok: true, reason: null };
+
+    case 14: { // Poderes Iniciais (Poderes do 1º Nível)
       return { ok: true, reason: null };
     }
 
-    case 13: { // Poderes por Nível (Progressão)
+    case 15: { // Poderes por Nível (Progressão Níveis 2-20)
        const currentNum = Object.keys(char.poderesProgressao || {}).length;
        const needed = (char.level || 1) - 1;
        const ok = currentNum >= needed;
        return { ok, reason: ok ? null : `Escolha seus poderes para os níveis extras (Pendente: ${needed - currentNum}).` };
     }
 
-    case 14: { // Identidade
+    case 16: { // Identidade
       const ok = !!char.nome?.trim?.();
       return { ok, reason: ok ? null : 'Dê um nome ao seu herói para continuar.' };
     }
@@ -159,11 +159,10 @@ export function shouldSkipStep(step, char, stats) {
     case 7: // Magias
       return !['arcanista', 'bardo', 'clerigo', 'druida'].includes(cls);
 
-    case 10: // Perícias de Inteligência
+    case 11: // Perícias de Inteligência
       return (stats.attrs?.INT || 0) <= 0;
 
-    case 13: // Progressão de Nível
-      // No CharacterCreation, "Progressão" é o passo 13.
+    case 15: // Progressão de Nível
       return (char.level || 1) <= 1;
 
     default:

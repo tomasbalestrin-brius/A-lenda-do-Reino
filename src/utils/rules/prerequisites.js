@@ -60,8 +60,14 @@ export function meetsRequirement(req, char, stats) {
 
   // Círculo de Magia
   if (req.circulo) {
-    // Lógica simplificada: nível 6 = 2º círculo, nível 10 = 3º círculo
-    const maxCirculo = characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1);
+    let maxCirculo = 1;
+    const fullCasters = ["arcanista", "clerigo", "druida"];
+    const halfCasters = ["bardo", "paladino", "cacador"];
+    if (fullCasters.includes(char.classe?.toLowerCase())) {
+      maxCirculo = characterLevel >= 17 ? 5 : (characterLevel >= 13 ? 4 : (characterLevel >= 9 ? 3 : (characterLevel >= 5 ? 2 : 1)));
+    } else if (halfCasters.includes(char.classe?.toLowerCase())) {
+      maxCirculo = characterLevel >= 14 ? 4 : (characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1));
+    }
     if (maxCirculo < req.circulo) return false;
   }
 
@@ -157,7 +163,14 @@ export function checkPowerEligibility(power, char, stats) {
 
   // Círculo
   if (req.circulo) {
-    const maxCirculo = characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1);
+    let maxCirculo = 1;
+    const fullCasters = ["arcanista", "clerigo", "druida"];
+    const halfCasters = ["bardo", "paladino", "cacador"];
+    if (fullCasters.includes(char.classe?.toLowerCase())) {
+      maxCirculo = characterLevel >= 17 ? 5 : (characterLevel >= 13 ? 4 : (characterLevel >= 9 ? 3 : (characterLevel >= 5 ? 2 : 1)));
+    } else if (halfCasters.includes(char.classe?.toLowerCase())) {
+      maxCirculo = characterLevel >= 14 ? 4 : (characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1));
+    }
     if (maxCirculo < req.circulo) {
       return { ok: false, reason: `${req.circulo}º Círculo` };
     }
@@ -171,6 +184,30 @@ export function checkPowerEligibility(power, char, stats) {
         return { ok: false, reason: `Proficiência em ${p}` };
       }
     }
+  }
+
+  // Restrição de Aumento de Atributo (JdA)
+  if (power.nome === 'Aumento de Atributo' || power.id === 'Aumento de Atributo') {
+    // Nota: Esta verificação é especial pois depende de QUAL atributo está sendo escolhido.
+    // Como a elegibilidade é checada ANTES da escolha no StepProgression,
+    // a o check total ocorre na UI. Mas aqui podemos checar se o herói AINDA PODE 
+    // escolher este poder para ALGUM atributo no patamar atual.
+    
+    const getTier = (l) => {
+      if (l <= 4) return 1;
+      if (l <= 10) return 2;
+      if (l <= 16) return 3;
+      return 4;
+    };
+
+    const currentTier = getTier(characterLevel);
+    const levelChoices = char.levelChoices || {};
+    
+    // Contar aumentos no mesmo patamar
+    // No JdA, você pode pegar Aumento de Atributo várias vezes no mesmo patamar, 
+    // mas cada um para um atributo DIFERENTE.
+    // Se todos os 6 atributos já foram aumentados no patamar (improvável), bloqueia.
+    // Mas a lógica real de "Este atributo X já foi aumentado?" deve estar no StepProgression.
   }
 
   return { ok: true };

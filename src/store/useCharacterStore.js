@@ -28,6 +28,7 @@ const getInitialCharState = () => ({
   rolagens: [],
   poderes: [],
   poderesGerais: [],
+  aliado: null,
   idiomas: ['Comum'],
   riqueza: 0,
   equipamento: [],
@@ -39,6 +40,7 @@ const getInitialCharState = () => ({
   aparencia: '',
   historia: '',
   
+  levelChoices: {}, // Stores choices per level: { 2: { type: 'power', id: '...' }, 3: ... }
   choices: {}
 });
 

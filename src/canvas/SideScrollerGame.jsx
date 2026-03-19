@@ -162,6 +162,9 @@ export function SideScrollerGame() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let animationId;
+    
+    // In-loop state for high-frequency updates (enemies)
+    const currentEnemies = [...useGameStore.getState().enemies];
 
     const loop = (now) => {
       const dt = Math.min(32, now - stateRef.current.lastTime);
@@ -185,9 +188,13 @@ export function SideScrollerGame() {
       physicsSystem.applyGravity(p);
       physicsSystem.update(p, room, dt);
 
-      const currentEnemies = useGameStore.getState().enemies;
+      // AI and Combat calculations
       const updatedEnemies = aiSystem.update(currentEnemies, p, dt);
-      useGameStore.setState({ enemies: updatedEnemies });
+      
+      // Update local array for next frame
+      updatedEnemies.forEach((e, i) => {
+        currentEnemies[i] = e;
+      });
 
       actionCombat.update(dt, updatedEnemies, (enemy, damage) => {
         handleEnemyHit(enemy, damage);
@@ -228,7 +235,6 @@ export function SideScrollerGame() {
       const frameData = animationSystem.getFrameData(p.anim);
       if (frameData?.image) {
         ctx.save();
-        // Squeeze & Stretch centering at feet
         ctx.translate(p.x + p.width / 2, p.y + p.height);
         if (p.facing === 'left') ctx.scale(-1, 1);
         ctx.scale(p.scaleX, p.scaleY);
@@ -250,7 +256,11 @@ export function SideScrollerGame() {
     };
 
     animationId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(animationId);
+    return () => {
+      cancelAnimationFrame(animationId);
+      // Sync enemies back to store on unmount
+      useGameStore.setState({ enemies: currentEnemies });
+    };
   }, [currentRoomId, activeHeroId, heroes, char]);
 
   if (gameState !== 'explore') return null;

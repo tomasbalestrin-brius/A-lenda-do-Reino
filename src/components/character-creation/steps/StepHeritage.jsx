@@ -137,15 +137,67 @@ export function StepHeritage() {
     );
   }
 
-  return (
-    <div className="flex flex-col gap-8">
-      <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
-        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
-        <h2 className="text-3xl font-black text-white tracking-tight mb-2">Herança: {race.nome}</h2>
-        <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
-      </div>
+    const selectedAttrs = char.racaEscolha || [];
 
-      <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl">
+    // Auxiliary to render attribute selection
+    const renderAttrSelection = (max) => {
+      return (
+        <div className="bg-amber-950/20 rounded-[2.5rem] border border-amber-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+          <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">📈</div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
+            <div>
+              <h3 className="text-xs md:text-sm font-black text-amber-400 uppercase tracking-[0.2em] mb-1">Atributos Raciais</h3>
+              <p className="text-[10px] md:text-[11px] text-slate-400 font-medium">Escolha {max} atributos diferentes para receber +1.</p>
+            </div>
+            <div className={`px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs font-black border-2 transition-all shadow-lg ${
+              selectedAttrs.length === max 
+                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+                : 'bg-amber-950/40 border-amber-500/40 text-amber-400'
+            }`}>
+              {selectedAttrs.length} / {max} Selecionados
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+            {['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'].map(attr => {
+              const isSelected = selectedAttrs.includes(attr);
+              return (
+                <motion.button
+                  key={attr}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    let next;
+                    if (isSelected) next = selectedAttrs.filter(x => x !== attr);
+                    else if (selectedAttrs.length < max) next = [...selectedAttrs, attr];
+                    else return;
+                    updateChar({ racaEscolha: next });
+                  }}
+                  className={`p-4 rounded-2xl border-2 text-xs font-black transition-all ${
+                    isSelected 
+                      ? 'border-amber-400 bg-amber-600 text-gray-950 shadow-xl shadow-amber-900/20' 
+                      : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-amber-500/30 hover:text-white'
+                  }`}
+                >
+                  {attr}
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="flex flex-col gap-8">
+        <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+          <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
+          <h2 className="text-3xl font-black text-white tracking-tight mb-2">Herança: {race.nome}</h2>
+          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
+        </div>
+
+        {isHumano && renderAttrSelection(3)}
+
+        <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl">
         <div className="flex items-center gap-3 mb-6">
           <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Habilidades Raciais</h3>

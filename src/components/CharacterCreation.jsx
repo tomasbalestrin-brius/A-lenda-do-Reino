@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '../lib/supabase';
 import { useCharacterStore } from '../store/useCharacterStore';
@@ -6,6 +6,10 @@ import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
 import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
 import { buildHeroData } from '../utils/rules/buildHeroData';
+import { ErrorBoundary } from './ErrorBoundary';
+
+// Lazy load PDF compendium (heavy dependency)
+const PDFCompendium = React.lazy(() => import('./compendium/PDFCompendium').then(m => ({ default: m.PDFCompendium })));
 
 // Modals
 import { RaceModal } from './character-creation/modals/RaceModal';
@@ -22,9 +26,11 @@ import { StepOrigin } from './character-creation/steps/StepOrigin';
 import { StepOrigemBeneficios } from './character-creation/steps/StepOrigemBeneficios';
 import { StepDeus } from './character-creation/steps/StepDeus';
 import { StepAttributes } from './character-creation/steps/StepAttributes';
+import { StepLevel } from './character-creation/steps/StepLevel';
 import { StepClassePericias } from './character-creation/steps/StepClassePericias';
 import { StepIntPericias } from './character-creation/steps/StepIntPericias';
 import { StepEquipment } from './character-creation/steps/StepEquipment';
+import { StepAllies } from './character-creation/steps/StepAllies';
 import { StepPowers } from './character-creation/steps/StepPowers';
 import { StepProgression } from './character-creation/steps/StepProgression';
 import { StepSpells } from './character-creation/steps/StepSpells';
@@ -43,16 +49,20 @@ const STEP_LABELS = [
   "Benefícios",       // 5
   "Divindade",        // 6
   "Magias",           // 7
-  "Atributos",        // 8
-  "Perícias (Classe)",// 9
-  "Perícias (Int)",   // 10
-  "Equipamento",      // 11
-  "Poderes Iniciais", // 12
-  "Progressão",       // 13
-  "Identidade",       // 14
-  "Revisão"           // 15
+  "Nível",            // 8
+  "Atributos",        // 9
+  "Perícias (Classe)",// 10
+  "Perícias (Int)",   // 11
+  "Equipamento",      // 12
+  "Aliados",          // 13
+  "Poderes Iniciais", // 14
+  "Progressão",       // 15
+  "Identidade",       // 16
+  "Revisão"           // 17
 ];
 const MAX_STEPS = STEP_LABELS.length;
+
+const AUTOSAVE_KEY = 'lenda_autosave';
 
 export default function CharacterCreation({ onComplete }) {
   const { char, updateChar, resetChar, loadChar } = useCharacterStore();
@@ -62,8 +72,51 @@ export default function CharacterCreation({ onComplete }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [savedChars, setSavedChars] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showResume, setShowResume] = useState(false);
 
   const stats = useMemo(() => computeStats(char), [char]);
+
+  // Auto-save on step change or char update
+  useEffect(() => {
+    if (view === 'creation' && (char.raca || char.classe)) {
+      try {
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ char, step }));
+      } catch (e) { /* quota exceeded — ignore */ }
+    }
+  }, [char, step, view]);
+
+  // Check for auto-save on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.char?.raca || saved?.char?.classe) {
+          setShowResume(true);
+        }
+      }
+    } catch (e) { /* corrupted — ignore */ }
+  }, []);
+
+  const handleResume = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(AUTOSAVE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved?.char) {
+          loadChar(saved.char);
+          setStep(saved.step || 0);
+          setView('creation');
+        }
+      }
+    } catch (e) { /* corrupted — start fresh */ }
+    setShowResume(false);
+  }, [loadChar]);
+
+  const dismissResume = useCallback(() => {
+    localStorage.removeItem(AUTOSAVE_KEY);
+    setShowResume(false);
+  }, []);
 
   useEffect(() => {
     fetchCharacters();
@@ -186,15 +239,43 @@ export default function CharacterCreation({ onComplete }) {
     }
   }
 
+  if (view === 'compendium') {
+    return (
+      <React.Suspense fallback={
+        <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+          <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+        </div>
+      }>
+        <PDFCompendium onBack={() => setView('library')} />
+      </React.Suspense>
+    );
+  }
+
   if (view === 'library') {
     return (
-      <CharacterLibrary
-        characters={savedChars}
-        onPlay={handlePlayFromLibrary}
-        onDelete={handleDelete}
-        onNew={handleNewCharacter}
-        loading={loading}
-      />
+      <>
+        {showResume && (
+          <div className="fixed inset-x-0 top-0 z-[100] flex justify-center p-4">
+            <motion.div
+              initial={{ y: -60, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              className="bg-amber-950/90 border border-amber-500/30 px-8 py-4 rounded-2xl backdrop-blur-xl shadow-2xl flex items-center gap-6"
+            >
+              <span className="text-amber-400 text-sm font-bold">Personagem em progresso encontrado!</span>
+              <button onClick={handleResume} className="px-5 py-2 bg-amber-500 text-gray-950 font-black text-xs uppercase tracking-widest rounded-xl hover:scale-105 active:scale-95 transition-all">Continuar</button>
+              <button onClick={dismissResume} className="px-4 py-2 border border-white/10 text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl hover:text-white transition-all">Descartar</button>
+            </motion.div>
+          </div>
+        )}
+        <CharacterLibrary
+          characters={savedChars}
+          onPlay={handlePlayFromLibrary}
+          onDelete={handleDelete}
+          onNew={handleNewCharacter}
+          onCompendium={() => setView('compendium')}
+          loading={loading}
+        />
+      </>
     );
   }
 
@@ -276,40 +357,51 @@ export default function CharacterCreation({ onComplete }) {
       <div className="flex-1 flex relative h-full">
         {/* Step Content */}
         <div className="flex-1 h-full overflow-y-auto px-4 py-8 md:p-12 relative pb-32" style={{ scrollbarWidth: 'thin' }}>
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-               key={step}
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               exit={{ opacity: 0, x: -20 }}
-               transition={{ duration: 0.3 }}
-            >
-              <div className="max-w-4xl mx-auto">
-                {step === 0 && <StepRace onNext={handleNext} />}
-                {step === 1 && <StepHeritage />}
-                {step === 2 && <StepClass onNext={handleNext} />}
-                {step === 3 && <StepClassSpecialization />}
-                {step === 4 && <StepOrigin onNext={handleNext} />}
-                {step === 5 && <StepOrigemBeneficios />}
-                {step === 6 && <StepDeus />}
-                {step === 7 && <StepSpells />}
-                {step === 8 && <StepAttributes stats={stats} />}
-                {step === 9 && <StepClassePericias />}
-                {step === 10 && <StepIntPericias stats={stats} />}
-                {step === 11 && <StepEquipment />}
-                {step === 12 && <StepPowers stats={stats} />}
-                {step === 13 && <StepProgression stats={stats} />}
-                {step === 14 && <StepIdentity />}
-                {step === 15 && (
-                  <StepReview 
-                    stats={stats} 
-                    onSave={handleSave} 
-                    onPlay={handleSaveAndPlay} 
-                  />
-                )}
-              </div>
-            </motion.div>
-          </AnimatePresence>
+          <ErrorBoundary onReset={() => setStep(0)}>
+            <AnimatePresence mode="popLayout" initial={false}>
+              <motion.div
+                 key={step}
+                 initial={{ opacity: 0, x: 20 }}
+                 animate={{ opacity: 1, x: 0 }}
+                 exit={{ opacity: 0, x: -20 }}
+                 transition={{ duration: 0.3 }}
+              >
+                <div className="max-w-4xl mx-auto">
+                  {step === 0 && <StepRace onNext={handleNext} />}
+                  {step === 1 && <StepHeritage />}
+                  {(() => {
+                    switch (step) {
+                      case 0: return <StepRace onNext={handleNext} />;
+                      case 1: return <StepHeritage />;
+                      case 2: return <StepClass onNext={handleNext} />;
+                      case 3: return <StepClassSpecialization />;
+                      case 4: return <StepOrigin onNext={handleNext} />;
+                      case 5: return <StepOrigemBeneficios />;
+                      case 6: return <StepDeus />;
+                      case 7: return <StepSpells stats={stats} />;
+                      case 8: return <StepLevel />;
+                      case 9: return <StepAttributes stats={stats} />;
+                      case 10: return <StepClassePericias />;
+                      case 11: return <StepIntPericias stats={stats} />;
+                      case 12: return <StepEquipment />;
+                      case 13: return <StepAllies />;
+                      case 14: return <StepPowers stats={stats} />;
+                      case 15: return <StepProgression stats={stats} />;
+                      case 16: return <StepIdentity />;
+                      case 17: return (
+                        <StepReview 
+                          stats={stats} 
+                          onSave={handleSave} 
+                          onPlay={handleSaveAndPlay} 
+                        />
+                      );
+                      default: return null;
+                    }
+                  })()}
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </ErrorBoundary>
         </div>
 
         {/* Bottom Navigation Bar */}

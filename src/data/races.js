@@ -39,7 +39,7 @@ export const RACES = {
       },
       {
         nome: "Tradição de Heredrimm",
-        descricao: "Para você, todos os machados, martelos, marretas e picaretas são armas simples. Você recebe +2 em ataques com essas armas."
+        descricao: "Você é treinado em machados e martelos. Para você, todos os machados e martelos (incluindo picaretas e marretas) são armas simples."
       }
     ]
   },
