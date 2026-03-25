@@ -15,7 +15,7 @@ export function StepIdentity() {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">📝</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-amber-500">XVII.</span> Identidade
+            <span className="text-amber-500">IV.</span> Identidade
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             Dê vida ao seu herói. Defina seu nome e sua história nas terras de Arton.

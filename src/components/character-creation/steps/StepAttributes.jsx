@@ -239,7 +239,7 @@ export function StepAttributes({ stats }) {
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">📊</div>
         <div className="flex-1">
           <h2 className="text-4xl font-black text-white tracking-tighter mb-3 flex items-center gap-4">
-             <span className="text-amber-500">X.</span> Atributos
+             <span className="text-amber-500">XI.</span> Atributos
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed max-w-lg font-medium">
             {isBuy
@@ -309,9 +309,9 @@ export function StepAttributes({ stats }) {
       {!isBuy && (char.rolagens || []).length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 bg-gray-950/40 border border-dashed border-white/10 rounded-[3.5rem] gap-8 backdrop-blur-sm">
              <div className={`text-[8rem] filter drop-shadow-[0_0_30px_rgba(245,158,11,0.2)] ${rolling ? 'animate-bounce' : 'opacity-20 translate-y-2'}`}>🎲</div>
-             <div className="text-center space-y-2">
+             <div className="text-center space-y-2 max-w-xs">
                 <p className="text-white text-xl font-black uppercase tracking-tight">Destino Indefinido</p>
-                <p className="text-slate-500 font-medium">Role os dados para determinar seu potencial genético.</p>
+                <p className="text-slate-500 font-medium">Role 6 vezes: cada rolagem usa <strong className="text-amber-400">4d6</strong>, descarta o menor, e converte em modificador com <strong className="text-amber-400">(soma − 10) ÷ 2</strong>.</p>
              </div>
              <button
                onClick={handleRoll}
@@ -339,29 +339,53 @@ export function StepAttributes({ stats }) {
               </button>
            </div>
 
+           {/* Fórmula explicativa */}
+           <div className="flex items-center gap-3 px-4 py-3 bg-amber-950/20 border border-amber-500/10 rounded-2xl text-[10px] text-slate-400 font-medium">
+             <span className="text-amber-400 text-base">🎲</span>
+             <span>Role <strong className="text-white">4d6</strong>, descarte o <strong className="text-rose-400">menor</strong>, some os 3 restantes. Modificador = <strong className="text-amber-400">(soma − 10) ÷ 2</strong> (arredondado para baixo).</span>
+           </div>
+
            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6">
-              {char.rolagens.map((r, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className={`relative group rounded-3xl p-6 flex flex-col items-center transition-all border-2 ${
-                    r.assignedTo
-                    ? 'bg-gray-950/20 border-white/5 opacity-30 grayscale'
-                    : 'bg-gray-900 border-white/5 hover:border-amber-500/50 shadow-xl'
-                  }`}
-                >
-                   <span className="text-[10px] text-slate-500 font-black mb-2 uppercase tracking-tighter">Total: {r.diceTotal}</span>
-                   <span className={`text-4xl font-black ${r.assignedTo ? 'text-slate-500' : 'text-amber-500'}`}>{signStr(r.modifier)}</span>
-                   <div className="mt-3 flex gap-1 opacity-40">
-                      {r.rolls.map((d, di) => (
-                        <span key={di} className="text-[9px] font-bold text-slate-400">{d}</span>
-                      ))}
-                   </div>
-                   {r.assignedTo && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-slate-800 text-[8px] font-black text-white uppercase">{r.assignedTo}</span>}
-                </motion.div>
-              ))}
+              {char.rolagens.map((r, idx) => {
+                // rolls está ordenado decrescente; rolls[3] é o dado descartado
+                const droppedValue = r.rolls[3];
+                return (
+                  <motion.div
+                    key={idx}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className={`relative group rounded-3xl p-6 flex flex-col items-center transition-all border-2 ${
+                      r.assignedTo
+                      ? 'bg-gray-950/20 border-white/5 opacity-30 grayscale'
+                      : 'bg-gray-900 border-white/5 hover:border-amber-500/50 shadow-xl'
+                    }`}
+                  >
+                     <span className="text-[10px] text-slate-500 font-black mb-2 uppercase tracking-tighter">
+                       ({r.kept.join('+')}={r.diceTotal})
+                     </span>
+                     <span className={`text-4xl font-black ${r.assignedTo ? 'text-slate-500' : 'text-amber-500'}`}>{signStr(r.modifier)}</span>
+                     <div className="mt-3 flex gap-1.5 items-center">
+                        {r.rolls.map((d, di) => {
+                          const isDropped = di === 3; // último após sort desc = menor
+                          return (
+                            <span
+                              key={di}
+                              className={`text-[9px] font-black px-1 py-0.5 rounded ${
+                                isDropped
+                                  ? 'text-rose-500 line-through opacity-60 bg-rose-950/30'
+                                  : 'text-slate-300 bg-white/5'
+                              }`}
+                            >
+                              {d}
+                            </span>
+                          );
+                        })}
+                     </div>
+                     {r.assignedTo && <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-slate-800 text-[8px] font-black text-white uppercase">{r.assignedTo}</span>}
+                  </motion.div>
+                );
+              })}
            </div>
         </div>
       )}
@@ -383,6 +407,24 @@ export function StepAttributes({ stats }) {
           />
         ))}
       </div>
+
+      {/* INT Extra Skills Hint */}
+      {(() => {
+        const intVal = stats?.attrs?.INT ?? 0;
+        return (
+          <div className={`flex items-center gap-3 px-5 py-3 rounded-2xl text-[11px] font-medium -mt-6 ${
+            intVal > 0
+              ? 'bg-blue-950/20 border border-blue-500/10 text-blue-300'
+              : 'bg-slate-950/40 border border-white/5 text-slate-500'
+          }`}>
+            <span>💡</span>
+            {intVal > 0
+              ? <span>Seu <strong className="text-white">INT +{intVal}</strong> desbloqueia <strong className="text-white">{intVal} perícia{intVal > 1 ? 's' : ''} extra{intVal > 1 ? 's' : ''}</strong> no passo XIII (Perícias por INT).</span>
+              : <span>INT {intVal} — o passo XIII (Perícias por INT) será pulado automaticamente. Aumente INT para desbloquear perícias extras.</span>
+            }
+          </div>
+        );
+      })()}
 
       {/* Impact Reference */}
       <div className="bg-gray-950/40 border border-white/5 rounded-[2rem] p-6">

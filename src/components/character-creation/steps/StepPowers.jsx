@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import GENERAL_POWERS from '../../../data/powers';
+import { divindades as DEUSES } from '../../../data/gods';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 
 export function StepPowers({ stats }) {
   const { char, updateChar } = useCharacterStore();
   const [activeTab, setActiveTab] = useState('combate');
+  const [search, setSearch] = useState('');
 
   const level = char.level || 1;
   const maxPowers = level - 1;
@@ -49,7 +51,7 @@ export function StepPowers({ stats }) {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">⚔️</div>
         <div>
           <h2 className="text-3xl font-black text-white tracking-tight">
-            <span className="text-amber-500 mr-2">X.</span> Poderes de Nível
+            <span className="text-amber-500 mr-2">XV.</span> Poderes
           </h2>
           <p className="text-gray-400 text-sm mt-1">Habilidades que seu herói desenvolveu ao longo de sua carreira.</p>
         </div>
@@ -94,11 +96,48 @@ export function StepPowers({ stats }) {
         ))}
       </div>
 
+      <div className="relative mb-2">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar poder por nome ou descrição..."
+          className="w-full bg-gray-900/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40"
+        />
+        {search && <button onClick={() => setSearch('')} className="absolute right-4 top-3 text-slate-500 hover:text-white text-lg">✕</button>}
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {(activeTab === 'todos' 
+        {activeTab === 'concedidos' ? (() => {
+          const deus = DEUSES[char.deus];
+          const devotoPoderes = deus?.devoto?.poderes || [];
+          if (!char.deus || devotoPoderes.length === 0) {
+            return (
+              <div className="col-span-full flex flex-col items-center justify-center py-16 opacity-40 gap-4">
+                <span className="text-5xl">🙏</span>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Nenhuma divindade escolhida</p>
+                <p className="text-[10px] text-slate-600 text-center max-w-xs">Volte ao passo VIII e escolha uma divindade para desbloquear seus poderes de devoto.</p>
+              </div>
+            );
+          }
+          return devotoPoderes.map(p => (
+            <div key={p.nome} className="p-6 rounded-[2rem] border-2 border-purple-500/20 bg-purple-950/10 flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="font-black text-sm uppercase tracking-tight text-purple-300">{p.nome}</span>
+                <span className="text-[9px] text-purple-500/60 font-black uppercase">{deus.nome}</span>
+              </div>
+              <p className="text-[11px] leading-relaxed font-medium text-slate-400 flex-1">{p.descricao}</p>
+              <span className="text-[9px] font-black text-purple-500/40 uppercase tracking-widest border-t border-purple-500/10 pt-2">Concedido automaticamente — não ocupa slot</span>
+            </div>
+          ));
+        })() : (activeTab === 'todos'
           ? Object.values(GENERAL_POWERS).flat()
           : (GENERAL_POWERS[activeTab] || [])
-        ).map(p => {
+        ).filter(p => {
+          if (!search.trim()) return true;
+          const q = search.toLowerCase();
+          return p.nome?.toLowerCase().includes(q) || p.descricao?.toLowerCase().includes(q);
+        }).map(p => {
           let category = activeTab;
           if (activeTab === 'todos') {
              category = Object.keys(GENERAL_POWERS).find(cat => GENERAL_POWERS[cat].some(sub => sub.nome === p.nome));

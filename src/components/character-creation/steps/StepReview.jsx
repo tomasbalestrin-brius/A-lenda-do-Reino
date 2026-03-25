@@ -223,36 +223,104 @@ export function StepReview({ stats, onSave, onPlay }) {
         />
       )}
       
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-10 rounded-[4rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
-        {/* Background Portrait */}
+      {/* ── HERO REVEAL BANNER ── */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.97 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="relative rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.6)]"
+      >
+        {/* Full bleed portrait bg */}
         <div className="absolute inset-0 z-0">
           {RACE_IMAGES[char.raca] && (
-            <img
-              src={RACE_IMAGES[char.raca]}
-              alt=""
-              className="w-full h-full object-cover opacity-10 scale-110 blur-sm brightness-50"
-            />
+            <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover object-top opacity-25 scale-105 blur-[2px] brightness-50" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/80 to-gray-950/40" />
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-950/60 via-transparent to-gray-950/60" />
         </div>
 
-        <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl rotate-12 z-0">{CLASS_ICONS[char.classe] || '⚔️'}</div>
-        
-        <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
-          <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2 italic">
-             <span className="text-amber-500 mr-2 underline decoration-amber-500/30">XVIII.</span> A Lenda se Ergue
-          </h2>
-          <p className="text-slate-400 text-sm md:text-base max-w-lg font-medium leading-relaxed">
-            Seu herói está forjado na história de Arton. Revise cada traço, cada cicatriz e prepare-se para a jornada.
-          </p>
+        <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 p-6 md:p-10 min-w-0">
+          {/* Portrait */}
+          <div className="shrink-0 w-24 h-24 md:w-36 md:h-36 rounded-[2rem] border-2 border-amber-500/50 overflow-hidden shadow-[0_0_60px_rgba(245,158,11,0.25)] bg-gray-950">
+            {RACE_IMAGES[char.raca]
+              ? <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
+              : <span className="w-full h-full flex items-center justify-center text-6xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
+            }
+          </div>
+
+          {/* Identity */}
+          <div className="flex-1 min-w-0 text-center md:text-left w-full">
+            {warnings.filter(w => w.type === 'error').length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-900/40 border border-emerald-500/40 text-emerald-400 text-[10px] font-black uppercase tracking-widest mb-4"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,1)]" />
+                Herói Pronto para a Lenda
+              </motion.div>
+            )}
+            <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter italic drop-shadow-2xl break-words">
+              {char.nome?.trim() || <span className="text-slate-600 text-2xl">Sem nome ainda...</span>}
+            </h1>
+            <p className="text-slate-400 font-bold mt-2 flex items-center justify-center md:justify-start gap-2 flex-wrap">
+              {char.raca && <span className="text-blue-300">{RACE_ICONS[char.raca]} {RACES[char.raca]?.nome || char.raca}</span>}
+              {char.raca && char.classe && <span className="text-slate-600">·</span>}
+              {char.classe && <span className="text-amber-300">{CLASS_ICONS[char.classe]} {cls?.nome || char.classe}</span>}
+              {char.level > 1 && <span className="px-2 py-0.5 rounded-full bg-purple-900/40 border border-purple-500/30 text-purple-300 text-xs">Nível {char.level}</span>}
+            </p>
+
+            {/* Key stat pills */}
+            <div className="flex flex-wrap gap-2 mt-5 justify-center md:justify-start">
+              {[
+                { label: 'PV', value: stats?.pv || 0, color: 'bg-red-900/40 border-red-500/30 text-red-300' },
+                { label: 'PM', value: stats?.pm || 0, color: 'bg-blue-900/40 border-blue-500/30 text-blue-300' },
+                { label: 'DEF', value: stats?.def || 0, color: 'bg-sky-900/40 border-sky-500/30 text-sky-300' },
+                { label: 'ATK', value: (stats?.atk >= 0 ? '+' : '') + (stats?.atk || 0), color: 'bg-orange-900/40 border-orange-500/30 text-orange-300' },
+                { label: 'INI', value: (stats?.ini >= 0 ? '+' : '') + (stats?.ini || 0), color: 'bg-green-900/40 border-green-500/30 text-green-300' },
+              ].map(({ label, value, color }) => (
+                <span key={label} className={`px-4 py-2 rounded-2xl border font-black text-sm flex items-center gap-2 ${color}`}>
+                  <span className="text-[9px] uppercase tracking-widest opacity-60">{label}</span>
+                  <span>{value}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* CTA buttons */}
+          <div className="flex flex-col gap-3 shrink-0 w-full md:w-auto">
+            <motion.button
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={onPlay}
+              disabled={!char.nome?.trim()}
+              className="px-8 py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-emerald-900/30 disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-3"
+            >
+              ▶ Jogar Agora
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              onClick={onSave}
+              disabled={!char.nome?.trim()}
+              className="px-8 py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-gray-950 font-black text-sm uppercase tracking-widest shadow-xl shadow-amber-900/30 disabled:opacity-30 disabled:grayscale transition-all flex items-center justify-center gap-3"
+            >
+              💾 Salvar Herói
+            </motion.button>
+          </div>
         </div>
 
-        <div className="relative z-10 w-28 h-28 rounded-[2.5rem] bg-gray-950 border-2 border-amber-500/40 flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(245,158,11,0.2)] relative group ring-4 ring-white/5 overflow-hidden">
-           {RACE_IMAGES[char.raca] && <img src={RACE_IMAGES[char.raca]} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" />}
-           <div className="absolute inset-0 bg-amber-500/10 animate-pulse" />
-           <span className="relative z-10 drop-shadow-2xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
-        </div>
-      </div>
+        {/* Warnings strip */}
+        {warnings.length > 0 && (
+          <div className="relative z-10 border-t border-white/5 bg-gray-950/60 px-8 py-4 flex flex-col gap-2">
+            {warnings.map((w, i) => (
+              <div key={i} className={`flex items-center gap-3 text-xs font-bold ${w.type === 'error' ? 'text-rose-400' : 'text-amber-400'}`}>
+                <span>{w.type === 'error' ? '🚫' : '⚠️'}</span>
+                {w.msg}
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
 
       <div className="space-y-8">
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="relative group">
@@ -323,7 +391,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                       </div>
                     </div>
                     {item.label === 'Divindade' && deus?.devoto?.restricoes && (
-                      <p className="text-[9px] text-amber-500/60 font-medium ml-22 max-w-xs leading-tight italic">
+                      <p className="text-[9px] text-amber-500/60 font-medium pl-4 leading-tight italic break-words">
                         "{deus.devoto.restricoes}"
                       </p>
                     )}
@@ -435,13 +503,17 @@ export function StepReview({ stats, onSave, onPlay }) {
 
           {/* ATAQUES DETALHADOS */}
           {(stats.detailedAttacks || []).length > 0 && (
-            <div className="lg:col-span-3 bg-gray-950/60 rounded-[3.5rem] border border-white/10 p-10 shadow-2xl flex flex-col gap-8 relative group/attacks">
-              <div className="relative z-10 flex items-center gap-4">
-                <span className="w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,1)]" />
-                <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Arsenal de Combate</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <details open className="lg:col-span-3 bg-gray-950/60 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden group/attacks">
+              <summary className="flex items-center gap-4 p-10 cursor-pointer list-none select-none group">
+                <span className="w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,1)] shrink-0" />
+                <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em] flex-1">
+                  Arsenal de Combate
+                  <span className="text-orange-500/60 ml-2">({stats.detailedAttacks.length} arma{stats.detailedAttacks.length !== 1 ? 's' : ''})</span>
+                </p>
+                <span className="text-slate-600 text-xs transition-transform [[open]_&]:rotate-180">▼</span>
+              </summary>
+
+              <div className="px-10 pb-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {stats.detailedAttacks.map(atk => (
                   <motion.div 
                     key={atk.uid}
@@ -490,7 +562,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                   </motion.div>
                 ))}
               </div>
-            </div>
+            </details>
           )}
 
           {/* Card: Magias */}

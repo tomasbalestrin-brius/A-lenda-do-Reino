@@ -64,27 +64,35 @@ export function StepRace({ onNext }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
         {races.map(([id, race]) => {
           const isSelected = char.raca === id;
+          const needsModal = !!race.atributos?.escolha;
           return (
-            <motion.div 
+            <motion.div
               key={id}
-              onClick={() => updateChar({ modalRace: id })}
-              whileHover={{ 
-                scale: 1.05, 
+              whileHover={{
+                scale: 1.05,
                 borderColor: 'rgba(255,255,255,0.3)',
                 boxShadow: '0 0 40px rgba(245,158,11,0.1)'
               }}
               whileTap={{ scale: 0.95 }}
               className={`group relative overflow-hidden rounded-[2.5rem] border transition-all cursor-pointer flex flex-col items-center justify-center h-44 md:h-56 ${
-                isSelected 
-                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)]' 
+                isSelected
+                  ? 'bg-amber-500/10 border-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.2)]'
                   : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
               }`}
+              onClick={() => {
+                if (needsModal) {
+                  updateChar({ modalRace: id });
+                } else {
+                  updateChar({ raca: id, racaEscolha: [], modalRace: null });
+                  if (!isSelected && onNext) onNext();
+                }
+              }}
             >
               {/* Image Background */}
               <div className="absolute inset-0 z-0">
-                <img 
-                  src={RACE_IMAGES[id] || '/assets/images/placeholder.png'} 
-                  alt="" 
+                <img
+                  src={RACE_IMAGES[id] || '/assets/images/placeholder.png'}
+                  alt=""
                   loading="lazy"
                   decoding="async"
                   className={`w-full h-full object-cover transition-all duration-700 opacity-20 group-hover:opacity-40 group-hover:scale-110 ${isSelected ? 'opacity-50' : ''}`}
@@ -98,7 +106,16 @@ export function StepRace({ onNext }) {
               <span className={`relative z-10 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] text-center ${isSelected ? 'text-amber-400' : 'text-slate-300 group-hover:text-white'}`}>
                  {race.nome}
               </span>
-              
+
+              {/* Info button */}
+              <button
+                onClick={e => { e.stopPropagation(); updateChar({ modalRace: id }); }}
+                className="absolute bottom-3 right-3 z-20 w-6 h-6 rounded-full bg-white/10 hover:bg-amber-500/30 border border-white/10 flex items-center justify-center text-[9px] text-slate-400 hover:text-amber-400 transition-all opacity-0 group-hover:opacity-100"
+                title="Ver detalhes"
+              >
+                ℹ
+              </button>
+
               {isSelected && (
                 <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)] z-20" />
               )}

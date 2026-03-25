@@ -23,6 +23,8 @@ const ALL_PERICIAS = [
 
 export function StepHeritage() {
   const { char, updateChar } = useCharacterStore();
+  const [somenteDisp, setSomenteDisp] = React.useState(false);
+  const [searchPower, setSearchPower] = React.useState('');
   const raca = char.raca;
   const race = RACES[raca];
 
@@ -319,7 +321,7 @@ export function StepHeritage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex flex-wrap gap-2 mb-4">
                   {[
                     { id: 'combate', label: 'Combate', icon: '⚔️' },
                     { id: 'destino', label: 'Destino', icon: '🔮' },
@@ -330,8 +332,8 @@ export function StepHeritage() {
                       key={t.id}
                       onClick={() => setChoices({ ...currentChoices, activePowerTab: t.id })}
                       className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
-                        (currentChoices.activePowerTab || 'combate') === t.id 
-                          ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/40' 
+                        (currentChoices.activePowerTab || 'combate') === t.id
+                          ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/40'
                           : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-purple-500/30'
                       }`}
                     >
@@ -339,10 +341,39 @@ export function StepHeritage() {
                       {t.label}
                     </button>
                   ))}
+                  <button
+                    onClick={() => setSomenteDisp(v => !v)}
+                    className={`ml-auto px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
+                      somenteDisp
+                        ? 'bg-emerald-700 border-emerald-400 text-white shadow-lg shadow-emerald-900/40'
+                        : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-emerald-500/30'
+                    }`}
+                  >
+                    <span className="text-xs">✅</span>
+                    {somenteDisp ? 'Disponíveis' : 'Todos'}
+                  </button>
                 </div>
 
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  value={searchPower}
+                  onChange={e => setSearchPower(e.target.value)}
+                  placeholder="Buscar poder por nome ou descrição..."
+                  className="w-full bg-gray-950/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500/40"
+                />
+                {searchPower && <button onClick={() => setSearchPower('')} className="absolute right-4 top-3 text-slate-500 hover:text-white text-lg">✕</button>}
+              </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map((p, idx) => {
+                    {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).filter(p => {
+                      const q = searchPower.toLowerCase().trim();
+                      if (q && !p.nome?.toLowerCase().includes(q) && !p.descricao?.toLowerCase().includes(q)) return false;
+                      if (!somenteDisp) return true;
+                      const currentStats = computeStats(char);
+                      const eligibility = checkPowerEligibility(p, char, currentStats || {});
+                      return eligibility.ok || currentChoices.herancaPower?.nome === p.nome;
+                    }).map((p, idx) => {
                       const currentStats = computeStats(char);
                       const eligibility = checkPowerEligibility(p, char, currentStats || {});
                       const isSelected = currentChoices.herancaPower?.nome === p.nome;

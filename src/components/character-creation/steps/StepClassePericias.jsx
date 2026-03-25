@@ -86,11 +86,19 @@ export function StepClassePericias() {
        <div className="bg-sky-950/20 p-8 rounded-[2.5rem] border border-sky-500/10 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl">{CLASS_ICONS[char.classe] || '⚔️'}</div>
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-amber-500">XI.</span> Treinamento: {cls.nome}
+            <span className="text-amber-500">XII.</span> Treinamento: {cls.nome}
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             Todo {cls.nome} recebe um treinamento rigoroso em competências fundamentais para sua sobrevivência e maestria.
           </p>
+          {skillOverlaps > 0 && (
+            <div className="flex items-center gap-2 mt-4 px-4 py-2 bg-emerald-950/30 border border-emerald-500/20 rounded-2xl w-fit">
+              <span className="text-emerald-400 text-sm">🔄</span>
+              <span className="text-[11px] font-black text-emerald-400">
+                Bônus por sobreposição com Origem: +{skillOverlaps} escolha{skillOverlaps > 1 ? 's' : ''} extra{skillOverlaps > 1 ? 's' : ''} de treinamento
+              </span>
+            </div>
+          )}
        </div>
 
        <details className="bg-blue-950/20 border border-blue-500/10 rounded-2xl overflow-hidden group">

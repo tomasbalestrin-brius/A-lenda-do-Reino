@@ -44,20 +44,20 @@ const STEP_LABELS = [
   "Raça",             // 0
   "Herança",          // 1
   "Classe",           // 2
-  "Esp. de Classe",   // 3 
-  "Origem",           // 4
-  "Benefícios",       // 5
-  "Divindade",        // 6
-  "Magias",           // 7
+  "Identidade",       // 3
+  "Esp. de Classe",   // 4
+  "Origem",           // 5
+  "Benefícios",       // 6
+  "Divindade",        // 7
   "Nível",            // 8
-  "Atributos",        // 9
-  "Perícias (Classe)",// 10
-  "Perícias (Int)",   // 11
-  "Equipamento",      // 12
-  "Aliados",          // 13
-  "Poderes Iniciais", // 14
-  "Progressão",       // 15
-  "Identidade",       // 16
+  "Magias",           // 9
+  "Atributos",        // 10
+  "Perícias (Classe)",// 11
+  "Perícias (Int)",   // 12
+  "Equipamento",      // 13
+  "Poderes",          // 14
+  "Aliados",          // 15
+  "Progressão",       // 16
   "Revisão"           // 17
 ];
 const MAX_STEPS = STEP_LABELS.length;
@@ -68,6 +68,7 @@ export default function CharacterCreation() {
   const [view, setView] = useState('library');
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [confirmBack, setConfirmBack] = useState(null); // { targetStep, message }
 
   // Handle shared character link (?char=base64)
   React.useEffect(() => {
@@ -139,15 +140,40 @@ export default function CharacterCreation() {
     }
   }
 
+  function goToPrev(targetStep) {
+    if (targetStep < 0) { setView('library'); return; }
+    setStep(targetStep);
+  }
+
   function handlePrev() {
-    if (step > 0) {
-      let prevStep = step - 1;
-      while (prevStep > 0 && shouldSkipStep(prevStep, char, stats)) {
-        prevStep--;
-      }
-      setStep(prevStep);
+    let prevStep = step - 1;
+    while (prevStep > 0 && shouldSkipStep(prevStep, char, stats)) prevStep--;
+
+    // Detectar se voltar vai apagar dados relevantes
+    const RESET_WARNINGS = {
+      // Ao voltar para a Origem (step 5), os benefícios escolhidos serão perdidos se mudar
+      6: char.origemBeneficios?.length > 0
+        ? 'Voltar para Origem pode redefinir seus Benefícios escolhidos caso mude de origem.'
+        : null,
+      // Ao voltar para a Classe, especializações e magias serão perdidas
+      4: (char.choices?.escolasMagia?.length > 0 || char.choices?.caminhoArcanista)
+        ? 'Voltar para Classe pode redefinir sua Especialização de Classe.'
+        : null,
+      // Ao voltar para Raça, a herança racial será perdida
+      1: (char.choices?.pericias?.length > 0 || char.choices?.herancaPower || char.racaEscolha?.length > 0)
+        ? 'Voltar para Raça pode redefinir suas escolhas de Herança Racial.'
+        : null,
+      // Ao voltar de Atributos após ter distribuído
+      10: (char.atributos && Object.values(char.atributos).some(v => v !== 0))
+        ? 'Seus atributos distribuídos serão preservados, mas mudanças de raça/nível podem alterá-los.'
+        : null,
+    };
+
+    const warning = RESET_WARNINGS[step];
+    if (warning) {
+      setConfirmBack({ targetStep: prevStep < 0 ? -1 : prevStep, message: warning });
     } else {
-      setView('library');
+      goToPrev(prevStep < 0 ? -1 : prevStep);
     }
   }
 
@@ -201,6 +227,38 @@ export default function CharacterCreation() {
 
   return (
     <div className="flex h-[100dvh] bg-[#020617] text-slate-300 font-sans overflow-hidden">
+
+      {/* Confirm Back Modal */}
+      {confirmBack && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-950/80 backdrop-blur-md" onClick={() => setConfirmBack(null)} />
+          <motion.div
+            initial={{ scale: 0.92, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="relative w-full max-w-sm bg-gray-900 border border-amber-500/20 rounded-[2.5rem] p-8 shadow-2xl flex flex-col gap-6"
+          >
+            <div className="flex flex-col items-center text-center gap-3">
+              <span className="text-4xl">⚠️</span>
+              <h3 className="text-lg font-black text-white uppercase tracking-tight">Voltar?</h3>
+              <p className="text-sm text-slate-400 font-medium leading-relaxed">{confirmBack.message}</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmBack(null)}
+                className="flex-1 py-3 rounded-2xl bg-gray-800 border border-white/5 text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-gray-700 transition-all"
+              >
+                Ficar aqui
+              </button>
+              <button
+                onClick={() => { goToPrev(confirmBack.targetStep); setConfirmBack(null); }}
+                className="flex-1 py-3 rounded-2xl bg-amber-600 text-gray-950 font-black text-xs uppercase tracking-widest hover:bg-amber-500 transition-all shadow-lg"
+              >
+                Voltar assim mesmo
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
       
       {/* Sidebar Navigation */}
       <div className="w-16 md:w-64 shrink-0 bg-[#040B16] border-r border-slate-800/60 shadow-2xl z-20 flex flex-col pt-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
@@ -311,20 +369,20 @@ export default function CharacterCreation() {
                       case 0: return <StepRace onNext={handleNext} />;
                       case 1: return <StepHeritage />;
                       case 2: return <StepClass onNext={handleNext} />;
-                      case 3: return <StepClassSpecialization />;
-                      case 4: return <StepOrigin onNext={handleNext} />;
-                      case 5: return <StepOrigemBeneficios />;
-                      case 6: return <StepDeus />;
-                      case 7: return <StepSpells stats={stats} />;
+                      case 3: return <StepIdentity />;
+                      case 4: return <StepClassSpecialization />;
+                      case 5: return <StepOrigin onNext={handleNext} />;
+                      case 6: return <StepOrigemBeneficios />;
+                      case 7: return <StepDeus />;
                       case 8: return <StepLevel />;
-                      case 9: return <StepAttributes stats={stats} />;
-                      case 10: return <StepClassePericias />;
-                      case 11: return <StepIntPericias stats={stats} />;
-                      case 12: return <StepEquipment />;
-                      case 13: return <StepAllies />;
+                      case 9: return <StepSpells stats={stats} />;
+                      case 10: return <StepAttributes stats={stats} />;
+                      case 11: return <StepClassePericias />;
+                      case 12: return <StepIntPericias stats={stats} />;
+                      case 13: return <StepEquipment />;
                       case 14: return <StepPowers stats={stats} />;
-                      case 15: return <StepProgression stats={stats} />;
-                      case 16: return <StepIdentity />;
+                      case 15: return <StepAllies />;
+                      case 16: return <StepProgression stats={stats} />;
                       case 17: return (
                         <StepReview
                           stats={stats}
@@ -387,7 +445,7 @@ export default function CharacterCreation() {
              <span className="w-1 h-3 bg-slate-600 rounded-full" />
              Visão Geral
            </h3>
-           <CharacterPreview char={char} stats={stats} />
+           <CharacterPreview char={char} stats={stats} currentStep={step} />
         </div>
 
         {/* Mobile Info Overlay */}
@@ -407,7 +465,7 @@ export default function CharacterCreation() {
                   className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xl"
                 >✕</button>
               </div>
-              <CharacterPreview char={char} stats={stats} />
+              <CharacterPreview char={char} stats={stats} currentStep={step} />
             </motion.div>
           )}
         </AnimatePresence>

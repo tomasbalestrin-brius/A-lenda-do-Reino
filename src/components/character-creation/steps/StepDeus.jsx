@@ -55,7 +55,7 @@ export function StepDeus() {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">✨</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-amber-500">VII.</span> Divindade
+            <span className="text-amber-500">VIII.</span> Divindade
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             {isDivine
@@ -64,6 +64,22 @@ export function StepDeus() {
           </p>
         </div>
       </div>
+
+      {isDivine && !char.deus && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-400"
+        >
+          <span className="text-2xl">⚠️</span>
+          <div>
+            <p className="font-black text-sm uppercase tracking-widest">Divindade Obrigatória</p>
+            <p className="text-[11px] text-rose-300/70 font-medium mt-0.5">
+              Como {CLASSES[char.classe]?.nome || char.classe}, você deve escolher uma divindade para prosseguir. Seu poder emana dela.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {[
@@ -151,6 +167,80 @@ export function StepDeus() {
           );
         })}
       </div>
+
+      {/* Painel de Consequências Mecânicas da Divindade Selecionada */}
+      <AnimatePresence>
+        {char.deus && DEUSES[char.deus] && (
+          <motion.div
+            key={char.deus}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            className="rounded-[2rem] border border-amber-500/20 bg-amber-950/10 overflow-hidden"
+          >
+            {/* Header */}
+            <div className="px-6 py-4 bg-amber-950/20 border-b border-amber-500/10 flex items-center gap-3">
+              {(() => { const Icon = DEITY_ICONS[char.deus] || Sparkles; return <Icon size={16} className="text-amber-400" />; })()}
+              <span className="text-xs font-black text-amber-400 uppercase tracking-widest">
+                Consequências de Seguir {DEUSES[char.deus].nome}
+              </span>
+            </div>
+
+            <div className="p-6 flex flex-col gap-6">
+              {/* Magias Concedidas (relevante para Clérigo, Druida, Paladino) */}
+              {DEUSES[char.deus].devoto?.magiasConcedidas && (
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black text-purple-400 uppercase tracking-[0.3em]">
+                    {isDivine ? '✦ Magias Concedidas (automáticas)' : '✦ Magias Concedidas'}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(DEUSES[char.deus].devoto.magiasConcedidas).map(([circ, nome]) => (
+                      <div key={circ} className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/30 border border-purple-500/20">
+                        <span className="text-[8px] font-black text-purple-500 uppercase">{circ}º</span>
+                        <span className="text-[10px] font-bold text-purple-300">{nome}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {isDivine && (
+                    <p className="text-[9px] text-slate-500 font-medium">
+                      Como {CLASSES[char.classe]?.nome}, você aprende estas magias automaticamente ao atingir o círculo correspondente.
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Poderes de Devoto */}
+              {DEUSES[char.deus].devoto?.poderes?.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-[0.3em]">✦ Poderes de Devoto disponíveis</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {DEUSES[char.deus].devoto.poderes.map((p, i) => (
+                      <div key={i} className="px-4 py-3 rounded-xl bg-emerald-950/20 border border-emerald-500/10">
+                        <p className="text-[10px] font-black text-emerald-400 mb-1">{p.nome}</p>
+                        <p className="text-[9px] text-slate-500 font-medium leading-relaxed">{p.descricao}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-slate-600 font-medium">
+                    Poderes de Devoto são escolhidos via Poderes Gerais nas etapas de Poderes e Progressão.
+                  </p>
+                </div>
+              )}
+
+              {/* Restrições */}
+              {DEUSES[char.deus].devoto?.restricoes && (
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-rose-950/20 border border-rose-500/15">
+                  <span className="text-rose-400 mt-0.5 shrink-0">⚠️</span>
+                  <div>
+                    <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Restrições do Dogma</p>
+                    <p className="text-[10px] text-rose-300/70 font-medium leading-relaxed">{DEUSES[char.deus].devoto.restricoes}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {char.modalDeity && (

@@ -64,9 +64,9 @@ export function meetsRequirement(req, char, stats) {
     const fullCasters = ["arcanista", "clerigo", "druida"];
     const halfCasters = ["bardo", "paladino", "cacador"];
     if (fullCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 17 ? 5 : (characterLevel >= 13 ? 4 : (characterLevel >= 9 ? 3 : (characterLevel >= 5 ? 2 : 1)));
+      maxCirculo = characterLevel >= 17 ? 5 : characterLevel >= 13 ? 4 : characterLevel >= 9 ? 3 : characterLevel >= 5 ? 2 : 1;
     } else if (halfCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 7 ? 4 : (characterLevel >= 5 ? 3 : (characterLevel >= 3 ? 2 : 1));
+      maxCirculo = characterLevel >= 7 ? 4 : characterLevel >= 5 ? 3 : characterLevel >= 3 ? 2 : 1;
     }
     if (maxCirculo < req.circulo) return false;
   }
@@ -167,9 +167,9 @@ export function checkPowerEligibility(power, char, stats) {
     const fullCasters = ["arcanista", "clerigo", "druida"];
     const halfCasters = ["bardo", "paladino", "cacador"];
     if (fullCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 17 ? 5 : (characterLevel >= 13 ? 4 : (characterLevel >= 9 ? 3 : (characterLevel >= 5 ? 2 : 1)));
+      maxCirculo = characterLevel >= 17 ? 5 : characterLevel >= 13 ? 4 : characterLevel >= 9 ? 3 : characterLevel >= 5 ? 2 : 1;
     } else if (halfCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 7 ? 4 : (characterLevel >= 5 ? 3 : (characterLevel >= 3 ? 2 : 1));
+      maxCirculo = characterLevel >= 7 ? 4 : characterLevel >= 5 ? 3 : characterLevel >= 3 ? 2 : 1;
     }
     if (maxCirculo < req.circulo) {
       return { ok: false, reason: `${req.circulo}º Círculo` };

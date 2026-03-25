@@ -47,13 +47,13 @@ export function StepAllies() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-black text-amber-500 uppercase tracking-tighter mb-2"><span className="text-amber-500 mr-2">XIV.</span> Aliados & Parceiros</h2>
+        <h2 className="text-2xl font-black text-amber-500 uppercase tracking-tighter mb-2"><span className="text-amber-500 mr-2">XVI.</span> Aliados & Parceiros</h2>
         {!hasAllyPower ? (
           <div className="p-4 bg-red-950/20 border border-red-500/20 rounded-2xl space-y-1">
              <p className="text-red-400 text-sm font-bold flex items-center gap-2">
                 <span>⚠️</span> Você não possui poderes que concedem um Aliado (ex: Parceiro, Aliado Animal).
              </p>
-             <p className="text-slate-500 text-xs pl-6">Para obter um aliado, escolha o poder <strong className="text-amber-400">Parceiro</strong> no passo <strong className="text-amber-400">XV. Poderes</strong> e volte aqui.</p>
+             <p className="text-slate-500 text-xs pl-6">Para obter um aliado, volte ao passo <strong className="text-amber-400">XV. Poderes</strong> e escolha o poder <strong className="text-amber-400">Parceiro</strong> (aba Destino).</p>
           </div>
         ) : (
           <p className="text-slate-400 text-sm">Escolha um companheiro para ajudá-lo em sua jornada.</p>

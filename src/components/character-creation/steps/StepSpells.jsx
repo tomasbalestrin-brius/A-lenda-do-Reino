@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import SPELLS from '../../../data/spellsData';
 import CLASSES from '../../../data/classes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export function StepSpells() {
   const { char, updateChar } = useCharacterStore();
+  const [search, setSearch] = React.useState('');
   const { classe, classSpells, choices } = char;
   
   const cls = CLASSES[classe];
@@ -34,8 +35,18 @@ export function StepSpells() {
 
   const maxCircle = useMemo(() => {
     const isFullCaster = ['arcanista', 'clerigo'].includes(classe);
-    if (isFullCaster) return Math.min(5, Math.ceil(level / 2));
-    return level >= 7 ? 4 : level >= 5 ? 3 : level >= 3 ? 2 : 1;
+    if (isFullCaster) {
+      if (level >= 17) return 5;
+      if (level >= 13) return 4;
+      if (level >= 9)  return 3;
+      if (level >= 5)  return 2;
+      return 1;
+    }
+    // Half casters: bardo, druida
+    if (level >= 7) return 4;
+    if (level >= 5) return 3;
+    if (level >= 3) return 2;
+    return 1;
   }, [classe, level]);
 
   const arcanaCircles = [SPELLS.magiasArcanas1, SPELLS.magiasArcanas2, SPELLS.magiasArcanas3, SPELLS.magiasArcanas4, SPELLS.magiasArcanas5];
@@ -45,10 +56,14 @@ export function StepSpells() {
     const circles = type === 'arcana' ? arcanaCircles : divinaCircles;
     const pool = circles.slice(0, maxCircle).flatMap(c => Object.entries(c || {}));
     return pool.filter(([, s]) => {
-      if (!schools) return true;
-      return schools.map(sch => sch.toLowerCase()).includes(s.escola.toLowerCase());
+      if (schools && !schools.map(sch => sch.toLowerCase()).includes(s.escola.toLowerCase())) return false;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        return s.nome?.toLowerCase().includes(q) || s.escola?.toLowerCase().includes(q) || s.descricao?.toLowerCase().includes(q);
+      }
+      return true;
     });
-  }, [type, schools, maxCircle]);
+  }, [type, schools, maxCircle, search]);
 
   const toggleSpell = (spell) => {
     const isOwned = (classSpells || []).some(s => s.nome === spell.nome);
@@ -65,13 +80,24 @@ export function StepSpells() {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">✨</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-amber-500">VIII.</span> Magias ({classSpells.length}/{limits})
+            <span className="text-amber-500">X.</span> Magias ({classSpells.length}/{limits})
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             Escolha as magias que definem seu repertório inicial. 
             {schools ? ` Suas escolas são: ${schools.join(', ')}.` : ''}
           </p>
         </div>
+      </div>
+
+      <div className="relative">
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Buscar magia por nome, escola ou descrição..."
+          className="w-full bg-gray-900/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40 mb-4"
+        />
+        {search && <button onClick={() => setSearch('')} className="absolute right-4 top-3 text-slate-500 hover:text-white text-lg">✕</button>}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

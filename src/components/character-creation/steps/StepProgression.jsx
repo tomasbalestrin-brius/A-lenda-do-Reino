@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CLASSES from '../../../data/classes';
 import GENERAL_POWERS from '../../../data/powers';
@@ -19,6 +19,19 @@ export function StepProgression({ stats }) {
   const allGeneralPowers = Object.values(GENERAL_POWERS).flat();
 
   const isConjurer = ['arcanista', 'bardo', 'clerigo', 'druida'].includes(char.classe?.toLowerCase());
+
+  // Poderes não-empilháveis já escolhidos em outros níveis ou em poderesGerais
+  const STACKABLE_POWERS = new Set(['Aumento de Atributo', 'Conhecimento Mágico']);
+  const takenPowerNames = useMemo(() => {
+    const names = new Set();
+    // De poderesGerais (StepPowers)
+    (char.poderesGerais || []).forEach(p => names.add(p.nome));
+    // De outros níveis
+    Object.values(selecoes).forEach(choice => {
+      if (choice?.nome && !STACKABLE_POWERS.has(choice.nome)) names.add(choice.nome);
+    });
+    return names;
+  }, [char.poderesGerais, selecoes]);
 
   const handleSelectPower = (lvl, power) => {
     const isRemove = selecoes[lvl]?.id === power.nome;
@@ -68,16 +81,106 @@ export function StepProgression({ stats }) {
     setActiveSpellSlot(null);
   };
 
+  // Tabela de progressão: todos os 20 níveis com habilidades da classe
+  const ProgressionTable = () => {
+    const [open, setOpen] = useState(false);
+    if (!cls) return null;
+    const allLevels = Array.from({ length: 20 }, (_, i) => i + 1);
+    return (
+      <div className="rounded-[2rem] border border-white/5 overflow-hidden">
+        <button
+          onClick={() => setOpen(o => !o)}
+          className="w-full flex items-center justify-between px-6 py-4 bg-gray-950/60 hover:bg-gray-900/60 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-blue-400 text-lg">📊</span>
+            <span className="text-xs font-black text-slate-300 uppercase tracking-widest">Tabela de Progressão — {cls.nome}</span>
+          </div>
+          <span className={`text-slate-500 transition-transform duration-300 ${open ? 'rotate-180' : ''}`}>▼</span>
+        </button>
+
+        {open && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-[11px]">
+              <thead>
+                <tr className="bg-gray-950/80 border-b border-white/5">
+                  <th className="text-left px-4 py-2.5 text-slate-500 font-black uppercase tracking-widest w-16">Nível</th>
+                  <th className="text-left px-4 py-2.5 text-slate-500 font-black uppercase tracking-widest">Habilidades</th>
+                </tr>
+              </thead>
+              <tbody>
+                {allLevels.map(lvl => {
+                  const features = cls.habilidades?.[lvl] || [];
+                  const isCurrentLevel = lvl === level;
+                  const isPast = lvl < level;
+                  const isFuture = lvl > level;
+                  const isPowerLevel = features.some(f => f.nome?.toLowerCase().includes('poder de'));
+                  return (
+                    <tr
+                      key={lvl}
+                      className={`border-b border-white/[0.03] transition-colors ${
+                        isCurrentLevel
+                          ? 'bg-amber-950/20'
+                          : isPast
+                            ? 'bg-gray-950/20'
+                            : 'bg-transparent opacity-40'
+                      }`}
+                    >
+                      <td className="px-4 py-2.5 font-black">
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black ${
+                          isCurrentLevel
+                            ? 'bg-amber-500 text-gray-950 shadow-lg'
+                            : isPast
+                              ? 'bg-emerald-900/40 text-emerald-400 border border-emerald-500/20'
+                              : 'bg-gray-900 text-gray-600 border border-white/5'
+                        }`}>
+                          {lvl}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        {features.length === 0 ? (
+                          <span className="text-gray-700 italic">—</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {features.map((f, fi) => (
+                              <span
+                                key={fi}
+                                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                                  isPowerLevel && f.nome?.toLowerCase().includes('poder de')
+                                    ? 'bg-amber-950/40 text-amber-400 border border-amber-500/20'
+                                    : 'bg-emerald-950/30 text-emerald-400 border border-emerald-500/10'
+                                }`}
+                              >
+                                {f.nome}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (level === 1) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 gap-8 bg-blue-950/20 rounded-[3rem] border border-blue-500/10 backdrop-blur-md">
-        <div className="w-24 h-24 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-5xl shadow-2xl shadow-blue-900/20 animate-bounce">🛡️</div>
-        <div className="text-center max-w-md">
-          <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Nível Heroico I</h2>
-          <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
-            Você está forjando um herói de nível inicial. A progressão de poderes começa a partir do nível 2. Siga em frente para a revisão final!
-          </p>
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col items-center justify-center p-20 gap-8 bg-blue-950/20 rounded-[3rem] border border-blue-500/10 backdrop-blur-md">
+          <div className="w-24 h-24 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-5xl shadow-2xl shadow-blue-900/20 animate-bounce">🛡️</div>
+          <div className="text-center max-w-md">
+            <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Nível Heroico I</h2>
+            <p className="text-slate-400 text-sm mt-4 font-medium leading-relaxed">
+              Você está forjando um herói de nível inicial. A progressão de poderes começa a partir do nível 2. Siga em frente para a revisão final!
+            </p>
+          </div>
         </div>
+        <ProgressionTable />
       </div>
     );
   }
@@ -85,12 +188,24 @@ export function StepProgression({ stats }) {
   const spellType = ['arcanista', 'bardo'].includes(char.classe?.toLowerCase()) ? 'arcana' : 'divina';
   const isFullCaster = ['arcanista', 'clerigo'].includes(char.classe?.toLowerCase());
   const maxCircle = isFullCaster
-    ? Math.min(5, Math.ceil(level / 2))
-    : level >= 7 ? 4 : level >= 5 ? 3 : level >= 3 ? 2 : 1;
+    ? (level >= 17 ? 5 : level >= 13 ? 4 : level >= 9 ? 3 : level >= 5 ? 2 : 1)
+    : (level >= 7 ? 4 : level >= 5 ? 3 : level >= 3 ? 2 : 1);
 
   const arcanaCircles = [SPELLS.magiasArcanas1, SPELLS.magiasArcanas2, SPELLS.magiasArcanas3, SPELLS.magiasArcanas4, SPELLS.magiasArcanas5];
   const divinaCircles = [SPELLS.magiasDivinas1, SPELLS.magiasDivinas2, SPELLS.magiasDivinas3, SPELLS.magiasDivinas4, SPELLS.magiasDivinas5];
   const spellCircles = spellType === 'arcana' ? arcanaCircles : divinaCircles;
+
+  // Todas as magias já escolhidas (iniciais + progressão de outros níveis)
+  const allChosenSpellNames = useMemo(() => {
+    const names = new Set();
+    (char.classSpells || []).forEach(s => names.add(s.nome));
+    (char.racialSpells || []).forEach(s => names.add(s.nome));
+    Object.values(selecoes).forEach(choice => {
+      if (choice?.levelSpell?.nome) names.add(choice.levelSpell.nome);
+      (choice?.spells || []).forEach(s => { if (s?.nome) names.add(s.nome); });
+    });
+    return names;
+  }, [char.classSpells, char.racialSpells, selecoes]);
 
   const allAvailableSpells = isConjurer
     ? spellCircles.slice(0, maxCircle).flatMap(pool => Object.values(pool || {}))
@@ -102,13 +217,15 @@ export function StepProgression({ stats }) {
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl rotate-12">🔮</div>
         <div className="flex-1">
           <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
-            <span className="text-blue-400 mr-2">XVI.</span> Senda Evolutiva
+            <span className="text-blue-400 mr-2">XVII.</span> Senda Evolutiva
           </h2>
           <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">
             Sua jornada te tornou mais experiente. A cada nível superado, novas técnicas e dons despertam.
           </p>
         </div>
       </div>
+
+      <ProgressionTable />
 
       <div className="grid grid-cols-1 gap-6">
         {levels.map(lvl => {
@@ -206,20 +323,24 @@ export function StepProgression({ stats }) {
                         {allClassPowers.map(p => {
                           const eligibility = checkPowerEligibility(p, { ...char, level: lvl }, stats);
                           const isPicked = selectedPowerName === p.nome;
-                          const canSelect = eligibility.ok || isPicked;
+                          const isStackable = STACKABLE_POWERS.has(p.nome);
+                          const alreadyTaken = !isStackable && takenPowerNames.has(p.nome) && !isPicked;
+                          const canSelect = (eligibility.ok && !alreadyTaken) || isPicked;
 
                           return (
-                            <motion.div 
-                              key={p.nome} 
+                            <motion.div
+                              key={p.nome}
                               whileHover={canSelect ? { scale: 1.02 } : {}}
                               whileTap={canSelect ? { scale: 0.98 } : {}}
                               onClick={() => canSelect && handleSelectPower(lvl, p)}
                               className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${
-                                isPicked 
-                                  ? 'bg-amber-950/30 border-amber-500 shadow-xl' 
-                                  : (canSelect 
-                                      ? 'bg-gray-950 border-white/5 hover:border-white/10' 
-                                      : 'bg-gray-950/50 border-gray-900/50 opacity-40 grayscale cursor-not-allowed')
+                                isPicked
+                                  ? 'bg-amber-950/30 border-amber-500 shadow-xl'
+                                  : alreadyTaken
+                                    ? 'bg-gray-950/50 border-gray-900/50 opacity-50 grayscale cursor-not-allowed'
+                                    : (canSelect
+                                        ? 'bg-gray-950 border-white/5 hover:border-white/10'
+                                        : 'bg-gray-950/50 border-gray-900/50 opacity-40 grayscale cursor-not-allowed')
                               }`}
                             >
                               <div className="flex items-center justify-between">
@@ -227,11 +348,12 @@ export function StepProgression({ stats }) {
                                   {p.nome}
                                 </p>
                                 {isPicked && <span className="text-xs">✅</span>}
+                                {alreadyTaken && <span className="text-[8px] text-slate-500 font-black uppercase">Já pego</span>}
                               </div>
                               <p className={`text-[10px] font-medium leading-relaxed ${canSelect ? 'text-slate-500' : 'text-gray-700'}`}>
                                 {p.descricao}
                               </p>
-                              {!eligibility.ok && !isPicked && (
+                              {!eligibility.ok && !isPicked && !alreadyTaken && (
                                 <span className="text-[8px] text-rose-500/80 font-black uppercase tracking-widest mt-1">
                                   Bloqueado: {eligibility.reason}
                                 </span>
@@ -244,20 +366,24 @@ export function StepProgression({ stats }) {
                         {allGeneralPowers.map(p => {
                           const eligibility = checkPowerEligibility(p, { ...char, level: lvl }, stats);
                           const isPicked = selectedPowerName === p.nome;
-                          const canSelect = eligibility.ok || isPicked;
+                          const isStackable = STACKABLE_POWERS.has(p.nome);
+                          const alreadyTaken = !isStackable && takenPowerNames.has(p.nome) && !isPicked;
+                          const canSelect = (eligibility.ok && !alreadyTaken) || isPicked;
 
                           return (
-                            <motion.div 
-                              key={p.nome} 
+                            <motion.div
+                              key={p.nome}
                               whileHover={canSelect ? { scale: 1.02 } : {}}
                               whileTap={canSelect ? { scale: 0.98 } : {}}
                               onClick={() => canSelect && handleSelectPower(lvl, p)}
                               className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2 ${
-                                isPicked 
-                                  ? 'bg-blue-950/30 border-blue-500 shadow-xl' 
-                                  : (canSelect 
-                                      ? 'bg-gray-950 border-white/5 hover:border-white/10' 
-                                      : 'bg-gray-950/50 border-gray-900/50 opacity-40 grayscale cursor-not-allowed')
+                                isPicked
+                                  ? 'bg-blue-950/30 border-blue-500 shadow-xl'
+                                  : alreadyTaken
+                                    ? 'bg-gray-950/50 border-gray-900/50 opacity-50 grayscale cursor-not-allowed'
+                                    : (canSelect
+                                        ? 'bg-gray-950 border-white/5 hover:border-white/10'
+                                        : 'bg-gray-950/50 border-gray-900/50 opacity-40 grayscale cursor-not-allowed')
                               }`}
                             >
                               <div className="flex items-center justify-between">
@@ -265,11 +391,12 @@ export function StepProgression({ stats }) {
                                   {p.nome}
                                 </p>
                                 {isPicked && <span className="text-xs">✅</span>}
+                                {alreadyTaken && <span className="text-[8px] text-slate-500 font-black uppercase">Já pego</span>}
                               </div>
                               <p className={`text-[10px] font-medium leading-relaxed ${canSelect ? 'text-slate-500' : 'text-gray-700'}`}>
                                 {p.descricao}
                               </p>
-                              {!eligibility.ok && !isPicked && (
+                              {!eligibility.ok && !isPicked && !alreadyTaken && (
                                 <span className="text-[8px] text-rose-500/80 font-black uppercase tracking-widest mt-1">
                                   Bloqueado: {eligibility.reason}
                                 </span>
@@ -385,25 +512,44 @@ export function StepProgression({ stats }) {
                   <button onClick={() => setActiveSpellSlot(null)} className="text-slate-500 hover:text-white transition-colors">✕</button>
                </div>
                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto custom-scrollbar">
-                  {allAvailableSpells.map(s => (
-                    <button
-                      key={s.nome}
-                      onClick={() => {
-                        if (activeSpellSlot.type === 'levelSpell') {
-                          handleLevelSpellChoice(activeSpellSlot.lvl, s);
-                        } else {
-                          handleSpellSlotChoice(activeSpellSlot.lvl, activeSpellSlot.index, s);
-                        }
-                      }}
-                      className="text-left p-6 rounded-2xl border-2 border-white/5 bg-gray-950 hover:border-purple-500/40 transition-all flex flex-col gap-2 group"
-                    >
-                       <div className="flex items-center justify-between">
-                          <span className="text-sm font-black text-white group-hover:text-purple-400 transition-colors uppercase">{s.nome}</span>
-                          <span className="text-[10px] text-purple-500 font-bold uppercase">{s.escola}</span>
-                       </div>
-                       <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{s.descricao}</p>
-                    </button>
-                  ))}
+                  {allAvailableSpells.map(s => {
+                    // Verificar se já foi escolhida em OUTRO slot (exceto o slot atual sendo editado)
+                    const currentSlotSpellName = (() => {
+                      const slotChoices = selecoes[activeSpellSlot.lvl];
+                      if (activeSpellSlot.type === 'levelSpell') return slotChoices?.levelSpell?.nome;
+                      return slotChoices?.spells?.[activeSpellSlot.index]?.nome;
+                    })();
+                    const alreadyChosen = allChosenSpellNames.has(s.nome) && s.nome !== currentSlotSpellName;
+
+                    return (
+                      <button
+                        key={s.nome}
+                        disabled={alreadyChosen}
+                        onClick={() => {
+                          if (alreadyChosen) return;
+                          if (activeSpellSlot.type === 'levelSpell') {
+                            handleLevelSpellChoice(activeSpellSlot.lvl, s);
+                          } else {
+                            handleSpellSlotChoice(activeSpellSlot.lvl, activeSpellSlot.index, s);
+                          }
+                        }}
+                        className={`text-left p-6 rounded-2xl border-2 transition-all flex flex-col gap-2 group ${
+                          alreadyChosen
+                            ? 'border-white/5 bg-gray-950/40 opacity-40 grayscale cursor-not-allowed'
+                            : 'border-white/5 bg-gray-950 hover:border-purple-500/40'
+                        }`}
+                      >
+                         <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-white group-hover:text-purple-400 transition-colors uppercase">{s.nome}</span>
+                            <div className="flex items-center gap-2">
+                              {alreadyChosen && <span className="text-[8px] text-slate-500 font-black uppercase">Já pega</span>}
+                              <span className="text-[10px] text-purple-500 font-bold uppercase">{s.escola}</span>
+                            </div>
+                         </div>
+                         <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-2">{s.descricao}</p>
+                      </button>
+                    );
+                  })}
                </div>
             </motion.div>
           </div>

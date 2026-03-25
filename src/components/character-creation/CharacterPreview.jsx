@@ -3,6 +3,7 @@ import CLASSES from '../../data/classes';
 import RACES from '../../data/races';
 import { ORIGENS } from '../../data/origins';
 import { ITENS } from '../../data/items';
+import { getAllTrainedSkills } from '../../utils/rules/characterStats';
 
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 
@@ -67,18 +68,165 @@ function StatBar({ label, value, max, color }) {
   );
 }
 
-export function CharacterPreview({ char, stats }) {
+const STEP_FOCUS = {
+  0:  { label: 'Raça',              hint: 'Bônus Raciais',        icon: '🧬' },
+  1:  { label: 'Herança',           hint: 'Bônus Raciais',        icon: '🧬' },
+  2:  { label: 'Classe',            hint: 'PV & PM da Classe',    icon: '⚔️' },
+  3:  { label: 'Identidade',        hint: 'Nome & Aparência',     icon: '🪪' },
+  4:  { label: 'Especialização',    hint: 'PV & PM da Classe',    icon: '✨' },
+  5:  { label: 'Origem',            hint: 'Perícias & Poderes',   icon: '🌍' },
+  6:  { label: 'Benefícios',        hint: 'Perícias & Poderes',   icon: '🌍' },
+  7:  { label: 'Divindade',         hint: 'Crenças & Bônus',      icon: '🙏' },
+  8:  { label: 'Nível',             hint: 'PV & PM Totais',       icon: '⭐' },
+  9:  { label: 'Magias',            hint: 'Magias de Classe',     icon: '📖' },
+  10: { label: 'Atributos',         hint: 'Todos os Atributos',   icon: '📊' },
+  11: { label: 'Perícias de Classe',hint: 'Perícias Treinadas',   icon: '🎯' },
+  12: { label: 'Perícias de INT',   hint: 'Perícias Treinadas',   icon: '🎯' },
+  13: { label: 'Equipamento',       hint: 'Inventário & Dinheiro',icon: '🎒' },
+  14: { label: 'Poderes',           hint: 'Poderes & Dons',       icon: '💥' },
+  15: { label: 'Aliados',           hint: 'Aliados',              icon: '🤝' },
+  16: { label: 'Progressão',        hint: 'Poderes & Dons',       icon: '💥' },
+  17: { label: 'Revisão',           hint: null,                   icon: '✅' },
+};
+
+function StepFocusPanel({ currentStep, char, stats }) {
+  const focus = STEP_FOCUS[currentStep];
+  if (!focus || !focus.hint) return null;
+
+  const hint = focus.hint;
+
+  const renderContent = () => {
+    if (hint === 'Bônus Raciais') {
+      const raceData = RACES[char.raca];
+      if (!raceData) return <p className="text-xs text-gray-500 italic">Selecione uma raça.</p>;
+      const attrBonuses = Object.entries(stats.raceBonus || {}).filter(([, v]) => v !== 0);
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {attrBonuses.length === 0 && <span className="text-xs text-gray-500 italic">Nenhum bônus fixo</span>}
+          {attrBonuses.map(([k, v]) => (
+            <span key={k} className={`text-xs font-bold px-2 py-0.5 rounded-full border ${v > 0 ? 'bg-green-900/40 text-green-300 border-green-700/40' : 'bg-red-900/40 text-red-300 border-red-700/40'}`}>
+              {k} {v > 0 ? `+${v}` : v}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    if (hint === 'PV & PM da Classe' || hint === 'PV & PM Totais') {
+      return (
+        <div className="flex gap-3">
+          <div className="flex flex-col items-center bg-red-900/20 border border-red-700/30 rounded-lg px-3 py-2 flex-1">
+            <span className="text-[9px] text-red-400 uppercase tracking-widest">PV</span>
+            <span className="text-lg font-black text-red-300">{stats.pv}</span>
+          </div>
+          <div className="flex flex-col items-center bg-blue-900/20 border border-blue-700/30 rounded-lg px-3 py-2 flex-1">
+            <span className="text-[9px] text-blue-400 uppercase tracking-widest">PM</span>
+            <span className="text-lg font-black text-blue-300">{stats.pm}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (hint === 'Todos os Atributos') {
+      const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
+      return (
+        <div className="grid grid-cols-3 gap-1">
+          {ATTR_KEYS.map(k => {
+            const total = stats.attrs?.[k] || 0;
+            return (
+              <div key={k} className="flex flex-col items-center bg-gray-900/60 rounded-lg py-1">
+                <span className="text-[8px] text-gray-500 uppercase">{k}</span>
+                <span className={`text-base font-black ${total >= 0 ? 'text-amber-400' : 'text-red-400'}`}>{total >= 0 ? '+' : ''}{total}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (hint === 'Perícias Treinadas') {
+      const allPericias = Array.from(getAllTrainedSkills(char));
+      return allPericias.length > 0
+        ? <div className="flex flex-wrap gap-1">{allPericias.slice(0, 8).map(p => <span key={p} className="text-[9px] bg-indigo-900/40 text-indigo-300 border border-indigo-700/30 px-2 py-0.5 rounded-full">{p}</span>)}{allPericias.length > 8 && <span className="text-[9px] text-gray-500">+{allPericias.length - 8}</span>}</div>
+        : <p className="text-xs text-gray-500 italic">Nenhuma perícia ainda.</p>;
+    }
+
+    if (hint === 'Inventário & Dinheiro') {
+      return (
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col items-center bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-2 flex-1">
+            <span className="text-[9px] text-yellow-400 uppercase tracking-widest">Dinheiro</span>
+            <span className="text-sm font-black text-yellow-300">{char.dinheiro ?? 0} to</span>
+          </div>
+          <div className="flex flex-col items-center bg-gray-900/40 border border-gray-700/30 rounded-lg px-3 py-2 flex-1">
+            <span className="text-[9px] text-gray-400 uppercase tracking-widest">Itens</span>
+            <span className="text-sm font-black text-gray-300">{(char.equipamento || []).length}</span>
+          </div>
+        </div>
+      );
+    }
+
+    if (hint === 'Poderes & Dons') {
+      const totalPowers = [
+        ...(char.poderesGerais || []),
+        ...(char.choices?.herancaPower ? [char.choices.herancaPower] : []),
+        ...(char.crencasBeneficios || []),
+      ];
+      return totalPowers.length > 0
+        ? <div className="flex flex-wrap gap-1">{totalPowers.map(p => <span key={p.nome} className="text-[9px] bg-purple-900/40 text-purple-300 border border-purple-700/30 px-2 py-0.5 rounded-full">{p.nome}</span>)}</div>
+        : <p className="text-xs text-gray-500 italic">Nenhum poder ainda.</p>;
+    }
+
+    if (hint === 'Magias de Classe') {
+      const spells = char.classSpells || [];
+      return spells.length > 0
+        ? <div className="flex flex-wrap gap-1">{spells.map(s => <span key={s.nome || s} className="text-[9px] bg-fuchsia-900/40 text-fuchsia-300 border border-fuchsia-700/30 px-2 py-0.5 rounded-full">✨ {s.nome || s}</span>)}</div>
+        : <p className="text-xs text-gray-500 italic">Nenhuma magia ainda.</p>;
+    }
+
+    if (hint === 'Crenças & Bônus') {
+      return char.deus
+        ? <p className="text-sm font-bold text-amber-300">🙏 {char.deus}</p>
+        : <p className="text-xs text-gray-500 italic">Nenhuma divindade escolhida.</p>;
+    }
+
+    if (hint === 'Nome & Aparência') {
+      return char.nome?.trim()
+        ? <p className="text-sm font-bold text-white">🪪 {char.nome}</p>
+        : <p className="text-xs text-amber-500 italic">Dê um nome ao seu herói!</p>;
+    }
+
+    return null;
+  };
+
+  const content = renderContent();
+  if (!content) return null;
+
+  return (
+    <div className="bg-amber-950/20 rounded-xl border border-amber-700/30 p-3 mb-1">
+      <p className="text-[10px] text-amber-500 uppercase tracking-widest mb-2 font-black flex items-center gap-1.5">
+        <span>{focus.icon}</span> Passo atual · {focus.label}
+      </p>
+      {content}
+    </div>
+  );
+}
+
+export function CharacterPreview({ char, stats, currentStep }) {
   const cls = CLASSES[char.classe];
   const race = RACES[char.raca];
   const spriteKey = `${char.raca}_${char.classe}`;
   const sprite = SPRITE_MAP[spriteKey] || SPRITE_MAP[`humano_${char.classe}`] || null;
-  
+
   const chosenOriginBenefits = char.origemBeneficios || [];
   const originPericias = (ORIGENS[char.origem]?.pericias || []).filter(p => chosenOriginBenefits.includes(p));
   const allPericias = [...new Set([...originPericias, ...(char.pericias || [])])];
 
   return (
     <div className="flex flex-col gap-3 pb-4">
+      {/* Step Focus */}
+      {currentStep !== undefined && <StepFocusPanel currentStep={currentStep} char={char} stats={stats} />}
+
       {/* Portrait */}
       <div className="bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl border border-gray-700 p-3 md:p-4 flex flex-col items-center gap-3">
         <div className="relative">

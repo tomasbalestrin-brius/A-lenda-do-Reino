@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function StepEquipment() {
   const { char, updateChar } = useCharacterStore();
   const [category, setCategory] = useState('arma');
+  const [searchItem, setSearchItem] = useState('');
   const stats = useMemo(() => computeStats(char), [char]);
   const [setupPhase, setSetupPhase] = useState(!char.choices?.claimedStartingKit);
   const [customizingItem, setCustomizingItem] = useState(null); // { uid, id, mods: [], material: null }
@@ -59,11 +60,19 @@ export function StepEquipment() {
     { id: 'animal', label: 'Animais', icon: '🐎' },
   ];
 
-  const filteredItems = Object.values(ITENS).filter(item => {
-    if (category === 'armadura') return item.tipo === 'armadura' && !item.slot;
-    if (category === 'escudo') return item.tipo === 'escudo';
-    return item.tipo === category;
-  });
+  const filteredItems = useMemo(() => {
+    const q = searchItem.trim().toLowerCase();
+    return Object.values(ITENS).filter(item => {
+      const matchCat = category === 'armadura'
+        ? item.tipo === 'armadura' && !item.slot
+        : category === 'escudo'
+          ? item.tipo === 'escudo'
+          : item.tipo === category;
+      if (!matchCat) return false;
+      if (!q) return true;
+      return item.nome?.toLowerCase().includes(q) || item.descricao?.toLowerCase().includes(q);
+    });
+  }, [category, searchItem]);
 
   const toggleItem = (item) => {
     const equip = char.equipamento || [];
@@ -125,7 +134,7 @@ export function StepEquipment() {
               <span className="px-3 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase tracking-widest">Fase 1 — Gratuito</span>
             </div>
             <h2 className="text-4xl font-black text-white mb-3 italic tracking-tighter">
-              <span className="text-amber-500 mr-3">XIII.</span> Equipamento Inicial
+              <span className="text-amber-500 mr-3">XIV.</span> Equipamento Inicial
             </h2>
             <p className="text-slate-400 text-sm mb-10 max-w-2xl font-medium leading-relaxed">De acordo com as regras de Arton, todo herói começa com itens básicos e escolhas gratuitas baseadas em seu treinamento.</p>
             
@@ -229,7 +238,7 @@ export function StepEquipment() {
             <span className="px-3 py-0.5 rounded-full bg-amber-950/40 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">Fase 2 — Compra com Dinheiro</span>
           </div>
           <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
-            <span className="text-amber-500 mr-2">XIII.</span> Arsenal Inicial
+            <span className="text-amber-500 mr-2">XIV.</span> Arsenal Inicial
           </h2>
           <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Você recebeu seu kit de herói. Agora use sua riqueza para comprar o que falta!</p>
         </div>
@@ -293,7 +302,7 @@ export function StepEquipment() {
         {categories.map(cat => (
           <button
             key={cat.id}
-            onClick={() => setCategory(cat.id)}
+            onClick={() => { setCategory(cat.id); setSearchItem(''); }}
             className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border ${
               category === cat.id 
                 ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg shadow-amber-900/20' 
@@ -304,6 +313,19 @@ export function StepEquipment() {
             {cat.label}
           </button>
         ))}
+      </div>
+
+      <div className="relative">
+        <input
+          type="text"
+          value={searchItem}
+          onChange={e => setSearchItem(e.target.value)}
+          placeholder={`Buscar em ${categories.find(c => c.id === category)?.label || 'itens'}...`}
+          className="w-full bg-gray-900/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40"
+        />
+        {searchItem && (
+          <button onClick={() => setSearchItem('')} className="absolute right-4 top-3 text-slate-500 hover:text-white text-lg">✕</button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
