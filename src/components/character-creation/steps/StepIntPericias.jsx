@@ -37,7 +37,7 @@ export function StepIntPericias({ stats }) {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">🧠</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-blue-400">V.</span> Especialização (INT)
+            <span className="text-blue-400">XII.</span> Perícias Extras por Inteligência
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             Seu raciocínio rápido permite que você aprenda <strong className="text-blue-400">{intBonus} perícia{intBonus !== 1 ? 's' : ''} extra{intBonus !== 1 ? 's' : ''}</strong> da sua classe.

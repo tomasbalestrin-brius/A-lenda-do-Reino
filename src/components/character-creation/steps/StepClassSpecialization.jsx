@@ -30,7 +30,7 @@ export function StepClassSpecialization() {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-1">Especialização: {cls.nome}</h2>
+          <h2 className="text-2xl font-bold text-amber-400 mb-1"><span className="text-amber-500 mr-2">IV.</span> Especialização: {cls.nome}</h2>
           <p className="text-gray-400 text-sm">Esta classe não possui opções de especialização obrigatórias no 1º nível.</p>
         </div>
         <div className="bg-gray-800/60 rounded-2xl border border-gray-700 p-6 text-center">
@@ -53,7 +53,7 @@ export function StepClassSpecialization() {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-1">Caminho do Arcanista</h2>
+          <h2 className="text-2xl font-bold text-amber-400 mb-1"><span className="text-amber-500 mr-2">IV.</span> Caminho do Arcanista</h2>
           <p className="text-gray-400 text-sm">Escolha o caminho que define como você canaliza sua magia.</p>
         </div>
         <div className="grid grid-cols-1 gap-3">
@@ -91,7 +91,7 @@ export function StepClassSpecialization() {
     return (
       <div className="flex flex-col gap-6">
         <div>
-          <h2 className="text-2xl font-bold text-amber-400 mb-1">Escolas de Magia ({schools.length}/{maxSchools})</h2>
+          <h2 className="text-2xl font-bold text-amber-400 mb-1"><span className="text-amber-500 mr-2">IV.</span> Escolas de Magia ({schools.length}/{maxSchools})</h2>
           <p className="text-gray-400 text-sm">Escolha {maxSchools} escolas de magia para focar seus estudos mágicos.</p>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

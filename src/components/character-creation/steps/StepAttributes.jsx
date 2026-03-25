@@ -239,7 +239,7 @@ export function StepAttributes({ stats }) {
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">📊</div>
         <div className="flex-1">
           <h2 className="text-4xl font-black text-white tracking-tighter mb-3 flex items-center gap-4">
-             <span className="text-amber-500">V.</span> Atributos
+             <span className="text-amber-500">X.</span> Atributos
           </h2>
           <p className="text-slate-400 text-sm leading-relaxed max-w-lg font-medium">
             {isBuy
@@ -248,7 +248,9 @@ export function StepAttributes({ stats }) {
           </p>
         </div>
 
-        <div className="flex items-center bg-gray-950 p-2 rounded-[2rem] border border-white/5 shadow-inner">
+        <div className="flex flex-col items-end gap-1">
+          <p className="text-[9px] text-slate-600 font-medium">⚠️ Trocar método reinicia os atributos</p>
+          <div className="flex items-center bg-gray-950 p-2 rounded-[2rem] border border-white/5 shadow-inner">
            {['buy', 'roll'].map(m => (
              <button
                key={m}
@@ -262,24 +264,31 @@ export function StepAttributes({ stats }) {
                {m === 'buy' ? 'PONTOS' : 'DADOS'}
              </button>
            ))}
+          </div>
         </div>
       </div>
 
       {/* Point Buy Pool Display */}
       {isBuy && (
-        <div className="flex justify-center -mt-8 relative z-10">
+        <div className="flex flex-col items-center gap-3 -mt-8 relative z-10">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               className={`px-6 md:px-10 py-4 md:py-5 rounded-full border-2 bg-gray-950 flex items-center gap-4 md:gap-6 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ${remaining > 0 ? 'border-amber-600/40' : remaining === 0 ? 'border-emerald-500/40' : 'border-red-500/40'}`}
             >
-               <span className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">Reserva de Pontos</span>
+               <span className="text-[10px] md:text-xs font-black text-slate-500 uppercase tracking-widest">{remaining === 0 ? '✓ Tudo distribuído!' : 'Reserva de Pontos'}</span>
                <div className="h-6 w-px bg-white/10" />
                <div className="flex items-baseline gap-1">
                   <span className={`text-3xl md:text-4xl font-black tabular-nums ${remaining > 0 ? 'text-amber-500' : remaining === 0 ? 'text-emerald-500' : 'text-red-500'}`}>{remaining}</span>
                   <span className="text-[10px] font-black text-slate-600 uppercase">pts</span>
                </div>
             </motion.div>
+            <div className="flex items-center gap-2 text-[9px] font-black text-slate-600 uppercase tracking-widest">
+              <span>Custo:</span>
+              {[[-1,0,'grátis'],[0,1,'1pt'],[1,2,'1pt'],[2,3,'2pt'],[3,4,'3pt']].map(([from,to,cost]) => (
+                <span key={from} className="px-2 py-0.5 rounded-md bg-white/5 border border-white/5">{from > -1 ? `${from}→${to}` : `≤0→+1`}: {cost}</span>
+              ))}
+            </div>
         </div>
       )}
 

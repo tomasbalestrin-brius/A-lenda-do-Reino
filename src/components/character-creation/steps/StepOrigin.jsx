@@ -10,7 +10,7 @@ export function StepOrigin({ onNext }) {
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in pb-12">
       <div className="text-center space-y-3 pb-4">
-        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md">Seu Passado</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md"><span className="text-amber-500 mr-2">V.</span> Seu Passado</h2>
         <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto font-medium">O que você era antes de se tornar um herói? Sua origem concede benefícios únicos baseados na sua história.</p>
       </div>
 

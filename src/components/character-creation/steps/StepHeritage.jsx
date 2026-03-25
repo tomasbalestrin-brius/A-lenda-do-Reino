@@ -93,6 +93,54 @@ export function StepHeritage() {
       </div>
     );
   };
+  
+  const SpellHeritageSelection = ({ title, description, list, max }) => {
+    const selectedSpells = char.racialSpells || [];
+    return (
+      <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">✨</div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
+          <div>
+            <h3 className="text-xs md:text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-1">{title}</h3>
+            <p className="text-[10px] md:text-[11px] text-slate-400 font-medium">{description}</p>
+          </div>
+          <div className={`px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs font-black border-2 transition-all shadow-lg ${
+            selectedSpells.length === max 
+              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+              : 'bg-purple-950/40 border-purple-500/40 text-purple-400'
+          }`}>
+            {selectedSpells.length} / {max} Selecionadas
+          </div>
+        </div>
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 md:gap-3">
+          {list.map(s => {
+            const isSelected = selectedSpells.includes(s);
+            return (
+              <motion.button
+                key={s}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  let next;
+                  if (isSelected) next = selectedSpells.filter(x => x !== s);
+                  else if (selectedSpells.length < max) next = [...selectedSpells, s];
+                  else return;
+                  updateChar({ racialSpells: next });
+                }}
+                className={`p-4 rounded-2xl border-2 text-xs font-black transition-all ${
+                  isSelected 
+                    ? 'border-purple-400 bg-purple-600 text-white shadow-xl shadow-purple-900/20' 
+                    : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-purple-500/30 hover:text-white'
+                }`}
+              >
+                {s}
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   if (isSuraggel) {
     const variant = currentChoices.suraggel || null;
@@ -137,67 +185,75 @@ export function StepHeritage() {
     );
   }
 
-    const selectedAttrs = char.racaEscolha || [];
+  const selectedAttrs = char.racaEscolha || [];
 
-    // Auxiliary to render attribute selection
-    const renderAttrSelection = (max) => {
-      return (
-        <div className="bg-amber-950/20 rounded-[2.5rem] border border-amber-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
-          <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">📈</div>
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
-            <div>
-              <h3 className="text-xs md:text-sm font-black text-amber-400 uppercase tracking-[0.2em] mb-1">Atributos Raciais</h3>
-              <p className="text-[10px] md:text-[11px] text-slate-400 font-medium">Escolha {max} atributos diferentes para receber +1.</p>
-            </div>
-            <div className={`px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs font-black border-2 transition-all shadow-lg ${
-              selectedAttrs.length === max 
-                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
-                : 'bg-amber-950/40 border-amber-500/40 text-amber-400'
-            }`}>
-              {selectedAttrs.length} / {max} Selecionados
-            </div>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
-            {['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'].map(attr => {
-              const isSelected = selectedAttrs.includes(attr);
-              return (
-                <motion.button
-                  key={attr}
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    let next;
-                    if (isSelected) next = selectedAttrs.filter(x => x !== attr);
-                    else if (selectedAttrs.length < max) next = [...selectedAttrs, attr];
-                    else return;
-                    updateChar({ racaEscolha: next });
-                  }}
-                  className={`p-4 rounded-2xl border-2 text-xs font-black transition-all ${
-                    isSelected 
-                      ? 'border-amber-400 bg-amber-600 text-gray-950 shadow-xl shadow-amber-900/20' 
-                      : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-amber-500/30 hover:text-white'
-                  }`}
-                >
-                  {attr}
-                </motion.button>
-              );
-            })}
-          </div>
-        </div>
-      );
-    };
 
+  // Auxiliary to render attribute selection
+  const renderAttrSelection = (max, restricted = []) => {
+    const allAttrs = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
+    const availableAttrs = allAttrs.filter(a => !restricted.includes(a));
+    
     return (
-      <div className="flex flex-col gap-8">
-        <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
-          <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
-          <h2 className="text-3xl font-black text-white tracking-tight mb-2">Herança: {race.nome}</h2>
-          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
+      <div className="bg-amber-950/20 rounded-[2.5rem] border border-amber-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">📈</div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
+          <div>
+            <h3 className="text-xs md:text-sm font-black text-amber-400 uppercase tracking-[0.2em] mb-1">Atributos Raciais</h3>
+            <p className="text-[10px] md:text-[11px] text-slate-400 font-medium tracking-wide">
+              Escolha {max} atributos {restricted.length > 0 ? `(exceto ${restricted.join(', ')})` : ''} para receber +1.
+            </p>
+          </div>
+          <div className={`px-4 md:px-6 py-1.5 md:py-2 rounded-full text-[10px] md:text-xs font-black border-2 transition-all shadow-lg ${
+            selectedAttrs.length === max 
+              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+              : 'bg-amber-950/40 border-amber-500/40 text-amber-400'
+          }`}>
+            {selectedAttrs.length} / {max} Selecionados
+          </div>
         </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
+          {availableAttrs.map(attr => {
+            const isSelected = selectedAttrs.includes(attr);
+            return (
+              <motion.button
+                key={attr}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  let next;
+                  if (isSelected) next = selectedAttrs.filter(x => x !== attr);
+                  else if (selectedAttrs.length < max) next = [...selectedAttrs, attr];
+                  else return;
+                  updateChar({ racaEscolha: next });
+                }}
+                className={`p-4 rounded-2xl border-2 text-xs font-black transition-all ${
+                  isSelected 
+                    ? 'border-amber-400 bg-amber-600 text-gray-950 shadow-xl shadow-amber-900/20' 
+                    : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-amber-500/30 hover:text-white'
+                }`}
+              >
+                {attr}
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
-        {isHumano && renderAttrSelection(3)}
+  return (
+    <div className="flex flex-col gap-8">
+      <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
+        <h2 className="text-3xl font-black text-white tracking-tight mb-2"><span className="text-amber-500 mr-2">II.</span> Herança: {race.nome}</h2>
+        <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
+      </div>
 
-        <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl">
+      {(isHumano || isSereia) && renderAttrSelection(3)}
+      {isLefou && renderAttrSelection(3, ['CAR'])}
+      {isOsteon && renderAttrSelection(3, ['CON'])}
+
+      <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl">
         <div className="flex items-center gap-3 mb-6">
           <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Habilidades Raciais</h3>
@@ -286,36 +342,44 @@ export function StepHeritage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map(p => {
-                    const currentStats = computeStats(char);
-                    const eligibility = checkPowerEligibility(p, char, currentStats || {});
-                    const isSelected = currentChoices.herancaPower?.nome === p.nome;
-                    
-                    if (!eligibility.ok && !isSelected) return null; // Only show eligible powers or the selected one
-
-                    return (
-                      <motion.button
-                        key={p.nome}
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setChoices({ ...currentChoices, herancaPower: isSelected ? null : p })}
-                        className={`p-5 rounded-2xl border-2 text-left transition-all flex flex-col gap-2 ${
-                          isSelected 
-                            ? 'border-purple-400 bg-purple-600 text-white shadow-xl shadow-purple-900/20' 
-                            : 'border-white/5 bg-gray-950/40 text-slate-400 hover:border-purple-500/30'
-                        }`}
-                      >
-                        <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-purple-200' : 'text-purple-400'}`}>Poder</span>
-                        <span className="text-sm font-black">{p.nome}</span>
-                        <span className={`text-[10px] leading-relaxed font-medium ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>{p.descricao}</span>
-                      </motion.button>
-                    );
-                  })}
+                    {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).map((p, idx) => {
+                      const currentStats = computeStats(char);
+                      const eligibility = checkPowerEligibility(p, char, currentStats || {});
+                      const isSelected = currentChoices.herancaPower?.nome === p.nome;
+                      const canSelect = eligibility.ok || isSelected;
+                      
+                      return (
+                        <motion.button
+                          key={p.nome || idx}
+                          whileHover={canSelect ? { y: -2 } : {}}
+                          whileTap={canSelect ? { scale: 0.98 } : {}}
+                          onClick={() => canSelect && setChoices({ ...currentChoices, herancaPower: isSelected ? null : p })}
+                          className={`p-5 rounded-2xl border-2 text-left transition-all flex flex-col gap-2 ${
+                            isSelected 
+                              ? 'border-purple-400 bg-purple-600 text-white shadow-xl shadow-purple-900/20' 
+                              : (canSelect 
+                                  ? 'border-white/5 bg-gray-950/40 text-slate-400 hover:border-purple-500/30' 
+                                  : 'bg-gray-950/60 border-gray-900/50 opacity-30 grayscale cursor-not-allowed')
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                             <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-purple-200' : (canSelect ? 'text-purple-400' : 'text-slate-600')}`}>Poder</span>
+                             {!canSelect && <span className="text-[8px] text-rose-500 font-black">Bloqueado</span>}
+                          </div>
+                          <span className={`text-sm font-black ${canSelect ? '' : 'text-slate-600'}`}>{p.nome}</span>
+                          <span className={`text-[10px] leading-relaxed font-medium ${isSelected ? 'text-white/80' : (canSelect ? 'text-slate-500' : 'text-slate-800 line-clamp-2')}`}>{p.descricao}</span>
+                          {!eligibility.ok && !isSelected && (
+                            <span className="text-[8px] text-rose-500/60 font-black uppercase leading-tight mt-1">{eligibility.reason}</span>
+                          )}
+                        </motion.button>
+                      );
+                    })}
                 </div>
               </div>
             )}
           </motion.div>
         )}
+
         {isLefou && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
             <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 backdrop-blur-md">
@@ -346,9 +410,29 @@ export function StepHeritage() {
               "A mácula da Tormenta concede bônus em suas competências."
             )}
             {currentChoices.tipoVersatilidade === 'poder' && (
-              <div className="bg-red-950/40 p-8 rounded-[2.5rem] border border-red-500/20 text-center">
-                <p className="text-red-400 font-black text-sm uppercase mb-2">Poder da Tormenta</p>
-                <p className="text-slate-400 text-xs">Poderes da Tormenta serão selecionados no Passo de Poderes (XI). Esta escolha libera o slot.</p>
+              <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+                <h3 className="text-sm font-black text-red-400 uppercase tracking-[0.2em] mb-4">Escolha seu Poder da Tormenta</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(GENERAL_POWERS.tormenta || []).map((p, idx) => {
+                      const isSelected = currentChoices.herancaPower?.nome === p.nome;
+                      return (
+                        <motion.button
+                          key={p.nome || idx}
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setChoices({ ...currentChoices, herancaPower: isSelected ? null : p })}
+                          className={`p-5 rounded-2xl border-2 text-left transition-all flex flex-col gap-2 ${
+                            isSelected 
+                              ? 'border-red-400 bg-red-600 text-white shadow-xl shadow-red-900/20' 
+                              : 'border-white/5 bg-gray-950/40 text-slate-400 hover:border-red-500/30'
+                          }`}
+                        >
+                          <span className="text-sm font-black">{p.nome}</span>
+                          <span className={`text-[10px] leading-relaxed font-medium ${isSelected ? 'text-white/80' : 'text-slate-500'}`}>{p.descricao}</span>
+                        </motion.button>
+                      );
+                    })}
+                </div>
               </div>
             )}
           </motion.div>
@@ -425,17 +509,32 @@ export function StepHeritage() {
         )}
         {isQareen && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {renderSelection("Tatuagem Mística", ["Armadura Arcana", "Compreender Idiomas", "Dardo Místico", "Escudo Fiel", "Imagem Espelhada", "Luz", "Sono"], 1, "Um símbolo de poder gravado em sua pele. Escolha uma magia de 1º círculo.")}
+             <SpellHeritageSelection 
+                title="Tatuagem Mística"
+                description="Escolha uma magia de 1º círculo. Ela será sua marca de poder."
+                list={["Armadura Arcana", "Compreender Idiomas", "Dardo Místico", "Escudo Fiel", "Imagem Espelhada", "Luz", "Sono"]}
+                max={1}
+             />
           </motion.div>
         )}
         {isSereia && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {renderSelection("Canção dos Mares", ["Amedrontar", "Comando", "Despedaçar", "Enfeitiçar", "Hipnotismo", "Sono"], 2, "O chamado das profundezas. Escolha duas magias sob seu domínio.")}
+             <SpellHeritageSelection 
+                title="Canção dos Mares"
+                description="O chamado das profundezas. Escolha duas magias sob seu domínio."
+                list={["Amedrontar", "Comando", "Despedaçar", "Enfeitiçar", "Hipnotismo", "Sono"]}
+                max={2}
+             />
           </motion.div>
         )}
         {isSilfide && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            {renderSelection("Magia das Fadas", ["Criar Ilusão", "Enfeitiçar", "Luz", "Sono"], 2, "O encanto feérico é natural para você. Escolha duas magias nativas das fadas.")}
+             <SpellHeritageSelection 
+                title="Magia das Fadas"
+                description="O encanto feérico é natural para você. Escolha duas magias nativas das fadas."
+                list={["Criar Ilusão", "Enfeitiçar", "Luz", "Sono"]}
+                max={2}
+             />
           </motion.div>
         )}
         {raca === 'golem' && (

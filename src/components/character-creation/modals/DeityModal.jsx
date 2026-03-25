@@ -2,12 +2,18 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 
+import { 
+  Eye, Leaf, Swords, Sun, Ghost, Flame, Scale, Flower2, 
+  ShieldCheck, Bird, Skull, Dices, Waves, BookOpen, 
+  Moon, Zap, Sparkles, Ban, Info
+} from 'lucide-react';
+
 const DEITY_ICONS = {
-  aharadak: '👁️', allihanna: '🌿', arsenal: '⚔️', azgher: '☀️',
-  hyninn: '🎭', kallyadranoch: '🐉', khalmyr: '⚖️', lena: '🌸',
-  lin_wu: '🗡️', marah: '🕊️', megalokk: '🦖', nimb: '🎲',
-  oceano: '🌊', sszzaas: '🐍', tanna_toh: '📖', tenebra: '🌑',
-  thwor: '🥊', thyatis: '🔥', valkaria: '🗽', wynna: '✨',
+  aharadak: Eye, allihanna: Leaf, arsenal: Swords, azgher: Sun,
+  hyninn: Ghost, kallyadranoch: Flame, khalmyr: Scale, lena: Flower2,
+  lin_wu: ShieldCheck, marah: Bird, megalokk: Skull, nimb: Dices,
+  oceano: Waves, sszzaas: Skull, tanna_toh: BookOpen, tenebra: Moon,
+  thwor: Swords, thyatis: Flame, valkaria: Zap, wynna: Sparkles,
 };
 
 export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
@@ -17,8 +23,9 @@ export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
   if (!deus) return null;
 
   const divineClasses = ['clerigo', 'druida', 'paladino'];
-  const isDivine = divineClasses.includes(classe);
-  const maxPowers = (classe === 'clerigo') ? 2 : (isDivine ? 1 : 0);
+  const isDivine = divineClasses.includes(classe?.toLowerCase());
+  const isDevotee = char.origem === 'devoto' || isDivine; // Or any class can be a devotee if they follow rules
+  const maxPowers = (classe === 'clerigo') ? 3 : (isDevotee ? 1 : 1); // Everyone can pick 1 if they served, Cleric gets all 3
   
   const togglePower = (power) => {
     const isOwned = crencasBeneficios.some(p => p.nome === power.nome);
@@ -46,9 +53,12 @@ export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
         className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3.5rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
       >
         {/* Left Visual */}
-        <div className="w-full md:w-2/5 relative bg-gray-950 flex flex-col items-center justify-center p-12 overflow-hidden border-b md:border-b-0 md:border-r border-white/10">
-          <div className="relative z-10 text-[10rem] mb-6 drop-shadow-[0_0_40px_rgba(245,158,11,0.3)] animate-float">
-             {DEITY_ICONS[id] || '✨'}
+        <div className="w-full md:w-1/3 relative bg-gray-950 flex flex-col items-center justify-center p-8 overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0">
+          <div className="relative z-10 p-8 rounded-full bg-amber-500/5 border border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.1)] mb-6">
+             {(() => {
+                const Icon = DEITY_ICONS[id] || Sparkles;
+                return <Icon size={80} className="text-amber-500 drop-shadow-[0_0_20px_rgba(245,158,11,0.5)]" />;
+             })()}
           </div>
           <span className="relative z-10 px-6 py-2 rounded-full font-black text-[10px] uppercase tracking-[0.4em] bg-amber-500/10 text-amber-500 border border-white/5">
              Panteão de Arton

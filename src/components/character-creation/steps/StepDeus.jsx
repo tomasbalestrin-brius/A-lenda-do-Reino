@@ -5,12 +5,18 @@ import CLASSES from '../../../data/classes';
 import { DeityModal } from '../modals/DeityModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 
+import { 
+  Eye, Leaf, Swords, Sun, Ghost, Flame, Scale, Flower2, 
+  ShieldCheck, Bird, Skull, Dices, Waves, BookOpen, 
+  Moon, Zap, Sparkles, Ban
+} from 'lucide-react';
+
 const DEITY_ICONS = {
-  aharadak: '👁️', allihanna: '🌿', arsenal: '⚔️', azgher: '☀️',
-  hyninn: '🎭', kallyadranoch: '🐉', khalmyr: '⚖️', lena: '🌸',
-  lin_wu: '🗡️', marah: '🕊️', megalokk: '🦖', nimb: '🎲',
-  oceano: '🌊', sszzaas: '🐍', tanna_toh: '📖', tenebra: '🌑',
-  thwor: '🥊', thyatis: '🔥', valkaria: '🗽', wynna: '✨',
+  aharadak: Eye, allihanna: Leaf, arsenal: Swords, azgher: Sun,
+  hyninn: Ghost, kallyadranoch: Flame, khalmyr: Scale, lena: Flower2,
+  lin_wu: ShieldCheck, marah: Bird, megalokk: Skull, nimb: Dices,
+  oceano: Waves, sszzaas: Skull, tanna_toh: BookOpen, tenebra: Moon,
+  thwor: Swords, thyatis: Flame, valkaria: Zap, wynna: Sparkles,
 };
 
 export function StepDeus() {
@@ -25,7 +31,7 @@ export function StepDeus() {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">✨</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-amber-500">VI.</span> Divindade
+            <span className="text-amber-500">VII.</span> Divindade
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             {isDivine
@@ -48,8 +54,10 @@ export function StepDeus() {
             }`}
           >
             <div className="flex items-center gap-3">
-               <span className="text-2xl">🚫</span>
-               <p className={`font-black text-sm uppercase tracking-widest ${!char.deus ? 'text-amber-400' : 'text-slate-400'}`}>Sem divindade</p>
+               <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${!char.deus ? 'bg-gray-700 border-amber-500/40' : 'bg-gray-950 border-white/5'}`}>
+                  <Ban size={20} className={!char.deus ? 'text-amber-400' : 'text-slate-600'} />
+               </div>
+               <p className={`font-black text-xs uppercase tracking-widest ${!char.deus ? 'text-amber-400' : 'text-slate-400'}`}>Sem divindade</p>
             </div>
             <p className="text-[10px] text-slate-500 mt-2 font-medium">Ateu ou agnóstico. Sem restrições nem poderes divinos.</p>
             {!char.deus && <div className="absolute top-4 right-4 w-2 h-2 bg-amber-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(245,158,11,1)]" />}
@@ -72,8 +80,11 @@ export function StepDeus() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl border ${isSelected ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'bg-gray-950 border-white/5'}`}>
-                    {DEITY_ICONS[id] || '✨'}
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${isSelected ? 'bg-amber-500/10 border-amber-500/40 shadow-[0_0_20px_rgba(245,158,11,0.2)]' : 'bg-gray-950 border-white/5'}`}>
+                    {(() => {
+                      const Icon = DEITY_ICONS[id] || Sparkles;
+                      return <Icon size={24} className={isSelected ? 'text-amber-400' : 'text-slate-400 text-slate-500'} />;
+                    })()}
                   </div>
                   <div>
                     <p className={`font-black text-sm uppercase tracking-tight ${isSelected ? 'text-amber-400' : 'text-white'}`}>{deus.nome}</p>

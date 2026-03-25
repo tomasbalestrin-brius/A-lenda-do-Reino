@@ -8,11 +8,11 @@ import { getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from './c
  */
 export function meetsRequirement(req, char, stats) {
   if (!req) return true;
-  
+
   // Atributos
   if (req.attr) {
     for (const [a, min] of Object.entries(req.attr)) {
-      if ((stats.attrs[a] || 0) < min) return false;
+      if ((stats?.attrs?.[a] || 0) < min) return false;
     }
   }
   
@@ -66,7 +66,7 @@ export function meetsRequirement(req, char, stats) {
     if (fullCasters.includes(char.classe?.toLowerCase())) {
       maxCirculo = characterLevel >= 17 ? 5 : (characterLevel >= 13 ? 4 : (characterLevel >= 9 ? 3 : (characterLevel >= 5 ? 2 : 1)));
     } else if (halfCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 14 ? 4 : (characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1));
+      maxCirculo = characterLevel >= 7 ? 4 : (characterLevel >= 5 ? 3 : (characterLevel >= 3 ? 2 : 1));
     }
     if (maxCirculo < req.circulo) return false;
   }
@@ -169,7 +169,7 @@ export function checkPowerEligibility(power, char, stats) {
     if (fullCasters.includes(char.classe?.toLowerCase())) {
       maxCirculo = characterLevel >= 17 ? 5 : (characterLevel >= 13 ? 4 : (characterLevel >= 9 ? 3 : (characterLevel >= 5 ? 2 : 1)));
     } else if (halfCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 14 ? 4 : (characterLevel >= 10 ? 3 : (characterLevel >= 6 ? 2 : 1));
+      maxCirculo = characterLevel >= 7 ? 4 : (characterLevel >= 5 ? 3 : (characterLevel >= 3 ? 2 : 1));
     }
     if (maxCirculo < req.circulo) {
       return { ok: false, reason: `${req.circulo}º Círculo` };

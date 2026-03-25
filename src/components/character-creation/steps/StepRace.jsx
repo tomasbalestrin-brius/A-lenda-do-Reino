@@ -57,7 +57,7 @@ export function StepRace({ onNext }) {
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in pb-12">
       <div className="text-center space-y-3 pb-4">
-        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md">Escolha sua Linhagem</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md"><span className="text-amber-500 mr-2">I.</span> Escolha sua Linhagem</h2>
         <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto font-medium">Os povos de Arton são diversos. Sua raça define suas origens, cultura e características físicas intrínsecas.</p>
       </div>
 

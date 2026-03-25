@@ -1,20 +1,13 @@
-import React, { useState, useEffect, lazy, Suspense } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useGameStore } from "./core/store";
+import React, { useEffect, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "./store/useAuthStore";
 import { AuthOverlay } from "./components/auth/AuthOverlay";
-import { assetPreloader } from "./utils/AssetPreloader";
-import RACES from "./data/races";
-import CLASSES from "./data/classes";
 import "./index.css";
 
-// Lazy load heavy components
 const CharacterCreation = lazy(() => import("./components/CharacterCreation"));
-const SideScrollerGame = lazy(() => import("./canvas/SideScrollerGame").then(module => ({ default: module.SideScrollerGame })));
 
-// Loading component for Suspense
 const LoadingScreen = () => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
     exit={{ opacity: 0 }}
@@ -34,46 +27,20 @@ const LoadingScreen = () => (
 );
 
 export default function App() {
-  const gameState = useGameStore(s => s.gameState);
-  const setHero = useGameStore(s => s.setHero);
   const { user, loading, initializeAuth } = useAuthStore();
 
   useEffect(() => {
-    const startApp = async () => {
-      // Preload critical assets while initializing auth
-      const preloadPromise = assetPreloader.preloadHeroAssets(RACES, CLASSES);
-      const authPromise = initializeAuth();
-      
-      await Promise.all([preloadPromise, authPromise]);
-    };
-    
-    startApp();
+    initializeAuth();
   }, [initializeAuth]);
 
-  const handleComplete = (heroData) => {
-    console.log("Personagem Criado:", heroData);
-    setHero(heroData);
-  };
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return <AuthOverlay />;
-  }
+  if (loading) return <LoadingScreen />;
+  if (!user) return <AuthOverlay />;
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
-      <AnimatePresence mode="wait">
-        <Suspense fallback={<LoadingScreen />}>
-        {gameState === 'menu' || gameState === 'criacao' ? (
-          <CharacterCreation onComplete={handleComplete} />
-        ) : (
-          <SideScrollerGame />
-        )}
-        </Suspense>
-      </AnimatePresence>
+      <Suspense fallback={<LoadingScreen />}>
+        <CharacterCreation />
+      </Suspense>
     </div>
   );
 }

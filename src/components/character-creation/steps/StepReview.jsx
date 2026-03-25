@@ -200,11 +200,13 @@ export function StepReview({ stats, onSave, onPlay }) {
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-10 rounded-[4rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
         {/* Background Portrait */}
         <div className="absolute inset-0 z-0">
-          <img 
-            src={RACE_IMAGES[char.raca]} 
-            alt="" 
-            className="w-full h-full object-cover opacity-10 scale-110 blur-sm brightness-50"
-          />
+          {RACE_IMAGES[char.raca] && (
+            <img
+              src={RACE_IMAGES[char.raca]}
+              alt=""
+              className="w-full h-full object-cover opacity-10 scale-110 blur-sm brightness-50"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-950/20 to-transparent" />
         </div>
 
@@ -220,7 +222,7 @@ export function StepReview({ stats, onSave, onPlay }) {
         </div>
 
         <div className="relative z-10 w-28 h-28 rounded-[2.5rem] bg-gray-950 border-2 border-amber-500/40 flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(245,158,11,0.2)] relative group ring-4 ring-white/5 overflow-hidden">
-           <img src={RACE_IMAGES[char.raca]} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" />
+           {RACE_IMAGES[char.raca] && <img src={RACE_IMAGES[char.raca]} alt="" className="absolute inset-0 w-full h-full object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" />}
            <div className="absolute inset-0 bg-amber-500/10 animate-pulse" />
            <span className="relative z-10 drop-shadow-2xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
         </div>
@@ -252,7 +254,7 @@ export function StepReview({ stats, onSave, onPlay }) {
           {/* Card: Essência */}
           <div className="lg:col-span-2 bg-gray-900/40 rounded-[3.5rem] border border-white/5 p-10 backdrop-blur-md shadow-2xl flex flex-col gap-10 relative overflow-hidden group/essence">
             <div className="absolute inset-0 z-0 opacity-0 group-hover/essence:opacity-5 transition-opacity duration-1000">
-               <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover scale-150 rotate-6" />
+               {RACE_IMAGES[char.raca] && <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover scale-150 rotate-6" />}
             </div>
 
             <div className="relative z-10 flex items-center gap-4">

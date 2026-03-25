@@ -15,7 +15,16 @@
       "Bash(timeout:*)",
       "Bash(nul)",
       "Bash(start \"\" \"http://localhost:5175\")",
-      "Bash(git -C c:/Users/tomas/a-lenda-do-reino remote -v)"
+      "Bash(git -C c:/Users/tomas/a-lenda-do-reino remote -v)",
+      "Bash(grep -n \"^\\\\s*[a-z]*:\\\\s*{$\" c:/Users/tomas/a-lenda-do-reino/src/data/classes.js)",
+      "Bash(npm install:*)",
+      "Bash(npx vitest:*)",
+      "Bash(node --input-type=module --eval \":*)",
+      "Bash(npx vite:*)",
+      "Bash(grep -n \"I\\\\.\\\\|II\\\\.\\\\|III\\\\.\\\\|IV\\\\.\\\\|V\\\\.\\\\|VI\\\\.\\\\|VII\\\\.\\\\|VIII\\\\.\\\\|IX\\\\.\\\\|X\\\\.\\\\|XI\\\\.\\\\|XII\\\\.\\\\|XIII\\\\.\\\\|XIV\\\\.\\\\|XV\\\\.\\\\|XVI\\\\.\\\\|XVII\\\\.\\\\|XVIII\\\\.\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/Step*.jsx)",
+      "Bash(grep -rn \"I\\\\.\\\\|II\\\\.\\\\|III\\\\.\\\\|IV\\\\.\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/Step*.jsx)",
+      "Bash(head -5 grep -n \"h2\\\\|<h2\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/StepClassSpecialization.jsx)",
+      "Bash(head -5 grep -n \"h2\\\\|<h2\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/StepOrigemBeneficios.jsx)"
     ],
     "deny": [],
     "ask": []

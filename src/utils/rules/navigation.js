@@ -47,7 +47,10 @@ export function canGoNext(step, char, stats) {
         }
 
         const ok = hasSkills && hasPower;
-        const msg = r === 'osteon' ? 'Selecione sua perícia ou poder geral.' : `Selecione ${requiredSkills} perícia(s) ${tipo === 'poder' ? 'e 1 poder' : ''}.`;
+        const needsPower = tipo === 'poder' && r !== 'lefou' && r !== 'osteon';
+        const msg = r === 'osteon'
+          ? 'Selecione sua perícia ou poder geral.'
+          : `Selecione ${requiredSkills} perícia(s)${needsPower ? ' e 1 poder' : ''}.`;
         return { ok, reason: ok ? null : msg };
       }
 
@@ -132,14 +135,14 @@ export function canGoNext(step, char, stats) {
     case 10: { // Classe Pericias
       const cls = CLASSES[char.classe?.toLowerCase()];
       if (!cls) return { ok: false, reason: 'Selecione uma classe primeiro.' };
-      const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
-      const obrigValues = Object.values(char.periciasObrigEscolha || {});
+      const orChoices = (cls.periciasObrigatorias || []).filter(s => Array.isArray(s));
+      const obrigValues = Object.values(char.periciasObrigEscolha || {}).filter(Boolean);
       const chosen = obrigValues.length;
       const hasDuplicates = new Set(obrigValues).size < chosen;
-      const ok = chosen === orChoices.length &&
-                 !hasDuplicates &&
-                 (char.periciasClasseEscolha || []).length === (cls.pericias || 0);
-      return { ok, reason: ok ? null : (hasDuplicates ? 'Perícias obrigatórias duplicadas.' : 'Selecione todas as perícias de classe obrigatórias.') };
+      const electiveNeeded = typeof cls.pericias === 'number' ? cls.pericias : 0;
+      const electiveChosen = (char.periciasClasseEscolha || []).length;
+      const ok = chosen === orChoices.length && !hasDuplicates && electiveChosen === electiveNeeded;
+      return { ok, reason: ok ? null : (hasDuplicates ? 'Perícias obrigatórias duplicadas.' : 'Selecione todas as perícias de classe.') };
     }
 
     case 11: { // Int Pericias

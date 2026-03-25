@@ -179,8 +179,8 @@ export function PlaySheet({ char, onBack }) {
     [char]
   );
 
-  const pvPercent = Math.max(0, Math.min(100, (currentPV / maxPV) * 100));
-  const pmPercent = Math.max(0, Math.min(100, (currentPM / maxPM) * 100));
+  const pvPercent = maxPV > 0 ? Math.max(0, Math.min(100, (currentPV / maxPV) * 100)) : 0;
+  const pmPercent = maxPM > 0 ? Math.max(0, Math.min(100, (currentPM / maxPM) * 100)) : 0;
   const pvColor = pvPercent > 50 ? 'bg-emerald-500' : pvPercent > 25 ? 'bg-yellow-500' : 'bg-red-500';
 
   const race = RACES[char.raca?.toLowerCase()] || {};

@@ -42,7 +42,7 @@ export function StepOrigemBeneficios({ stats }) {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">📜</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-3">
-            <span className="text-rose-400">V.</span> Benefícios: {origem.nome}
+            <span className="text-rose-400">VI.</span> Benefícios: {origem.nome}
           </h2>
           <p className="text-slate-400 text-sm mt-2 max-w-md leading-relaxed font-medium">
             Seu passado concedeu dons específicos. Escolha <strong className="text-rose-400">2 benefícios</strong> para carregar em sua jornada.
