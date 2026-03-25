@@ -321,36 +321,38 @@ export function StepHeritage() {
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {[
-                    { id: 'combate', label: 'Combate', icon: '⚔️' },
-                    { id: 'destino', label: 'Destino', icon: '🔮' },
-                    { id: 'magia', label: 'Magia', icon: '✨' },
-                    { id: 'tormenta', label: 'Tormenta', icon: '👹' },
-                  ].map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setChoices({ ...currentChoices, activePowerTab: t.id })}
-                      className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
-                        (currentChoices.activePowerTab || 'combate') === t.id
-                          ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/40'
-                          : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-purple-500/30'
-                      }`}
-                    >
-                      <span className="text-xs">{t.icon}</span>
-                      {t.label}
-                    </button>
-                  ))}
+                <div className="flex flex-col gap-2 mb-4">
+                  <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+                    {[
+                      { id: 'combate', label: 'Combate', icon: '⚔️' },
+                      { id: 'destino', label: 'Destino', icon: '🔮' },
+                      { id: 'magia', label: 'Magia', icon: '✨' },
+                      { id: 'tormenta', label: 'Tormenta', icon: '👹' },
+                    ].map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => setChoices({ ...currentChoices, activePowerTab: t.id })}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 shrink-0 ${
+                          (currentChoices.activePowerTab || 'combate') === t.id
+                            ? 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-900/40'
+                            : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-purple-500/30'
+                        }`}
+                      >
+                        <span className="text-xs">{t.icon}</span>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
                   <button
                     onClick={() => setSomenteDisp(v => !v)}
-                    className={`ml-auto px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
+                    className={`self-start px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border-2 ${
                       somenteDisp
                         ? 'bg-emerald-700 border-emerald-400 text-white shadow-lg shadow-emerald-900/40'
                         : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-emerald-500/30'
                     }`}
                   >
                     <span className="text-xs">✅</span>
-                    {somenteDisp ? 'Disponíveis' : 'Todos'}
+                    {somenteDisp ? 'Somente Disponíveis' : 'Mostrar Todos'}
                   </button>
                 </div>
 
@@ -393,15 +395,14 @@ export function StepHeritage() {
                                   : 'bg-gray-950/60 border-gray-900/50 opacity-30 grayscale cursor-not-allowed')
                           }`}
                         >
-                          <div className="flex items-center justify-between">
-                             <span className={`text-[10px] font-black uppercase tracking-widest ${isSelected ? 'text-purple-200' : (canSelect ? 'text-purple-400' : 'text-slate-600')}`}>Poder</span>
-                             {!canSelect && <span className="text-[8px] text-rose-500 font-black">Bloqueado</span>}
+                          <div className="flex items-center justify-between gap-2">
+                             <span className={`text-[10px] font-black uppercase tracking-widest shrink-0 ${isSelected ? 'text-purple-200' : (canSelect ? 'text-purple-400' : 'text-slate-600')}`}>Poder</span>
+                             {!canSelect && (
+                               <span className="text-[9px] text-rose-400 font-black leading-tight text-right">🔒 {eligibility.reason || 'Requisito não atendido'}</span>
+                             )}
                           </div>
                           <span className={`text-sm font-black ${canSelect ? '' : 'text-slate-600'}`}>{p.nome}</span>
-                          <span className={`text-[10px] leading-relaxed font-medium ${isSelected ? 'text-white/80' : (canSelect ? 'text-slate-500' : 'text-slate-800 line-clamp-2')}`}>{p.descricao}</span>
-                          {!eligibility.ok && !isSelected && (
-                            <span className="text-[8px] text-rose-500/60 font-black uppercase leading-tight mt-1">{eligibility.reason}</span>
-                          )}
+                          <span className={`text-[10px] leading-relaxed font-medium ${isSelected ? 'text-white/80' : (canSelect ? 'text-slate-500' : 'text-slate-700')}`}>{p.descricao}</span>
                         </motion.button>
                       );
                     })}

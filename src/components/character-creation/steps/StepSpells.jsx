@@ -101,6 +101,18 @@ export function StepSpells() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {availableSpells.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center py-16 opacity-50 gap-3">
+            <span className="text-5xl">🔮</span>
+            <p className="text-sm font-black uppercase tracking-widest text-slate-500">
+              {search ? 'Nenhuma magia encontrada' : 'Nenhuma magia disponível'}
+            </p>
+            {search && <p className="text-xs text-slate-600">Tente outro nome ou limpe a busca.</p>}
+            {!search && schools && schools.length === 0 && (
+              <p className="text-xs text-slate-600 text-center max-w-xs">Volte ao passo V e selecione suas escolas de magia.</p>
+            )}
+          </div>
+        )}
         {availableSpells.map(([id, spell]) => {
           const isSelected = (classSpells || []).some(s => s.nome === spell.nome);
           const canSelect = isSelected || (classSpells || []).length < limits;
@@ -131,7 +143,7 @@ export function StepSpells() {
                 </div>
               </div>
               
-              <p className="text-xs text-slate-400 leading-relaxed font-medium line-clamp-2">
+              <p className="text-xs text-slate-400 leading-relaxed font-medium">
                 {spell.descricao}
               </p>
 

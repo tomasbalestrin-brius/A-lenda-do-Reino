@@ -142,13 +142,13 @@ export function StepEquipment() {
               {/* Simple Weapon */}
               <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                 <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Arma Simples Gratuita</label>
-                <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="grid grid-cols-2 gap-2">
                   {simpleWeapons.map(w => (
                     <button key={w.id} onClick={() => selectFree(w.id, 'simple')}
                       className={`p-3 rounded-xl border-2 text-left transition-all ${char.choices?.freeEquipment?.simple === w.id ? 'border-amber-500 bg-amber-950/40 text-white' : 'border-white/5 bg-gray-900/60 text-slate-400 hover:border-amber-500/30'}`}>
-                      <p className="font-black text-[11px] uppercase truncate">{w.nome}</p>
+                      <p className="font-black text-xs uppercase">{w.nome}</p>
                       <p className="text-[10px] text-amber-400 font-bold mt-0.5">{w.dano}</p>
-                      <p className="text-[8px] text-slate-600 mt-0.5">{w.critico}× · {w.empunhadura || 'simples'}</p>
+                      <p className="text-[10px] text-slate-500 mt-0.5">{w.critico}× · {w.empunhadura || 'simples'}</p>
                     </button>
                   ))}
                 </div>
@@ -158,13 +158,13 @@ export function StepEquipment() {
               {hasMartial && (
                 <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Arma Marcial Gratuita</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                  <div className="grid grid-cols-2 gap-2">
                     {martialWeapons.map(w => (
                       <button key={w.id} onClick={() => selectFree(w.id, 'martial')}
                         className={`p-3 rounded-xl border-2 text-left transition-all ${char.choices?.freeEquipment?.martial === w.id ? 'border-amber-500 bg-amber-950/40 text-white' : 'border-white/5 bg-gray-900/60 text-slate-400 hover:border-amber-500/30'}`}>
-                        <p className="font-black text-[11px] uppercase truncate">{w.nome}</p>
+                        <p className="font-black text-xs uppercase">{w.nome}</p>
                         <p className="text-[10px] text-amber-400 font-bold mt-0.5">{w.dano}</p>
-                        <p className="text-[8px] text-slate-600 mt-0.5">{w.critico}× · {w.empunhadura || 'marcial'}</p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{w.critico}× · {w.empunhadura || 'marcial'}</p>
                       </button>
                     ))}
                   </div>
@@ -175,15 +175,25 @@ export function StepEquipment() {
               {!isArcanista && (
                 <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Armadura Gratuita</label>
-                  <select 
-                    className="w-full bg-gray-900 border-2 border-gray-800 focus:border-amber-500 rounded-2xl p-4 text-sm text-white font-bold transition-all outline-none appearance-none cursor-pointer"
-                    value={char.choices?.freeEquipment?.armor || ''}
-                    onChange={(e) => selectFree(e.target.value, 'armor')}
-                  >
-                    <option value="">Selecione uma armadura...</option>
-                    {lightArmors.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
-                    {hasHeavy && heavyArmors.map(a => <option key={a.id} value={a.id}>{a.nome} (Pesada)</option>)}
-                  </select>
+                  <div className="grid grid-cols-1 gap-2">
+                    {[...lightArmors, ...(hasHeavy ? heavyArmors : [])].map(a => (
+                      <button key={a.id} onClick={() => selectFree(a.id, 'armor')}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                          char.choices?.freeEquipment?.armor === a.id
+                            ? 'border-amber-500 bg-amber-950/40 text-white'
+                            : 'border-white/5 bg-gray-900/60 text-slate-400 hover:border-amber-500/30'
+                        }`}>
+                        <div>
+                          <p className="font-black text-sm uppercase">{a.nome}</p>
+                          {hasHeavy && heavyArmors.some(h => h.id === a.id) && (
+                            <span className="text-[10px] text-amber-500/60 font-black">PESADA</span>
+                          )}
+                          {a.descricao && <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{a.descricao}</p>}
+                        </div>
+                        {char.choices?.freeEquipment?.armor === a.id && <span className="text-amber-400 text-lg shrink-0">✓</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
@@ -191,14 +201,31 @@ export function StepEquipment() {
               {hasShields && (
                 <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Escudo Gratuito</label>
-                  <select 
-                    className="w-full bg-gray-900 border-2 border-gray-800 focus:border-amber-500 rounded-2xl p-4 text-sm text-white font-bold transition-all outline-none appearance-none cursor-pointer"
-                    value={char.choices?.freeEquipment?.shield || ''}
-                    onChange={(e) => selectFree(e.target.value, 'shield')}
-                  >
-                    <option value="">Nenhum</option>
-                    {shields.map(s => <option key={s.id} value={s.id}>{s.nome}</option>)}
-                  </select>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button onClick={() => selectFree('', 'shield')}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                        !char.choices?.freeEquipment?.shield
+                          ? 'border-slate-600 bg-slate-900/40 text-slate-300'
+                          : 'border-white/5 bg-gray-900/60 text-slate-500 hover:border-slate-600'
+                      }`}>
+                      <p className="font-black text-sm uppercase">Nenhum</p>
+                      {!char.choices?.freeEquipment?.shield && <span className="text-slate-400 text-lg shrink-0">✓</span>}
+                    </button>
+                    {shields.map(s => (
+                      <button key={s.id} onClick={() => selectFree(s.id, 'shield')}
+                        className={`p-4 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                          char.choices?.freeEquipment?.shield === s.id
+                            ? 'border-amber-500 bg-amber-950/40 text-white'
+                            : 'border-white/5 bg-gray-900/60 text-slate-400 hover:border-amber-500/30'
+                        }`}>
+                        <div>
+                          <p className="font-black text-sm uppercase">{s.nome}</p>
+                          {s.descricao && <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{s.descricao}</p>}
+                        </div>
+                        {char.choices?.freeEquipment?.shield === s.id && <span className="text-amber-400 text-lg shrink-0">✓</span>}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -298,14 +325,14 @@ export function StepEquipment() {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
         {categories.map(cat => (
           <button
             key={cat.id}
             onClick={() => { setCategory(cat.id); setSearchItem(''); }}
-            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border ${
-              category === cat.id 
-                ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg shadow-amber-900/20' 
+            className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 border shrink-0 ${
+              category === cat.id
+                ? 'bg-amber-600 border-amber-500 text-gray-900 shadow-lg shadow-amber-900/20'
                 : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:border-gray-600'
             }`}
           >
