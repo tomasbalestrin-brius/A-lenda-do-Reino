@@ -1,5 +1,6 @@
 import CLASSES from '../../data/classes';
 import { ORIGENS } from '../../data/origins';
+import RACES from '../../data/races';
 
 /**
  * Verifica se o personagem pode avançar para o próximo passo da criação.
@@ -26,20 +27,40 @@ export function canGoNext(step, char, stats) {
       if (['humano', 'lefou', 'osteon'].includes(r)) {
         const tipo = char.choices?.tipoVersatilidade || 'pericias';
         const requiredSkills = r === 'osteon' ? (tipo === 'poder' ? 0 : 1) : (tipo === 'poder' ? 1 : 2);
-        
+
         const hasSkills = (char.choices?.pericias || []).length === requiredSkills;
         const hasPower = tipo === 'poder' ? (r === 'lefou' ? true : !!char.choices?.herancaPower) : true;
-        
+
+        // Validate racaEscolha: must have 3 choices and none can be restricted
+        const raceData = RACES[r];
+        const restricoes = raceData?.escolhaRestricao || [];
+        const racaEscolha = char.racaEscolha || [];
+        const hasEnoughAttrChoices = raceData?.atributos?.escolha ? racaEscolha.length === raceData.atributos.escolha : true;
+        const hasInvalidAttrChoice = restricoes.some(k => racaEscolha.includes(k));
+
+        if (!hasEnoughAttrChoices) {
+          return { ok: false, reason: `Selecione ${raceData.atributos.escolha} atributos diferentes.` };
+        }
+        if (hasInvalidAttrChoice) {
+          const forbidden = restricoes.filter(k => racaEscolha.includes(k)).join(', ');
+          return { ok: false, reason: `Sua raça não pode escolher: ${forbidden}.` };
+        }
+
         const ok = hasSkills && hasPower;
         const msg = r === 'osteon' ? 'Selecione sua perícia ou poder geral.' : `Selecione ${requiredSkills} perícia(s) ${tipo === 'poder' ? 'e 1 poder' : ''}.`;
         return { ok, reason: ok ? null : msg };
       }
 
-      if (['sereia', 'silfide', 'kliren', 'qareen'].includes(r)) {
+      if (['sereia', 'silfide', 'qareen'].includes(r)) {
         const required = (r === 'sereia' || r === 'silfide') ? 2 : 1;
-        const selected = char.choices?.pericias?.length || 0;
+        const selected = (char.racialSpells || []).length;
         const ok = selected === required;
-        return { ok, reason: ok ? null : `Selecione ${required} competências da sua herança.` };
+        return { ok, reason: ok ? null : `Selecione ${required} magia(s) da sua herança.` };
+      }
+      if (r === 'kliren') {
+        const selected = (char.choices?.pericias || []).length;
+        const ok = selected === 1;
+        return { ok, reason: ok ? null : `Selecione 1 perícia da sua herança Híbrida.` };
       }
       return { ok: true, reason: null };
     }
@@ -76,7 +97,14 @@ export function canGoNext(step, char, stats) {
       return { ok, reason: ok ? null : `Selecione ${maxChoices} benefícios da sua origem.` };
     }
 
-    case 6: return { ok: true, reason: null }; // Deus é opcional
+    case 6: { // Deus
+      const divineClasses = ['clerigo', 'druida', 'paladino'];
+      const isDivine = divineClasses.includes(char.classe?.toLowerCase());
+      if (isDivine && !char.deus) {
+        return { ok: false, reason: `Como ${char.classe}, você deve escolher uma divindade.` };
+      }
+      return { ok: true, reason: null };
+    }
 
     case 7: { // Magias
       const cls = char.classe?.toLowerCase();
@@ -105,9 +133,13 @@ export function canGoNext(step, char, stats) {
       const cls = CLASSES[char.classe?.toLowerCase()];
       if (!cls) return { ok: false, reason: 'Selecione uma classe primeiro.' };
       const orChoices = cls?.periciasObrigatorias?.filter(s => Array.isArray(s)) || [];
-      const chosen = Object.keys(char.periciasObrigEscolha || {}).length;
-      const ok = chosen === orChoices.length && (char.periciasClasseEscolha || []).length === (cls.pericias || 0);
-      return { ok, reason: ok ? null : 'Selecione todas as perícias de classe obrigatórias.' };
+      const obrigValues = Object.values(char.periciasObrigEscolha || {});
+      const chosen = obrigValues.length;
+      const hasDuplicates = new Set(obrigValues).size < chosen;
+      const ok = chosen === orChoices.length &&
+                 !hasDuplicates &&
+                 (char.periciasClasseEscolha || []).length === (cls.pericias || 0);
+      return { ok, reason: ok ? null : (hasDuplicates ? 'Perícias obrigatórias duplicadas.' : 'Selecione todas as perícias de classe obrigatórias.') };
     }
 
     case 11: { // Int Pericias
@@ -122,13 +154,18 @@ export function canGoNext(step, char, stats) {
     case 13: // Aliados
       return { ok: true, reason: null };
 
-    case 14: { // Poderes Iniciais (Poderes do 1º Nível)
-      return { ok: true, reason: null };
+    case 14: { // Poderes Iniciais
+      const maxPowers = (char.level || 1) - 1;
+      if (maxPowers === 0) return { ok: true, reason: null };
+      const currentPowers = (char.poderesGerais || []).length;
+      const ok = currentPowers >= maxPowers;
+      return { ok, reason: ok ? null : `Escolha mais ${maxPowers - currentPowers} poder(es) para continuar.` };
     }
 
     case 15: { // Poderes por Nível (Progressão Níveis 2-20)
-       const currentNum = Object.keys(char.poderesProgressao || {}).length;
+       const choices = char.levelChoices || {};
        const needed = (char.level || 1) - 1;
+       const currentNum = Object.values(choices).filter(v => v && (v.id || v.type === 'attribute')).length;
        const ok = currentNum >= needed;
        return { ok, reason: ok ? null : `Escolha seus poderes para os níveis extras (Pendente: ${needed - currentNum}).` };
     }

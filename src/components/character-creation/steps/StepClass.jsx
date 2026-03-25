@@ -36,15 +36,43 @@ const CLASS_IMAGES = {
   paladino: '/assets/images/classes/paladino.png',
 };
 
+const ROLE_GROUPS = {
+  'Todos': null,
+  'Combate': ['barbaro', 'guerreiro', 'lutador', 'cavaleiro'],
+  'Magia': ['arcanista', 'clerigo', 'druida', 'bardo'],
+  'Furtivo': ['ladino', 'bucaneiro', 'cacador'],
+  'Especial': ['inventor', 'nobre', 'paladino'],
+};
+
 export function StepClass({ onNext }) {
   const { char, updateChar } = useCharacterStore();
-  const classes = Object.entries(CLASSES);
+  const [roleFilter, setRoleFilter] = React.useState('Todos');
+  const allClasses = Object.entries(CLASSES);
+  const classes = roleFilter === 'Todos'
+    ? allClasses
+    : allClasses.filter(([id]) => ROLE_GROUPS[roleFilter]?.includes(id));
 
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in pb-12">
       <div className="text-center space-y-3 pb-4">
-        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md">Forje Seu Caminho</h2>
+        <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter drop-shadow-md"><span className="text-amber-500 mr-2">III.</span> Forje Seu Caminho</h2>
         <p className="text-slate-400 text-sm md:text-base max-w-xl mx-auto font-medium">Sua classe é sua vocação. Ela define suas habilidades em combate, magias e o seu papel no grupo de aventureiros.</p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 justify-center mb-4">
+        {Object.keys(ROLE_GROUPS).map(role => (
+          <button
+            key={role}
+            onClick={() => setRoleFilter(role)}
+            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${
+              roleFilter === role
+                ? 'bg-amber-600 border-amber-500 text-gray-950'
+                : 'bg-gray-900/40 border-white/5 text-slate-500 hover:border-white/20 hover:text-slate-300'
+            }`}
+          >
+            {role}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">

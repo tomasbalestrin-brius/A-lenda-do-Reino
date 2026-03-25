@@ -6,12 +6,37 @@ import { PARCEIROS } from '../../../data/parceiros';
 export function StepAllies() {
   const { char, updateChar } = useCharacterStore();
 
+  // Collect all power names from every source
+  const levelPowerNames = Object.values(char.levelChoices || {})
+    .map(c => c?.nome)
+    .filter(Boolean);
+
+  const allPowers = new Set([
+     ...(char.poderesGerais || []).map(p => p.nome),
+     ...levelPowerNames,
+     ...(char.crencasBeneficios || []).map(b => b.nome),
+     ...(char.origemBeneficios || []).filter(b => b.tipo === 'poder').map(b => b.nome)
+  ]);
+
+  // Power names that grant an ally/partner (from powers.js and class pools)
+  const ALLY_POWERS = new Set([
+    'Parceiro',           // poder geral (powers.js)
+    'Companheiro Animal', // Caçador / Druida
+    'Vinculação Animal',  // Druida
+    'Autômato',           // Inventor
+    'Montaria',           // Cavaleiro (Caminho do Cavaleiro)
+  ]);
+
+  const hasAllyPower = [...allPowers].some(p => ALLY_POWERS.has(p));
+
   const handleSelectType = (tipo) => {
+    if (!hasAllyPower) return;
     const current = char.aliado || { nivel: 'iniciante' };
     updateChar({ aliado: { ...current, tipo: tipo.nome } });
   };
 
   const handleSelectLevel = (nivel) => {
+    if (!hasAllyPower) return;
     const current = char.aliado || { tipo: PARCEIROS.tipos[0].nome };
     updateChar({ aliado: { ...current, nivel } });
   };
@@ -22,8 +47,17 @@ export function StepAllies() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-black text-amber-500 uppercase tracking-tighter mb-2">Aliados & Parceiros</h2>
-        <p className="text-slate-400 text-sm">Escolha um companheiro para ajudá-lo em sua jornada. Alguns começam com aliados por conta de sua Origem ou Poderes.</p>
+        <h2 className="text-2xl font-black text-amber-500 uppercase tracking-tighter mb-2"><span className="text-amber-500 mr-2">XIV.</span> Aliados & Parceiros</h2>
+        {!hasAllyPower ? (
+          <div className="p-4 bg-red-950/20 border border-red-500/20 rounded-2xl space-y-1">
+             <p className="text-red-400 text-sm font-bold flex items-center gap-2">
+                <span>⚠️</span> Você não possui poderes que concedem um Aliado (ex: Parceiro, Aliado Animal).
+             </p>
+             <p className="text-slate-500 text-xs pl-6">Para obter um aliado, escolha o poder <strong className="text-amber-400">Parceiro</strong> no passo <strong className="text-amber-400">XV. Poderes</strong> e volte aqui.</p>
+          </div>
+        ) : (
+          <p className="text-slate-400 text-sm">Escolha um companheiro para ajudá-lo em sua jornada.</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -33,8 +67,10 @@ export function StepAllies() {
             {PARCEIROS.tipos.map((tipo) => (
               <button
                 key={tipo.nome}
+                disabled={!hasAllyPower}
                 onClick={() => handleSelectType(tipo)}
                 className={`p-4 rounded-2xl border transition-all text-left group ${
+                  !hasAllyPower ? 'opacity-30 grayscale cursor-not-allowed' :
                   char.aliado?.tipo === tipo.nome
                     ? 'bg-amber-500/10 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-900/20'
                     : 'bg-slate-900/50 border-slate-800 text-slate-400 hover:border-slate-700'

@@ -82,12 +82,19 @@ export function StepProgression({ stats }) {
     );
   }
 
-  const allAvailableSpells = [
-    ...Object.values(SPELLS.magiasArcanas1 || {}),
-    ...Object.values(SPELLS.magiasArcanas2 || {}),
-    ...Object.values(SPELLS.magiasDivinas1 || {}),
-    ...Object.values(SPELLS.magiasDivinas2 || {})
-  ];
+  const spellType = ['arcanista', 'bardo'].includes(char.classe?.toLowerCase()) ? 'arcana' : 'divina';
+  const isFullCaster = ['arcanista', 'clerigo'].includes(char.classe?.toLowerCase());
+  const maxCircle = isFullCaster
+    ? Math.min(5, Math.ceil(level / 2))
+    : level >= 7 ? 4 : level >= 5 ? 3 : level >= 3 ? 2 : 1;
+
+  const arcanaCircles = [SPELLS.magiasArcanas1, SPELLS.magiasArcanas2, SPELLS.magiasArcanas3, SPELLS.magiasArcanas4, SPELLS.magiasArcanas5];
+  const divinaCircles = [SPELLS.magiasDivinas1, SPELLS.magiasDivinas2, SPELLS.magiasDivinas3, SPELLS.magiasDivinas4, SPELLS.magiasDivinas5];
+  const spellCircles = spellType === 'arcana' ? arcanaCircles : divinaCircles;
+
+  const allAvailableSpells = isConjurer
+    ? spellCircles.slice(0, maxCircle).flatMap(pool => Object.values(pool || {}))
+    : [];
 
   return (
     <div className="flex flex-col gap-10 pb-10">
@@ -95,7 +102,7 @@ export function StepProgression({ stats }) {
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl rotate-12">🔮</div>
         <div className="flex-1">
           <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
-            <span className="text-blue-400 mr-2">XV.</span> Senda Evolutiva
+            <span className="text-blue-400 mr-2">XVI.</span> Senda Evolutiva
           </h2>
           <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">
             Sua jornada te tornou mais experiente. A cada nível superado, novas técnicas e dons despertam.

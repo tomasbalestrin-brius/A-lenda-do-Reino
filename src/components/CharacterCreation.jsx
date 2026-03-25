@@ -1,11 +1,10 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { supabase } from '../lib/supabase';
 import { useCharacterStore } from '../store/useCharacterStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
 import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
-import { buildHeroData } from '../utils/rules/buildHeroData';
+import { useCharacterPersistence } from '../hooks/useCharacterPersistence';
 import { ErrorBoundary } from './ErrorBoundary';
 
 // Lazy load PDF compendium (heavy dependency)
@@ -39,6 +38,7 @@ import { StepReview } from './character-creation/steps/StepReview';
 
 import { CharacterLibrary } from './character-creation/CharacterLibrary';
 import { CharacterPreview } from './character-creation/CharacterPreview';
+import { PlaySheet } from './PlaySheet';
 
 const STEP_LABELS = [
   "Raça",             // 0
@@ -62,159 +62,71 @@ const STEP_LABELS = [
 ];
 const MAX_STEPS = STEP_LABELS.length;
 
-const AUTOSAVE_KEY = 'lenda_autosave';
-
-export default function CharacterCreation({ onComplete }) {
-  const { char, updateChar, resetChar, loadChar } = useCharacterStore();
+export default function CharacterCreation() {
+  const { char, resetChar } = useCharacterStore();
   const { user, signOut } = useAuthStore();
   const [view, setView] = useState('library');
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [savedChars, setSavedChars] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showResume, setShowResume] = useState(false);
+
+  // Handle shared character link (?char=base64)
+  React.useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const encoded = params.get('char');
+      if (encoded) {
+        const charData = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+        if (charData?.raca) {
+          const { loadChar } = useCharacterStore.getState();
+          loadChar(charData);
+          setStep(0);
+          setView('creation');
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+    } catch { /* link inválido — ignora */ }
+  }, []);
 
   const stats = useMemo(() => computeStats(char), [char]);
 
-  // Auto-save on step change or char update
-  useEffect(() => {
-    if (view === 'creation' && (char.raca || char.classe)) {
-      try {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ char, step }));
-      } catch (e) { /* quota exceeded — ignore */ }
-    }
-  }, [char, step, view]);
+  const {
+    savedChars,
+    loading,
+    showResume,
+    handleResume: resumeAndGetStep,
+    dismissResume,
+    handleSave,
+    handleLoadFromLibrary,
+    handleDelete,
+  } = useCharacterPersistence({ char, step });
 
-  // Check for auto-save on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved?.char?.raca || saved?.char?.classe) {
-          setShowResume(true);
-        }
-      }
-    } catch (e) { /* corrupted — ignore */ }
-  }, []);
-
-  const handleResume = useCallback(() => {
-    try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved?.char) {
-          loadChar(saved.char);
-          setStep(saved.step || 0);
-          setView('creation');
-        }
-      }
-    } catch (e) { /* corrupted — start fresh */ }
-    setShowResume(false);
-  }, [loadChar]);
-
-  const dismissResume = useCallback(() => {
-    localStorage.removeItem(AUTOSAVE_KEY);
-    setShowResume(false);
-  }, []);
-
-  useEffect(() => {
-    fetchCharacters();
-  }, []);
-
-  async function fetchCharacters() {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('characters')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setSavedChars(data || []);
-    } catch (err) {
-      console.error('Error fetching characters:', err.message);
-      try {
-        const localRaw = localStorage.getItem('lenda_personagens');
-        const localParsed = localRaw ? JSON.parse(localRaw) : [];
-        setSavedChars(Array.isArray(localParsed) ? localParsed : []);
-      } catch (storageErr) {
-        setSavedChars([]);
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleSave() {
-    if (!char.nome?.trim()) return;
-    const s = { pv: stats.pv, pm: stats.pm, def: stats.def, atk: stats.atk };
-    const heroData = buildHeroData(char, stats);
-    const entry = { ...char, heroData, stats: s };
-    
-    try {
-      const { data, error } = await supabase
-        .from('characters')
-        .upsert({ 
-          id: char.id || undefined, 
-          name: char.nome,
-          data: entry
-        }, { onConflict: 'id' })
-        .select();
-
-      if (error) throw error;
-      
-      if (char.id) {
-        setSavedChars(prev => prev.map(c => c.id === char.id ? data[0] : c));
-      } else {
-        setSavedChars(prev => [data[0], ...prev]);
-        updateChar({ id: data[0].id });
-      }
-      
-      localStorage.setItem('lenda_personagens', JSON.stringify([data[0], ...savedChars.filter(c => c.id !== data[0].id)]));
-    } catch (err) {
-      console.error('Error saving character:', err.message);
-      const next = [...savedChars, entry];
-      setSavedChars(next);
-      localStorage.setItem('lenda_personagens', JSON.stringify(next));
-    }
-  }
-
-  function handleSaveAndPlay() {
-    if (!char.nome?.trim()) return;
-    handleSave();
-    onComplete(buildHeroData(char, stats));
-  }
-
-  function handlePlayFromLibrary(savedChar) {
-    const charData = savedChar.data || savedChar;
-    const heroData = charData.heroData || buildHeroData(charData, computeStats(charData));
-    onComplete(heroData);
-  }
-
-  async function handleDelete(idx) {
-    const target = savedChars[idx];
-    if (target.id) {
-      try {
-        const { error } = await supabase
-          .from('characters')
-          .delete()
-          .eq('id', target.id);
-        if (error) throw error;
-      } catch (err) {
-        console.error('Error deleting character:', err.message);
-      }
-    }
-    
-    const next = savedChars.filter((_, i) => i !== idx);
-    setSavedChars(next);
-    localStorage.setItem('lenda_personagens', JSON.stringify(next));
+  function handleResume() {
+    const savedStep = resumeAndGetStep();
+    setStep(savedStep);
+    setView('creation');
   }
 
   function handleNewCharacter() {
     resetChar();
     setStep(0);
     setView('creation');
+  }
+
+  function handleEditFromLibrary(savedChar) {
+    handleLoadFromLibrary(savedChar);
+    setStep(0);
+    setView('creation');
+  }
+
+  function handleImportFromJSON(imported) {
+    handleLoadFromLibrary(imported);
+    setStep(0);
+    setView('creation');
+  }
+
+  function handlePlayFromLibrary(savedChar) {
+    handleLoadFromLibrary(savedChar);
+    setView('play');
   }
 
   function handleNext() {
@@ -237,6 +149,10 @@ export default function CharacterCreation({ onComplete }) {
     } else {
       setView('library');
     }
+  }
+
+  if (view === 'play') {
+    return <PlaySheet char={char} onBack={() => setView('library')} />;
   }
 
   if (view === 'compendium') {
@@ -269,10 +185,12 @@ export default function CharacterCreation({ onComplete }) {
         )}
         <CharacterLibrary
           characters={savedChars}
-          onPlay={handlePlayFromLibrary}
+          onLoad={handleEditFromLibrary}
           onDelete={handleDelete}
           onNew={handleNewCharacter}
           onCompendium={() => setView('compendium')}
+          onImport={handleImportFromJSON}
+          onPlay={handlePlayFromLibrary}
           loading={loading}
         />
       </>
@@ -295,6 +213,27 @@ export default function CharacterCreation({ onComplete }) {
         </button>
 
         <div className="flex-1 flex flex-col gap-1 px-3 md:px-6 pb-6">
+          {/* Progress counter */}
+          {(() => {
+            const visibleSteps = STEP_LABELS.filter((_, i) => !shouldSkipStep(i, char, stats));
+            const completedSteps = visibleSteps.filter((_, i) => {
+              const realIdx = STEP_LABELS.findIndex((l, ri) => l === visibleSteps[i] && !shouldSkipStep(ri, char, stats) && ri <= step);
+              return realIdx !== -1 && STEP_LABELS.indexOf(visibleSteps[i]) < step;
+            }).length;
+            const totalVisible = visibleSteps.length;
+            const pct = Math.round((step / (totalVisible - 1)) * 100);
+            return (
+              <div className="hidden md:flex flex-col gap-1.5 mb-4 px-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Progresso</span>
+                  <span className="text-[9px] font-black text-amber-500">{step + 1} / {totalVisible}</span>
+                </div>
+                <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                </div>
+              </div>
+            );
+          })()}
           {STEP_LABELS.map((label, i) => {
             if (shouldSkipStep(i, char, stats)) return null;
             
@@ -367,8 +306,6 @@ export default function CharacterCreation({ onComplete }) {
                  transition={{ duration: 0.3 }}
               >
                 <div className="max-w-4xl mx-auto">
-                  {step === 0 && <StepRace onNext={handleNext} />}
-                  {step === 1 && <StepHeritage />}
                   {(() => {
                     switch (step) {
                       case 0: return <StepRace onNext={handleNext} />;
@@ -389,10 +326,10 @@ export default function CharacterCreation({ onComplete }) {
                       case 15: return <StepProgression stats={stats} />;
                       case 16: return <StepIdentity />;
                       case 17: return (
-                        <StepReview 
-                          stats={stats} 
-                          onSave={handleSave} 
-                          onPlay={handleSaveAndPlay} 
+                        <StepReview
+                          stats={stats}
+                          onSave={handleSave}
+                          onPlay={() => setView('play')}
                         />
                       );
                       default: return null;
@@ -424,7 +361,7 @@ export default function CharacterCreation({ onComplete }) {
                      {blockReason || 'Complete as escolhas pendentes.'}
                    </motion.div>
                  )}
-                 {step === 14 && (
+                 {step === MAX_STEPS - 1 && (
                    <span className="text-[10px] uppercase font-black tracking-[0.4em] text-amber-500/50">Jornada Pronta</span>
                  )}
               </div>
@@ -436,7 +373,7 @@ export default function CharacterCreation({ onComplete }) {
                   canAdvance 
                     ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500 active:scale-95' 
                     : 'bg-gray-900/50 border border-white/5 text-gray-600 cursor-not-allowed opacity-50 grayscale'
-                } ${step === 14 ? 'invisible' : ''}`}
+                } ${step === MAX_STEPS - 1 ? 'invisible' : ''}`}
               >
                 <span className="hidden xs:inline">Avançar</span>
                 <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>

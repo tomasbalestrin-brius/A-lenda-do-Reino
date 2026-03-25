@@ -11,6 +11,7 @@ import { useCharacterStore } from '../../../store/useCharacterStore';
 import { getAllTrainedSkills } from '../../../utils/rules/characterStats';
 
 import { exportToMarkdown } from '../../../utils/exportCharacter';
+import { exportToPDF } from '../../../utils/exportPDF';
 import { LevelUpModal } from '../modals/LevelUpModal';
 import CombatRollerBG3 from './CombatRollerBG3';
 
@@ -82,12 +83,40 @@ const StatItem = React.memo(({ label, value, detail, color, icon }) => (
   </div>
 ));
 
+const ATTR_LABELS = [
+  { key: 'FOR', label: 'Força',        color: 'text-red-400',    bg: 'bg-red-500' },
+  { key: 'DES', label: 'Destreza',     color: 'text-green-400',  bg: 'bg-green-500' },
+  { key: 'CON', label: 'Constituição', color: 'text-orange-400', bg: 'bg-orange-500' },
+  { key: 'INT', label: 'Inteligência', color: 'text-blue-400',   bg: 'bg-blue-500' },
+  { key: 'SAB', label: 'Sabedoria',    color: 'text-purple-400', bg: 'bg-purple-500' },
+  { key: 'CAR', label: 'Carisma',      color: 'text-pink-400',   bg: 'bg-pink-500' },
+];
+
+const ALLY_TYPE_LABELS = {
+  Combatente: '⚔️', Guardião: '🛡️', Assassino: '🗡️',
+  Atirador: '🏹', Fortão: '💪', Vigilante: '👁️',
+};
+
+const ALLY_LEVEL_LABELS = { iniciante: 'Iniciante', veterano: 'Veterano', mestre: 'Mestre' };
+
 export function StepReview({ stats, onSave, onPlay }) {
   const { char, updateChar } = useCharacterStore();
   const cls = CLASSES[char.classe] || {};
   const race = RACES[char.raca] || {};
   const orig = ORIGENS[char.origem] || {};
   const deus = DEUSES[char.deus] || {};
+
+  const specLabel = (() => {
+    const c = char.choices || {};
+    if (char.classe === 'arcanista' && c.caminhoArcanista) {
+      const names = { bruxo: 'Bruxo', feiticeiro: 'Feiticeiro', mago: 'Mago' };
+      return `Caminho: ${names[c.caminhoArcanista] || c.caminhoArcanista}`;
+    }
+    if ((char.classe === 'bardo' || char.classe === 'druida') && c.escolasMagia?.length) {
+      return `Escolas: ${c.escolasMagia.join(', ')}`;
+    }
+    return null;
+  })();
   const allPericias = React.useMemo(() => getAllTrainedSkills(char), [char]);
   const [rollTest, setRollTest] = useState(null);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
@@ -131,6 +160,33 @@ export function StepReview({ stats, onSave, onPlay }) {
     exportToMarkdown(char, stats);
   };
 
+  const handleShareLink = async () => {
+    try {
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify({ ...char, schemaVersion: 2 }))));
+      const url = `${window.location.origin}${window.location.pathname}?char=${encoded}`;
+      await navigator.clipboard.writeText(url);
+      alert('Link copiado! Cole em outro navegador para importar o personagem.');
+    } catch {
+      alert('Não foi possível copiar o link. Tente exportar JSON manualmente.');
+    }
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF(char, stats);
+  };
+
+  const handleExportJSON = () => {
+    const blob = new Blob([JSON.stringify({ ...char, schemaVersion: 2 }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${char.nome || 'personagem'}_t20.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="flex flex-col gap-10 pb-16">
       {rollTest && (
@@ -156,7 +212,7 @@ export function StepReview({ stats, onSave, onPlay }) {
         
         <div className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left">
           <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-2 italic">
-             <span className="text-amber-500 mr-2 underline decoration-amber-500/30">XIII.</span> A Lenda se Ergue
+             <span className="text-amber-500 mr-2 underline decoration-amber-500/30">XVIII.</span> A Lenda se Ergue
           </h2>
           <p className="text-slate-400 text-sm md:text-base max-w-lg font-medium leading-relaxed">
             Seu herói está forjado na história de Arton. Revise cada traço, cada cicatriz e prepare-se para a jornada.
@@ -208,7 +264,7 @@ export function StepReview({ stats, onSave, onPlay }) {
               <div className="space-y-8">
                 {[
                   { label: 'Raça', val: race?.nome, sub: RACE_ICONS[char.raca], img: RACE_IMAGES[char.raca] },
-                  { label: 'Classe', val: cls?.nome, sub: CLASS_ICONS[char.classe] },
+                  { label: 'Classe', val: cls?.nome, sub: CLASS_ICONS[char.classe], extra: specLabel },
                 ].map(item => (
                   <div key={item.label} className="group flex items-center gap-6">
                     <div className="w-16 h-16 rounded-3xl bg-gray-950 border border-white/10 flex items-center justify-center text-3xl shadow-2xl group-hover:border-amber-500/30 transition-all group-hover:scale-110 relative overflow-hidden">
@@ -218,6 +274,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                     <div>
                       <span className="text-[10px] uppercase tracking-widest font-black text-slate-600 block mb-1">{item.label}</span>
                       <span className="text-2xl font-black text-white truncate drop-shadow-md">{item.val}</span>
+                      {item.extra && <span className="text-[9px] text-amber-400/70 font-bold uppercase tracking-wider block mt-0.5">{item.extra}</span>}
                     </div>
                   </div>
                 ))}
@@ -245,6 +302,21 @@ export function StepReview({ stats, onSave, onPlay }) {
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Atributos */}
+            <div className="relative z-10 mt-6 grid grid-cols-3 md:grid-cols-6 gap-3">
+              {ATTR_LABELS.map(({ key, label, color, bg }) => {
+                const val = stats?.attrs?.[key] ?? 0;
+                return (
+                  <div key={key} className="bg-gray-950/80 rounded-2xl border border-white/5 p-3 flex flex-col items-center gap-1 relative overflow-hidden">
+                    <div className={`absolute top-0 inset-x-0 h-1 ${bg} opacity-20 rounded-t-2xl`} />
+                    <span className={`text-xl font-black ${color}`}>{val >= 0 ? '+' : ''}{val}</span>
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{key}</span>
+                    <span className="text-[7px] text-slate-700 font-medium hidden md:block">{label}</span>
+                  </div>
+                );
+              })}
             </div>
 
             <div className="relative z-10 mt-6 grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -295,6 +367,16 @@ export function StepReview({ stats, onSave, onPlay }) {
                     <p className="text-sm font-black text-white leading-none">{(stats?.languages || ['Comum']).join(', ')}</p>
                   </div>
                </div>
+
+               {char.dinheiro != null && (
+                 <div className="bg-yellow-950/30 border border-yellow-500/20 px-6 py-3 rounded-2xl flex items-center gap-3">
+                    <span className="text-xl">💰</span>
+                    <div>
+                      <p className="text-[8px] uppercase font-black text-yellow-500/60 leading-none mb-1">Dinheiro</p>
+                      <p className="text-sm font-black text-white leading-none">T$ {char.dinheiro}</p>
+                    </div>
+                 </div>
+               )}
             </div>
           </div>
 
@@ -383,6 +465,41 @@ export function StepReview({ stats, onSave, onPlay }) {
             </div>
           )}
 
+          {/* Card: Magias */}
+          {(() => {
+            const progressionSpells = Object.values(char.levelChoices || {})
+              .filter(c => c?.spells?.length > 0)
+              .flatMap(c => c.spells.filter(Boolean));
+            const allSpells = [...(char.classSpells || []), ...(char.racialSpells || []), ...progressionSpells];
+            if (allSpells.length === 0) return null;
+            return (
+              <div className="bg-gray-950/60 rounded-[3.5rem] border border-purple-500/10 p-10 shadow-2xl flex flex-col gap-8">
+                <div className="flex items-center gap-4">
+                  <span className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,1)]" />
+                  <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Magias Conhecidas</p>
+                  {stats?.spellDC > 10 && (
+                    <span className="ml-auto text-[10px] text-purple-400 font-black uppercase tracking-widest bg-purple-900/20 border border-purple-500/20 px-3 py-1 rounded-full">
+                      CD {stats.spellDC}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  {allSpells.map((spell, i) => {
+                    const s = typeof spell === 'string' ? { nome: spell } : spell;
+                    const circleLabel = s.circulo ? `${s.circulo}º` : null;
+                    return (
+                      <span key={i} className="px-4 py-2.5 bg-purple-900/10 border border-purple-500/20 rounded-2xl text-[11px] font-black text-purple-300 uppercase tracking-wider flex items-center gap-2 hover:bg-purple-500/20 transition-colors">
+                        <span className="text-sm">✦</span>
+                        {s.nome}
+                        {circleLabel && <span className="text-[9px] text-purple-500 font-black">{circleLabel}</span>}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            {/* Card: Poderes */}
            <div className="bg-gray-950/60 rounded-[3rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-6 group hover:border-blue-500/20 transition-all">
@@ -433,41 +550,152 @@ export function StepReview({ stats, onSave, onPlay }) {
               </div>
            </div>
         </div>
+
+          {/* Card: Aliado */}
+          {char.aliado && (
+            <div className="md:col-span-2 bg-gray-950/60 rounded-[3rem] border border-emerald-500/10 p-10 shadow-2xl flex flex-col gap-6 group hover:border-emerald-500/20 transition-all">
+              <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">
+                <span className="w-2 h-2 bg-emerald-400 rounded-full" /> Aliado
+              </p>
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-3xl bg-gray-900 border border-emerald-500/20 flex items-center justify-center text-3xl">
+                  {ALLY_TYPE_LABELS[char.aliado.tipo] || '🤝'}
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-white">{char.aliado.tipo}</p>
+                  <p className="text-[11px] text-emerald-400/70 font-bold uppercase tracking-widest mt-1">
+                    {ALLY_LEVEL_LABELS[char.aliado.nivel] || char.aliado.nivel}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+        {/* Card: Identidade */}
+        {(char.idade || char.genero || char.aparencia || char.historia) && (
+          <div className="bg-gray-900/40 rounded-[3.5rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-8 backdrop-blur-md">
+            <div className="flex items-center gap-4">
+              <span className="w-3 h-3 bg-slate-400 rounded-full" />
+              <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Identidade</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {char.idade && (
+                <div className="bg-gray-950/60 rounded-2xl p-4 border border-white/5">
+                  <p className="text-[8px] uppercase font-black text-slate-600 mb-1">Idade</p>
+                  <p className="text-sm font-bold text-white">{char.idade}</p>
+                </div>
+              )}
+              {char.genero && (
+                <div className="bg-gray-950/60 rounded-2xl p-4 border border-white/5">
+                  <p className="text-[8px] uppercase font-black text-slate-600 mb-1">Gênero</p>
+                  <p className="text-sm font-bold text-white">{char.genero}</p>
+                </div>
+              )}
+            </div>
+            {char.aparencia && (
+              <div className="bg-gray-950/60 rounded-2xl p-6 border border-white/5">
+                <p className="text-[8px] uppercase font-black text-slate-600 mb-2">Aparência</p>
+                <p className="text-sm text-slate-300 leading-relaxed">{char.aparencia}</p>
+              </div>
+            )}
+            {char.historia && (
+              <div className="bg-gray-950/60 rounded-2xl p-6 border border-white/5">
+                <p className="text-[8px] uppercase font-black text-slate-600 mb-2">História</p>
+                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">{char.historia}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-col md:flex-row gap-6 pt-10">
-        <motion.button
-          whileHover={{ scale: 1.02, boxShadow: '0 20px 50px rgba(245, 158, 11, 0.3)' }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onPlay}
-          disabled={!char.nome?.trim()}
-          className="flex-[2] py-8 rounded-[3rem] bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 text-gray-950 font-black text-xl uppercase tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:grayscale transition-all relative overflow-hidden group/play"
-        >
-          <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/play:translate-x-[100%] transition-transform duration-1000 skew-x-12" />
-          <span className="relative z-10 flex items-center justify-center gap-4">
-             ⚔️ Começar Crônica Épica
-          </span>
-        </motion.button>
-        
-        <div className="flex-1 flex gap-4">
+      {/* Card: Habilidades de Classe */}
+      {(() => {
+        const level = char.level || 1;
+        const habs = cls?.habilidades || {};
+        const granted = Object.entries(habs)
+          .filter(([lvl]) => parseInt(lvl) <= level)
+          .flatMap(([, arr]) => arr);
+        if (granted.length === 0) return null;
+        return (
+          <div className="bg-gray-950/60 rounded-[3.5rem] border border-amber-500/10 p-10 shadow-2xl flex flex-col gap-6">
+            <div className="flex items-center gap-4">
+              <span className="w-3 h-3 bg-amber-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
+              <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Habilidades de Classe</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {granted.map((h, i) => (
+                <span key={i} className="px-4 py-2.5 bg-amber-900/10 border border-amber-500/20 rounded-2xl text-[11px] font-black text-amber-300 uppercase tracking-wider flex items-center gap-2">
+                  <span className="text-sm">★</span> {h.nome || (typeof h === 'string' ? h : JSON.stringify(h))}
+                </span>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      <div className="flex flex-col gap-3 pt-10">
+        <div className="flex gap-3">
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={onSave}
             disabled={!char.nome?.trim()}
-            className="flex-1 py-8 px-6 rounded-[2.5rem] border-2 border-white/10 bg-gray-900/60 text-slate-300 font-extrabold text-[12px] uppercase tracking-[0.2em] shadow-2xl hover:text-white hover:border-white/20 transition-all disabled:opacity-30"
+            className="flex-[3] py-8 rounded-[3rem] bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 text-gray-950 font-black text-xl uppercase tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:grayscale transition-all relative overflow-hidden group/save"
           >
-            💾 Salvar
+            <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/save:translate-x-[100%] transition-transform duration-1000 skew-x-12" />
+            <span className="relative z-10 flex items-center justify-center gap-4">
+              💾 Salvar
+            </span>
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onPlay}
+            disabled={!char.nome?.trim()}
+            className="flex-1 py-8 rounded-[3rem] bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl uppercase tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 transition-all"
+          >
+            ▶ Jogar
+          </motion.button>
+        </div>
+
+        <div className="flex gap-3">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleExportPDF}
+            disabled={!char.nome?.trim()}
+            className="flex-[2] py-5 px-6 rounded-[2rem] border-2 border-red-500/30 bg-red-900/10 text-red-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-red-900/20 hover:border-red-500/50 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+          >
+            🖨️ Imprimir Ficha PDF
           </motion.button>
 
           <motion.button
-            whileHover={{ scale: 1.05, borderColor: 'rgba(59,130,246,0.5)' }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleExportJSON}
+            disabled={!char.nome?.trim()}
+            className="flex-1 py-5 px-6 rounded-[2rem] border-2 border-emerald-500/30 bg-emerald-900/10 text-emerald-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-emerald-900/20 hover:border-emerald-500/50 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+          >
+            📦 Exportar JSON
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={handleExport}
             disabled={!char.nome?.trim()}
-            className="flex-1 py-8 px-6 rounded-[2.5rem] border-2 border-blue-500/20 bg-blue-900/10 text-blue-400 font-extrabold text-[12px] uppercase tracking-[0.2em] shadow-2xl hover:text-blue-300 transition-all disabled:opacity-30"
+            className="flex-1 py-5 px-6 rounded-[2rem] border-2 border-blue-500/20 bg-blue-900/10 text-blue-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-blue-900/20 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
           >
             📄 Ficha .MD
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleShareLink}
+            disabled={!char.nome?.trim()}
+            className="flex-1 py-5 px-6 rounded-[2rem] border-2 border-violet-500/20 bg-violet-900/10 text-violet-400 font-black text-[11px] uppercase tracking-[0.2em] hover:bg-violet-900/20 transition-all disabled:opacity-30 flex items-center justify-center gap-2"
+          >
+            🔗 Compartilhar
           </motion.button>
         </div>
       </div>

@@ -123,42 +123,67 @@ export function StepPowers({ stats }) {
                   </p>
                   
                   {!eligibility.ok && !isOwned && (
-                    <div className="mt-3 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_5px_red]" />
-                       <span className="text-[9px] text-rose-400 font-black uppercase tracking-widest">Requisito: {eligibility.reason}</span>
+                    <div className="mt-3 flex flex-col gap-1">
+                       <div className="flex items-center gap-2">
+                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 shadow-[0_0_5px_red]" />
+                         <span className="text-[9px] text-rose-400 font-black uppercase tracking-widest">Requisito: {eligibility.reason}</span>
+                       </div>
+                       {stats?.attrs && (
+                         <div className="flex flex-wrap gap-1 pl-3.5">
+                           {['FOR','DES','CON','INT','SAB','CAR'].map(a => stats.attrs[a] !== 0 && stats.attrs[a] !== undefined ? (
+                             <span key={a} className="text-[8px] font-black text-slate-600">{a} {stats.attrs[a] > 0 ? '+' : ''}{stats.attrs[a]}</span>
+                           ) : null)}
+                         </div>
+                       )}
                     </div>
                   )}
                 </div>
               </button>
               
-              {isOwned && p.nome === 'Aumento de Atributo' && ownedInstances.map((instance, idx) => (
-                <div key={instance.id || idx} className="flex flex-col gap-1 p-3 bg-amber-950/20 rounded-2xl border border-amber-500/20">
-                  <p className="text-[8px] text-amber-500/60 font-black uppercase mb-1">Escolha {ownedInstances.length > 1 ? `#${idx + 1}` : ''}</p>
-                  <div className="flex flex-wrap gap-1">
-                    {['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'].map(attr => {
-                      const currentSelected = instance.escolha === attr;
-                      return (
-                        <button
-                          key={attr}
-                          onClick={() => {
-                            const updatedPowers = char.poderesGerais.map(pg => 
-                              pg.id === instance.id ? { ...pg, escolha: attr } : pg
-                            );
-                            updateChar({ poderesGerais: updatedPowers });
-                          }}
-                          className={`flex-1 px-2 py-1.5 rounded-lg text-[10px] font-black transition-all ${
-                            currentSelected 
-                              ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40' 
-                              : 'bg-black/40 text-amber-500/60 hover:text-amber-500 hover:bg-black/60'
-                          }`}
-                        >
-                          {attr}
-                        </button>
-                      );
-                    })}
+              {isOwned && p.nome === 'Aumento de Atributo' && ownedInstances.map((instance, idx) => {
+                // Count how many times each attr is already chosen in tier 1 (level 1-4),
+                // excluding the current instance
+                const tier1LevelChoices = Object.entries(char.levelChoices || {})
+                  .filter(([l]) => parseInt(l) <= 4)
+                  .map(([, c]) => c);
+                const attrCountInTier = (at) => {
+                  const fromOtherInstances = ownedInstances.filter((inst, i) => i !== idx && inst.escolha === at).length;
+                  const fromLevelChoices = tier1LevelChoices.filter(c => c?.nome === 'Aumento de Atributo' && c?.escolha === at).length;
+                  return fromOtherInstances + fromLevelChoices;
+                };
+                return (
+                  <div key={instance.id || idx} className="flex flex-col gap-1 p-3 bg-amber-950/20 rounded-2xl border border-amber-500/20">
+                    <p className="text-[8px] text-amber-500/60 font-black uppercase mb-1">Escolha {ownedInstances.length > 1 ? `#${idx + 1}` : ''}</p>
+                    <div className="flex flex-wrap gap-1">
+                      {['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'].map(attr => {
+                        const currentSelected = instance.escolha === attr;
+                        const alreadyUsedInTier = attrCountInTier(attr) >= 1;
+                        return (
+                          <button
+                            key={attr}
+                            disabled={alreadyUsedInTier && !currentSelected}
+                            onClick={() => {
+                              const updatedPowers = char.poderesGerais.map(pg =>
+                                pg.id === instance.id ? { ...pg, escolha: attr } : pg
+                              );
+                              updateChar({ poderesGerais: updatedPowers });
+                            }}
+                            className={`flex-1 px-2 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                              currentSelected
+                                ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/40'
+                                : (alreadyUsedInTier
+                                    ? 'bg-black/20 text-gray-700 cursor-not-allowed opacity-40'
+                                    : 'bg-black/40 text-amber-500/60 hover:text-amber-500 hover:bg-black/60')
+                            }`}
+                          >
+                            {attr}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           );
         })}

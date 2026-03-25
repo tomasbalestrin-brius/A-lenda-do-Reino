@@ -121,8 +121,11 @@ export function StepEquipment() {
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full" />
           
           <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-1">
+              <span className="px-3 py-0.5 rounded-full bg-emerald-950/40 border border-emerald-500/30 text-emerald-400 text-[9px] font-black uppercase tracking-widest">Fase 1 — Gratuito</span>
+            </div>
             <h2 className="text-4xl font-black text-white mb-3 italic tracking-tighter">
-              <span className="text-amber-500 mr-3">XII.</span> Equipamento Inicial
+              <span className="text-amber-500 mr-3">XIII.</span> Equipamento Inicial
             </h2>
             <p className="text-slate-400 text-sm mb-10 max-w-2xl font-medium leading-relaxed">De acordo com as regras de Arton, todo herói começa com itens básicos e escolhas gratuitas baseadas em seu treinamento.</p>
             
@@ -218,8 +221,11 @@ export function StepEquipment() {
       <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-10 rounded-[3rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">💰</div>
         <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <span className="px-3 py-0.5 rounded-full bg-amber-950/40 border border-amber-500/30 text-amber-400 text-[9px] font-black uppercase tracking-widest">Fase 2 — Compra com Dinheiro</span>
+          </div>
           <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
-            <span className="text-amber-500 mr-2">XI.</span> Arsenal Inicial
+            <span className="text-amber-500 mr-2">XIII.</span> Arsenal Inicial
           </h2>
           <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Você recebeu seu kit de herói. Agora use sua riqueza para comprar o que falta!</p>
         </div>
@@ -323,7 +329,7 @@ export function StepEquipment() {
                   <div>
                     <p className="font-bold text-white text-sm">{item.nome}</p>
                     <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
-                      {item.dano && `Dano: ${item.dano} `}
+                      {item.dano && `Dano: ${item.dano}+${item.distancia ? 'DES' : 'FOR'} `}
                       {item.def && `Defesa: +${item.def} `}
                       {item.peso && `Peso: ${item.peso}kg`}
                     </p>

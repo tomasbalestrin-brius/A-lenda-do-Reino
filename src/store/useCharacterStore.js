@@ -15,6 +15,7 @@ const getInitialCharState = () => ({
   pericias: [],
   periciasObrigEscolha: {},
   classSpells: [],
+  racialSpells: [],
   
   origem: null,
   origemBeneficios: [],
@@ -26,11 +27,10 @@ const getInitialCharState = () => ({
   attrMethod: 'buy',
   atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
   rolagens: [],
-  poderes: [],
   poderesGerais: [],
   aliado: null,
   idiomas: ['Comum'],
-  riqueza: 0,
+  dinheiro: 0,
   equipamento: [],
   
   // Identidade
@@ -57,7 +57,10 @@ export const useCharacterStore = create((set, get) => ({
     if (updates.classe && updates.classe !== state.char.classe) {
       newChar.pericias = [];
       newChar.periciasObrigEscolha = {};
+      newChar.periciasClasseEscolha = [];
       newChar.classSpells = [];
+      newChar.poderesGerais = [];
+      newChar.levelChoices = {};
     }
     
     // Se a origem mudou, limpa benefícios de origem

@@ -30,14 +30,25 @@ export function StepSpells() {
 
   const type = (classe === 'arcanista' || classe === 'bardo') ? 'arcana' : 'divina';
   const schools = (classe === 'bardo' || classe === 'druida') ? (choices.escolasMagia || []) : null;
+  const level = char.level || 1;
+
+  const maxCircle = useMemo(() => {
+    const isFullCaster = ['arcanista', 'clerigo'].includes(classe);
+    if (isFullCaster) return Math.min(5, Math.ceil(level / 2));
+    return level >= 7 ? 4 : level >= 5 ? 3 : level >= 3 ? 2 : 1;
+  }, [classe, level]);
+
+  const arcanaCircles = [SPELLS.magiasArcanas1, SPELLS.magiasArcanas2, SPELLS.magiasArcanas3, SPELLS.magiasArcanas4, SPELLS.magiasArcanas5];
+  const divinaCircles = [SPELLS.magiasDivinas1, SPELLS.magiasDivinas2, SPELLS.magiasDivinas3, SPELLS.magiasDivinas4, SPELLS.magiasDivinas5];
 
   const availableSpells = useMemo(() => {
-    const list = type === 'arcana' ? SPELLS.magiasArcanas1 : SPELLS.magiasDivinas1;
-    return Object.entries(list).filter(([id, s]) => {
+    const circles = type === 'arcana' ? arcanaCircles : divinaCircles;
+    const pool = circles.slice(0, maxCircle).flatMap(c => Object.entries(c || {}));
+    return pool.filter(([, s]) => {
       if (!schools) return true;
       return schools.map(sch => sch.toLowerCase()).includes(s.escola.toLowerCase());
     });
-  }, [type, schools]);
+  }, [type, schools, maxCircle]);
 
   const toggleSpell = (spell) => {
     const isOwned = (classSpells || []).some(s => s.nome === spell.nome);
@@ -54,7 +65,7 @@ export function StepSpells() {
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">✨</div>
         <div className="flex-1">
           <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-4">
-            <span className="text-amber-500">VII.</span> Magias ({classSpells.length}/{limits})
+            <span className="text-amber-500">VIII.</span> Magias ({classSpells.length}/{limits})
           </h2>
           <p className="text-slate-400 text-sm mt-3 max-w-lg leading-relaxed font-medium">
             Escolha as magias que definem seu repertório inicial. 
