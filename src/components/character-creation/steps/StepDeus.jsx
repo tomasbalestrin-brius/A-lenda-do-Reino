@@ -19,8 +19,32 @@ const DEITY_ICONS = {
   thwor: Swords, thyatis: Flame, valkaria: Zap, wynna: Sparkles,
 };
 
+const DEITY_CLASS = {
+  khalmyr: ['guerreiro', 'paladino', 'cavaleiro'],
+  valkaria: ['guerreiro', 'barbaro', 'lutador'],
+  thwor: ['barbaro', 'lutador'],
+  thyatis: ['clerigo', 'paladino'],
+  lena: ['clerigo', 'druida'],
+  allihanna: ['druida', 'cacador'],
+  lin_wu: ['lutador', 'cavaleiro', 'paladino'],
+  wynna: ['arcanista', 'bardo'],
+  tanna_toh: ['arcanista', 'inventor'],
+  marah: ['bardo', 'nobre'],
+  nimb: ['bucaneiro', 'ladino', 'bardo'],
+  azgher: ['paladino', 'cavaleiro'],
+  arsenal: ['guerreiro', 'bucaneiro'],
+  oceano: ['bucaneiro', 'druida'],
+  megalokk: ['barbaro', 'guerreiro'],
+  sszzaas: ['ladino', 'arcanista'],
+  tenebra: ['ladino', 'arcanista'],
+  hyninn: ['ladino', 'bucaneiro'],
+  aharadak: ['arcanista', 'inventor'],
+  kallyadranoch: ['barbaro', 'arcanista'],
+};
+
 export function StepDeus() {
   const { char, updateChar } = useCharacterStore();
+  const [filtro, setFiltro] = React.useState('todos');
   const deuses = Object.entries(DEUSES);
   const divineClasses = ['clerigo', 'druida', 'paladino'];
   const isDivine = divineClasses.includes(char.classe);
@@ -39,6 +63,23 @@ export function StepDeus() {
               : 'Opcional. Dedicar-se a um deus pode conceder dons únicos, mas exige seguir seus dogmas.'}
           </p>
         </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id: 'todos', label: 'Todos', icon: '✨' },
+          { id: 'classe', label: `Ideal para ${CLASSES[char.classe]?.nome || 'sua Classe'}`, icon: '⭐' },
+          { id: 'combate', label: 'Combate', icon: '⚔️' },
+          { id: 'magia', label: 'Magia', icon: '🔮' },
+          { id: 'cura', label: 'Cura & Natureza', icon: '💚' },
+        ].map(f => (
+          <button key={f.id} onClick={() => setFiltro(f.id)}
+            className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${
+              filtro === f.id ? 'bg-amber-600 border-amber-500 text-gray-950' : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-amber-500/30'
+            }`}>
+            {f.icon} {f.label}
+          </button>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -64,7 +105,14 @@ export function StepDeus() {
           </motion.button>
         )}
 
-        {deuses.map(([id, deus]) => {
+        {deuses.filter(([id]) => {
+          if (filtro === 'todos') return true;
+          if (filtro === 'classe') return (DEITY_CLASS[id] || []).includes(char.classe?.toLowerCase());
+          if (filtro === 'combate') return (DEITY_CLASS[id] || []).some(c => ['guerreiro','barbaro','lutador','cavaleiro','bucaneiro'].includes(c));
+          if (filtro === 'magia') return (DEITY_CLASS[id] || []).some(c => ['arcanista','bardo','inventor'].includes(c));
+          if (filtro === 'cura') return (DEITY_CLASS[id] || []).some(c => ['clerigo','druida','paladino','cacador'].includes(c));
+          return true;
+        }).map(([id, deus]) => {
           const isSelected = char.deus === id;
           return (
             <motion.button

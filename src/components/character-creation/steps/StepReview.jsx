@@ -8,7 +8,7 @@ import { ITENS } from '../../../data/items';
 import { MELHORIAS, MATERIAIS } from '../../../data/modificacoes';
 import DiceRollerBG3 from '../../DiceRollerBG3';
 import { useCharacterStore } from '../../../store/useCharacterStore';
-import { getAllTrainedSkills } from '../../../utils/rules/characterStats';
+import { getAllTrainedSkills, getAllOwnedPowers } from '../../../utils/rules/characterStats';
 
 import { exportToMarkdown } from '../../../utils/exportCharacter';
 import { exportToPDF } from '../../../utils/exportPDF';
@@ -155,6 +155,32 @@ export function StepReview({ stats, onSave, onPlay }) {
   const startTest = (name, modifier) => {
     setRollTest({ name, modifier });
   };
+
+  const warnings = React.useMemo(() => {
+    const w = [];
+    if (!char.nome?.trim()) w.push({ type: 'error', msg: 'Personagem sem nome.' });
+    const hasWeapon = (char.equipamento || []).some(e => {
+      const item = ITENS[typeof e === 'string' ? e : e.id];
+      return item?.tipo === 'arma';
+    });
+    if (!hasWeapon) w.push({ type: 'warn', msg: 'Nenhuma arma no equipamento — personagem indefeso em combate.' });
+    const casterClasses = ['arcanista', 'bardo', 'clerigo', 'druida'];
+    const isCaster = casterClasses.includes(char.classe?.toLowerCase());
+    if (isCaster && (char.classSpells || []).length === 0) {
+      w.push({ type: 'warn', msg: 'Conjurador sem magias selecionadas.' });
+    }
+    const level = char.level || 1;
+    if (level > 1) {
+      const needed = level - 1;
+      const filled = Object.values(char.levelChoices || {}).filter(v => v?.id || v?.type === 'attribute').length;
+      if (filled < needed) w.push({ type: 'warn', msg: `${needed - filled} nível(is) sem poder escolhido na Progressão.` });
+    }
+    const divineClasses = ['clerigo', 'druida', 'paladino'];
+    if (divineClasses.includes(char.classe?.toLowerCase()) && !char.deus) {
+      w.push({ type: 'error', msg: `${cls?.nome || 'Esta classe'} exige uma divindade.` });
+    }
+    return w;
+  }, [char, cls]);
 
   const handleExport = () => {
     exportToMarkdown(char, stats);
@@ -634,6 +660,22 @@ export function StepReview({ stats, onSave, onPlay }) {
           </div>
         );
       })()}
+
+      {warnings.length > 0 && (
+        <div className="flex flex-col gap-2 p-6 bg-gray-950/60 rounded-[2rem] border border-amber-500/10">
+          <p className="text-[9px] font-black text-amber-500/70 uppercase tracking-widest mb-1">⚠️ Avisos do Sistema</p>
+          {warnings.map((w, i) => (
+            <div key={i} className={`flex items-start gap-3 px-4 py-2.5 rounded-xl border text-[11px] font-bold ${
+              w.type === 'error'
+                ? 'bg-red-950/30 border-red-500/30 text-red-300'
+                : 'bg-amber-950/20 border-amber-500/20 text-amber-300'
+            }`}>
+              <span>{w.type === 'error' ? '🔴' : '🟡'}</span>
+              {w.msg}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-col gap-3 pt-10">
         <div className="flex gap-3">

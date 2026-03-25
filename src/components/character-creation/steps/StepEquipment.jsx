@@ -131,30 +131,34 @@ export function StepEquipment() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Simple Weapon */}
-              <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors group">
+              <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                 <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Arma Simples Gratuita</label>
-                <select 
-                  className="w-full bg-gray-900 border-2 border-gray-800 focus:border-amber-500 rounded-2xl p-4 text-sm text-white font-bold transition-all outline-none appearance-none cursor-pointer"
-                  value={char.choices?.freeEquipment?.simple || ''}
-                  onChange={(e) => selectFree(e.target.value, 'simple')}
-                >
-                  <option value="">Selecione uma arma...</option>
-                  {simpleWeapons.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
-                </select>
+                <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                  {simpleWeapons.map(w => (
+                    <button key={w.id} onClick={() => selectFree(w.id, 'simple')}
+                      className={`p-3 rounded-xl border-2 text-left transition-all ${char.choices?.freeEquipment?.simple === w.id ? 'border-amber-500 bg-amber-950/40 text-white' : 'border-white/5 bg-gray-900/60 text-slate-400 hover:border-amber-500/30'}`}>
+                      <p className="font-black text-[11px] uppercase truncate">{w.nome}</p>
+                      <p className="text-[10px] text-amber-400 font-bold mt-0.5">{w.dano}</p>
+                      <p className="text-[8px] text-slate-600 mt-0.5">{w.critico}× · {w.empunhadura || 'simples'}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Martial Weapon */}
               {hasMartial && (
                 <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Arma Marcial Gratuita</label>
-                  <select 
-                    className="w-full bg-gray-900 border-2 border-gray-800 focus:border-amber-500 rounded-2xl p-4 text-sm text-white font-bold transition-all outline-none appearance-none cursor-pointer"
-                    value={char.choices?.freeEquipment?.martial || ''}
-                    onChange={(e) => selectFree(e.target.value, 'martial')}
-                  >
-                    <option value="">Selecione uma arma...</option>
-                    {martialWeapons.map(w => <option key={w.id} value={w.id}>{w.nome}</option>)}
-                  </select>
+                  <div className="grid grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1 custom-scrollbar">
+                    {martialWeapons.map(w => (
+                      <button key={w.id} onClick={() => selectFree(w.id, 'martial')}
+                        className={`p-3 rounded-xl border-2 text-left transition-all ${char.choices?.freeEquipment?.martial === w.id ? 'border-amber-500 bg-amber-950/40 text-white' : 'border-white/5 bg-gray-900/60 text-slate-400 hover:border-amber-500/30'}`}>
+                        <p className="font-black text-[11px] uppercase truncate">{w.nome}</p>
+                        <p className="text-[10px] text-amber-400 font-bold mt-0.5">{w.dano}</p>
+                        <p className="text-[8px] text-slate-600 mt-0.5">{w.critico}× · {w.empunhadura || 'marcial'}</p>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 

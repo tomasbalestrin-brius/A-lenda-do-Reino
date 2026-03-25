@@ -202,6 +202,9 @@ export function shouldSkipStep(step, char, stats) {
     case 11: // Perícias de Inteligência
       return (stats.attrs?.INT || 0) <= 0;
 
+    case 14: // Poderes Iniciais — apenas se level > 1
+      return (char.level || 1) <= 1;
+
     case 15: // Progressão de Nível
       return (char.level || 1) <= 1;
 

@@ -11,6 +11,38 @@ const CLASS_ICONS = {
   nobre: '👑', paladino: '⚔️',
 };
 
+const PERICIAS_INFO = {
+  'Acrobacia':    { attr: 'DES', desc: 'Equilíbrio, rolar, escapar de agarrões' },
+  'Adestramento': { attr: 'CAR', desc: 'Treinar e comandar animais' },
+  'Atletismo':    { attr: 'FOR', desc: 'Escalar, nadar, saltar longas distâncias' },
+  'Atuação':      { attr: 'CAR', desc: 'Cantar, dançar, atuar — entreter plateias' },
+  'Cavalgar':     { attr: 'DES', desc: 'Controlar montarias em terreno difícil' },
+  'Conhecimento': { attr: 'INT', desc: 'Saber sobre história, geografia e lendas' },
+  'Cura':         { attr: 'SAB', desc: 'Primeiros socorros e tratar doenças/venenos' },
+  'Diplomacia':   { attr: 'CAR', desc: 'Persuadir, negociar, melhorar atitudes' },
+  'Enganação':    { attr: 'CAR', desc: 'Mentir, disfarçar, criar distrações' },
+  'Fortitude':    { attr: 'CON', desc: 'Resistir a venenos, doenças e efeitos físicos' },
+  'Furtividade':  { attr: 'DES', desc: 'Mover-se sem ser visto ou ouvido' },
+  'Guerra':       { attr: 'INT', desc: 'Táticas militares e conhecimento de batalha' },
+  'Iniciativa':   { attr: 'DES', desc: 'Agir primeiro no combate' },
+  'Intimidação':  { attr: 'CAR', desc: 'Assustar, coagir ou dominar com ameaças' },
+  'Intuição':     { attr: 'SAB', desc: 'Detectar mentiras e perceber intenções' },
+  'Investigação': { attr: 'INT', desc: 'Analisar pistas, examinar cenas e resolver enigmas' },
+  'Jogatina':     { attr: 'CAR', desc: 'Ganhar em jogos de azar e apostas' },
+  'Ladinagem':    { attr: 'DES', desc: 'Abrir fechaduras, bolsear e desarmar armadilhas' },
+  'Luta':         { attr: 'FOR', desc: 'Atacar com armas corpo a corpo' },
+  'Misticismo':   { attr: 'INT', desc: 'Identificar magias, itens e usar pergaminhos' },
+  'Nobreza':      { attr: 'INT', desc: 'Etiqueta, heráldica e política da aristocracia' },
+  'Ofício':       { attr: 'INT', desc: 'Criar e vender produtos artesanais' },
+  'Percepção':    { attr: 'SAB', desc: 'Notar detalhes, detectar emboscadas' },
+  'Pilotagem':    { attr: 'DES', desc: 'Controlar embarcações, carruagens e aeronaves' },
+  'Pontaria':     { attr: 'DES', desc: 'Atacar com armas à distância' },
+  'Reflexos':     { attr: 'DES', desc: 'Esquivar de explosões e efeitos de área' },
+  'Religião':     { attr: 'SAB', desc: 'Conhecer divindades, rituais e práticas religiosas' },
+  'Sobrevivência':{ attr: 'SAB', desc: 'Rastrear, orientar-se e sobreviver no ambiente' },
+  'Vontade':      { attr: 'SAB', desc: 'Resistir a magias mentais e efeitos psíquicos' },
+};
+
 export function StepClassePericias() {
   const { char, updateChar } = useCharacterStore();
   const cls = CLASSES[char.classe];
@@ -61,6 +93,19 @@ export function StepClassePericias() {
           </p>
        </div>
 
+       <details className="bg-blue-950/20 border border-blue-500/10 rounded-2xl overflow-hidden group">
+         <summary className="flex items-center justify-between px-5 py-3 cursor-pointer text-[10px] font-black text-blue-400 uppercase tracking-widest list-none">
+           <span>💡 Como funcionam as perícias em T20</span>
+           <span className="transition-transform group-open:rotate-180">▼</span>
+         </summary>
+         <div className="px-5 pb-4 text-[11px] text-slate-400 leading-relaxed space-y-1 font-medium">
+           <p>• Ser <strong className="text-white">treinado</strong> em uma perícia adiciona <strong className="text-white">+5</strong> no teste.</p>
+           <p>• Seu bônus final = Atributo + metade do nível + 5 (se treinado).</p>
+           <p>• Perícias com 🔒 são obrigatórias da classe — você já as recebe automaticamente.</p>
+           <p>• Se já tem uma perícia pela origem, você ganha uma escolha extra da classe.</p>
+         </div>
+       </details>
+
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* Mandatory Section */}
           <div className="space-y-4">
@@ -71,7 +116,14 @@ export function StepClassePericias() {
             <div className="grid grid-cols-1 gap-3">
                {fixedObrig.map(p => (
                  <div key={p} className="p-5 rounded-2xl bg-gray-950 border border-gray-800 flex items-center justify-between shadow-inner">
-                    <span className="text-base font-black text-gray-300 uppercase tracking-tight">{p}</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-black text-gray-300 uppercase tracking-tight">{p}</span>
+                      {PERICIAS_INFO[p] && (
+                        <span className="text-[9px] text-slate-600 mt-0.5 font-medium">
+                          {PERICIAS_INFO[p].attr} · {PERICIAS_INFO[p].desc}
+                        </span>
+                      )}
+                    </div>
                     <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-[10px]">🔒</div>
                  </div>
                ))}
@@ -148,8 +200,13 @@ export function StepClassePericias() {
                           : 'bg-gray-900/60 border-white/5 text-slate-300 hover:border-amber-500/40 hover:bg-gray-950')
                      }`}
                    >
-                     <div className="flex flex-col">
+                     <div className="flex flex-col gap-0.5">
                         <span className="text-xs font-black uppercase tracking-tight truncate">{p}</span>
+                        {PERICIAS_INFO[p] && !isOrigin && !isObrigChoice && (
+                          <span className={`text-[9px] font-medium ${isPicked ? 'text-gray-800' : 'text-slate-600'}`}>
+                            {PERICIAS_INFO[p].attr} · {PERICIAS_INFO[p].desc}
+                          </span>
+                        )}
                         {(isOrigin || isObrigChoice) && <span className="text-[8px] opacity-60 font-black">Já Adquirido</span>}
                      </div>
                      {isPicked && <span className="text-lg">⚔️</span>}

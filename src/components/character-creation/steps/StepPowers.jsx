@@ -64,6 +64,19 @@ export function StepPowers({ stats }) {
         </div>
       </div>
 
+      <details className="bg-blue-950/20 border border-blue-500/10 rounded-2xl overflow-hidden group">
+        <summary className="flex items-center justify-between px-5 py-3 cursor-pointer text-[10px] font-black text-blue-400 uppercase tracking-widest list-none">
+          <span>💡 Como funcionam os poderes gerais em T20</span>
+          <span className="transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="px-5 pb-4 text-[11px] text-slate-400 leading-relaxed space-y-1 font-medium">
+          <p>• Poderes Gerais são escolhidos a cada nível (<strong className="text-white">nível - 1</strong> poderes no total).</p>
+          <p>• Aqui você escolhe os poderes do <strong className="text-white">nível inicial</strong>. No step XVI você escolhe os de outros níveis.</p>
+          <p>• Poderes em cinza com "Bloqueado" têm pré-requisitos não atendidos ainda.</p>
+          <p>• <strong className="text-white">Aumento de Atributo</strong> pode ser pego múltiplas vezes mas para atributos diferentes por patamar.</p>
+        </div>
+      </details>
+
       <div className="flex flex-wrap gap-2 mb-4 bg-gray-950/40 p-2 rounded-2xl border border-white/5">
         {types.map(t => (
           <button

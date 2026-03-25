@@ -268,6 +268,19 @@ export function StepAttributes({ stats }) {
         </div>
       </div>
 
+      <details className="bg-blue-950/20 border border-blue-500/10 rounded-2xl overflow-hidden group -mt-4">
+        <summary className="flex items-center justify-between px-5 py-3 cursor-pointer text-[10px] font-black text-blue-400 uppercase tracking-widest list-none">
+          <span>💡 Como funcionam os atributos em T20</span>
+          <span className="transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="px-5 pb-4 text-[11px] text-slate-400 leading-relaxed space-y-1 font-medium">
+          <p>• Os atributos vão de <strong className="text-white">-5 a +5</strong>. O valor já É o modificador (não como D&D).</p>
+          <p>• <strong className="text-white">0 é a média humana</strong>. +2 já é muito bom. +4 é extraordinário.</p>
+          <p>• O custo em pontos é progressivo: valores 0, 1 custam 1pt cada. 2 custa 2pts. 3 custa 3pts.</p>
+          <p>• Seu atributo principal (Ataque/Mana) deve ser priorizado — destacado em laranja ou azul acima.</p>
+        </div>
+      </details>
+
       {/* Point Buy Pool Display */}
       {isBuy && (
         <div className="flex flex-col items-center gap-3 -mt-8 relative z-10">
@@ -369,6 +382,26 @@ export function StepAttributes({ stats }) {
             onChange={handleChange}
           />
         ))}
+      </div>
+
+      {/* Impact Reference */}
+      <div className="bg-gray-950/40 border border-white/5 rounded-[2rem] p-6">
+        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-4">O que cada atributo afeta</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[
+            { key: 'FOR', color: 'text-orange-400', impact: 'Ataque melee · Dano corpo a corpo · Atletismo' },
+            { key: 'DES', color: 'text-yellow-400', impact: 'Defesa · Iniciativa · Pontaria · Reflexos · Furtividade' },
+            { key: 'CON', color: 'text-red-400',    impact: 'PV por nível · Fortitude · Resistência física' },
+            { key: 'INT', color: 'text-blue-400',   impact: 'PM (Arcanista) · Perícias extras · Misticismo · Guerra' },
+            { key: 'SAB', color: 'text-green-400',  impact: 'PM (Clérigo/Druida/Caçador) · Vontade · Percepção · Cura' },
+            { key: 'CAR', color: 'text-pink-400',   impact: 'PM (Bardo/Paladino/Nobre) · Diplomacia · Intimidação' },
+          ].map(a => (
+            <div key={a.key} className="flex flex-col gap-1 p-3 bg-white/[0.03] rounded-xl border border-white/5">
+              <span className={`text-xs font-black ${a.color}`}>{a.key}</span>
+              <span className="text-[9px] text-slate-500 font-medium leading-relaxed">{a.impact}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

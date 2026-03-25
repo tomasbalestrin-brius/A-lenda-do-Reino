@@ -75,6 +75,20 @@ export function StepClass({ onNext }) {
         ))}
       </div>
 
+      <details className="bg-blue-950/20 border border-blue-500/10 rounded-2xl overflow-hidden group">
+        <summary className="flex items-center justify-between px-5 py-3 cursor-pointer text-[10px] font-black text-blue-400 uppercase tracking-widest list-none">
+          <span>💡 Como escolher sua classe</span>
+          <span className="transition-transform group-open:rotate-180">▼</span>
+        </summary>
+        <div className="px-5 pb-4 text-[11px] text-slate-400 leading-relaxed space-y-1 font-medium">
+          <p>• <strong className="text-white">Quer atacar em corpo a corpo?</strong> Guerreiro, Bárbaro, Lutador, Cavaleiro ou Paladino.</p>
+          <p>• <strong className="text-white">Quer lançar magias?</strong> Arcanista (arcanas), Clérigo/Druida (divinas), Bardo (ambas).</p>
+          <p>• <strong className="text-white">Quer ser furtivo?</strong> Ladino, Bucaneiro ou Caçador.</p>
+          <p>• <strong className="text-white">Quer suporte social?</strong> Nobre ou Bardo.</p>
+          <p>• <strong className="text-white">Dica:</strong> Em T20, toda classe tem PM e usa habilidades ativas — não existe classe sem recursos.</p>
+        </div>
+      </details>
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {classes.map(([id, cls]) => {
           const isSelected = char.classe === id;
