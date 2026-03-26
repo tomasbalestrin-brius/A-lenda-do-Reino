@@ -33,6 +33,7 @@ const getInitialCharState = () => ({
   idiomas: ['Comum'],
   dinheiro: 0,
   equipamento: [],
+  portrait: null,
   
   // Identidade
   nome: '',

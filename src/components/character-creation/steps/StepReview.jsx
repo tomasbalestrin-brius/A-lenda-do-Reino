@@ -20,6 +20,7 @@ const RACE_ICONS = {
   goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
   hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
   kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
+  moreau: '🦊',
 };
 
 const RACE_IMAGES = {
@@ -242,8 +243,8 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
       >
         {/* Full bleed portrait bg */}
         <div className="absolute inset-0 z-0">
-          {RACE_IMAGES[char.raca] && (
-            <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover object-top opacity-25 scale-105 blur-[2px] brightness-50" />
+          {(char.portrait || RACE_IMAGES[char.raca]) && (
+            <img src={char.portrait || RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover object-top opacity-25 scale-105 blur-[2px] brightness-50" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/80 to-gray-950/40" />
           <div className="absolute inset-0 bg-gradient-to-r from-gray-950/60 via-transparent to-gray-950/60" />
@@ -252,8 +253,8 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 p-6 md:p-10 min-w-0">
           {/* Portrait */}
           <div className="shrink-0 w-24 h-24 md:w-36 md:h-36 rounded-[2rem] border-2 border-amber-500/50 overflow-hidden shadow-[0_0_60px_rgba(245,158,11,0.25)] bg-gray-950">
-            {RACE_IMAGES[char.raca]
-              ? <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
+            {(char.portrait || RACE_IMAGES[char.raca])
+              ? <img src={char.portrait || RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
               : <span className="w-full h-full flex items-center justify-center text-6xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
             }
           </div>

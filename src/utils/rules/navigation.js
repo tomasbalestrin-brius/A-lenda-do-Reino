@@ -50,6 +50,13 @@ export function canGoNext(step, char, stats) {
         return { ok, reason: ok ? null : msg };
       }
 
+      if (r === 'moreau') {
+        const hasVariant = !!(char.choices?.moreau || char.racaVariante);
+        const hasAttrChoice = (char.racaEscolha || []).length === 1;
+        const ok = hasVariant && hasAttrChoice;
+        return { ok, reason: ok ? null : (!hasVariant ? 'Selecione sua variante (Raposa, Urso ou Touro).' : 'Escolha 1 atributo para receber +2.') };
+      }
+
       if (['sereia', 'silfide', 'qareen'].includes(r)) {
         const required = (r === 'sereia' || r === 'silfide') ? 2 : 1;
         const selected = (char.racialSpells || []).length;

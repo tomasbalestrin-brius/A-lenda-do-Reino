@@ -27,6 +27,7 @@ const RACE_ICONS = {
   goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
   hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
   kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
+  moreau: '🦊',
 };
 
 const RACE_IMAGES = {
@@ -116,6 +117,9 @@ export function StepRace({ onNext }) {
                 ℹ
               </button>
 
+              {race.dlc && (
+                <div className="absolute top-3 left-3 z-20 px-2 py-0.5 rounded-full bg-purple-900/60 border border-purple-500/40 text-purple-300 text-[7px] font-black uppercase tracking-widest">DLC</div>
+              )}
               {isSelected && (
                 <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)] z-20" />
               )}

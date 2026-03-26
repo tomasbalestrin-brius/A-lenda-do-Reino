@@ -65,6 +65,11 @@ function getRaceAttrBonus(raceData, escolha, variante) {
   if (a.variante && variante && raceData.variantes?.[variante]) {
     const va = raceData.variantes[variante].atributos || {};
     Object.entries(va).forEach(([k, v]) => { const m = keyMap[k]; if (m) out[m] += v; });
+    // Also handle escolha/valor in variant (e.g., Moreau)
+    if (va.escolha && va.valor && escolha) {
+      const restricoes = raceData?.escolhaRestricao || [];
+      escolha.forEach(k => { if (out[k] !== undefined && !restricoes.includes(k)) out[k] += va.valor; });
+    }
     return out;
   }
 
@@ -379,7 +384,12 @@ export function computeStats(char) {
   savesResult.ref    += magicBonuses.ref;
   savesResult.von    += magicBonuses.von;
 
-  const ini = attrs.DES + halfLevel + (aliado?.tipo === 'Vigilante' ? 2 : 0) + magicBonuses.ini;
+  const racialIniBonus = (raceData?.habilidades || []).reduce((sum, h) => {
+    if (!h.bonus?.ini) return sum;
+    if (h.variante && h.variante !== char.racaVariante) return sum;
+    return sum + h.bonus.ini;
+  }, 0);
+  const ini = attrs.DES + halfLevel + (aliado?.tipo === 'Vigilante' ? 2 : 0) + magicBonuses.ini + racialIniBonus;
 
   // Penalidade de armadura em perícias
   const armorPenaltyPericias = PERICIAS.filter(p => p.penalidade).map(p => p.nome);

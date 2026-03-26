@@ -11,6 +11,7 @@ const RACE_ICONS = {
   goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
   hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
   kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
+  moreau: '🦊',
 };
 
 const ALL_PERICIAS = [
@@ -38,14 +39,15 @@ export function StepHeritage() {
   const isSereia = raca === 'sereia';
   const isSilfide = raca === 'silfide';
   const isQareen = raca === 'qareen';
+  const isMoreau = raca === 'moreau';
 
   const currentChoices = char.choices || {};
   const selectedSkills = currentChoices.pericias || [];
 
   const setChoices = (newChoices) => {
-    updateChar({ 
-      choices: newChoices, 
-      racaVariante: newChoices.suraggel || char.racaVariante 
+    updateChar({
+      choices: newChoices,
+      racaVariante: newChoices.suraggel || newChoices.moreau || char.racaVariante
     });
   };
 
@@ -569,6 +571,111 @@ export function StepHeritage() {
              />
           </motion.div>
         )}
+        {isMoreau && (() => {
+          const moreuVariant = currentChoices.moreau || char.racaVariante || null;
+          const varianteInfo = { raposa: { icon: '🦊', label: 'Raposa', attrs: '+2 INT', bonus: '+4 Iniciativa' }, urso: { icon: '🐻', label: 'Urso', attrs: '+2 CON', bonus: '' }, touro: { icon: '🐂', label: 'Touro', attrs: '+2 FOR', bonus: '' } };
+          const moreauPowers = currentChoices.moreauPowers || [];
+          const moreauPericia = currentChoices.moreauPericia || null;
+          return (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
+              {/* Variant selection */}
+              <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl backdrop-blur-md">
+                <h3 className="text-sm font-black text-amber-400 uppercase tracking-[0.2em] mb-2">Variante Moreau</h3>
+                <p className="text-[11px] text-slate-400 font-medium mb-6">Escolha sua linhagem animal ancestral.</p>
+                <div className="grid grid-cols-3 gap-4">
+                  {Object.entries(varianteInfo).map(([key, v]) => (
+                    <motion.button key={key} whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }}
+                      onClick={() => setChoices({ ...currentChoices, moreau: key, moreauPowers: [], moreauPericia: null })}
+                      className={`p-6 rounded-[2rem] border-2 transition-all text-left group ${moreuVariant === key ? 'border-amber-500 bg-amber-950/30 shadow-xl' : 'border-white/5 bg-gray-900/40 hover:border-amber-500/30'}`}
+                    >
+                      <span className="text-4xl block mb-3">{v.icon}</span>
+                      <p className={`font-black text-sm uppercase tracking-wide mb-1 ${moreuVariant === key ? 'text-amber-400' : 'text-white'}`}>{v.label}</p>
+                      <p className="text-[10px] text-slate-400 font-medium">{v.attrs}{v.bonus ? ` · ${v.bonus}` : ''}</p>
+                      <p className="text-[10px] text-slate-500 mt-1">+2 em 1 attr à escolha</p>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+              {/* Attribute choice */}
+              {moreuVariant && renderAttrSelection(1)}
+              {/* 2 Free powers */}
+              {moreuVariant && (
+                <div className="bg-orange-950/20 rounded-[2.5rem] border border-orange-500/10 p-8 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-sm font-black text-orange-400 uppercase tracking-[0.2em] mb-1">2 Talentos Raciais</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Moreau possui dois poderes gerais extras no 1º nível.</p>
+                    </div>
+                    <div className={`px-4 py-2 rounded-full text-[10px] font-black border-2 ${moreauPowers.length === 2 ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' : 'bg-orange-950/40 border-orange-500/40 text-orange-400'}`}>
+                      {moreauPowers.length} / 2
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {[{ id: 'combate', label: 'Combate' }, { id: 'destino', label: 'Destino' }, { id: 'magia', label: 'Magia' }].map(t => (
+                      <button key={t.id} onClick={() => setChoices({ ...currentChoices, moreau: moreuVariant, activePowerTab: t.id })}
+                        className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${(currentChoices.activePowerTab || 'combate') === t.id ? 'bg-orange-600 border-orange-400 text-white' : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-orange-500/30'}`}
+                      >{t.label}</button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(GENERAL_POWERS[currentChoices.activePowerTab || 'combate'] || []).filter(p => {
+                      const stats = computeStats(char);
+                      return checkPowerEligibility(p, char, stats).ok || moreauPowers.some(x => x.nome === p.nome);
+                    }).map(p => {
+                      const isSelected = moreauPowers.some(x => x.nome === p.nome);
+                      return (
+                        <button key={p.nome} onClick={() => {
+                          let next;
+                          if (isSelected) next = moreauPowers.filter(x => x.nome !== p.nome);
+                          else if (moreauPowers.length < 2) next = [...moreauPowers, p];
+                          else return;
+                          setChoices({ ...currentChoices, moreau: moreuVariant, moreauPowers: next });
+                          updateChar({ poderesGerais: next.map(x => x.nome) });
+                        }}
+                          className={`p-4 rounded-2xl border-2 text-left text-xs transition-all ${isSelected ? 'border-orange-400 bg-orange-600 text-white' : 'border-white/5 bg-gray-950/40 text-slate-400 hover:border-orange-500/30'}`}
+                        >
+                          <p className="font-black mb-1">{p.nome}</p>
+                          <p className="text-[10px] leading-relaxed opacity-70">{p.descricao?.substring(0, 80)}...</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {/* 1 Extra skill */}
+              {moreuVariant && (
+                <div className="bg-teal-950/20 rounded-[2.5rem] border border-teal-500/10 p-8 shadow-2xl backdrop-blur-md">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-sm font-black text-teal-400 uppercase tracking-[0.2em] mb-1">Perícia Extra</h3>
+                      <p className="text-[11px] text-slate-400 font-medium">Moreau possui treinamento natural em uma competência adicional.</p>
+                    </div>
+                    <div className={`px-4 py-2 rounded-full text-[10px] font-black border-2 ${moreauPericia ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' : 'bg-teal-950/40 border-teal-500/40 text-teal-400'}`}>
+                      {moreauPericia ? '1 / 1' : '0 / 1'}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {ALL_PERICIAS.map(s => {
+                      const isSel = moreauPericia === s;
+                      return (
+                        <button key={s} onClick={() => {
+                          const next = isSel ? null : s;
+                          setChoices({ ...currentChoices, moreau: moreuVariant, moreauPericia: next });
+                          const pericias = (char.pericias || []).filter(x => x !== moreauPericia);
+                          if (next) updateChar({ pericias: [...pericias, next] });
+                          else updateChar({ pericias });
+                        }}
+                          className={`p-3 rounded-2xl border-2 text-xs font-black transition-all ${isSel ? 'border-teal-400 bg-teal-600 text-white' : 'border-white/5 bg-gray-950/40 text-slate-500 hover:border-teal-500/30 hover:text-white'}`}
+                        >{s}</button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          );
+        })()}
+
         {raca === 'golem' && (
              <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
               <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">🤖</div>

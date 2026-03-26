@@ -361,6 +361,50 @@ export const RACES = {
     ]
   },
 
+  moreau: {
+    nome: "Moreau",
+    descricao: "Humanoides com traços de animais, originários de Moreania. Cada variante carrega o espírito de seu animal ancestral. São ágeis, perspicazes e possuem sentidos apurados.",
+    atributos: { variante: true },
+    dlc: "Reinos de Moreania",
+    variantes: {
+      raposa: {
+        nome: "Raposa",
+        descricao: "Inteligente e veloz, a Moreau-Raposa combina astúcia com ferocidade. +2 INT, +2 em um atributo à escolha, +4 Iniciativa.",
+        atributos: { inteligencia: 2, escolha: 1, valor: 2 }
+      },
+      urso: {
+        nome: "Urso",
+        descricao: "Robusto e resistente, o Moreau-Urso é um guardião natural. +2 CON, +2 em um atributo à escolha.",
+        atributos: { constituicao: 2, escolha: 1, valor: 2 }
+      },
+      touro: {
+        nome: "Touro",
+        descricao: "Poderoso e implacável, o Moreau-Touro abala qualquer linha defensiva. +2 FOR, +2 em um atributo à escolha.",
+        atributos: { forca: 2, escolha: 1, valor: 2 }
+      }
+    },
+    habilidades: [
+      {
+        nome: "Faro",
+        descricao: "Você percebe criaturas em alcance curto (9m) mesmo sem vê-las, e recebe +4 em testes de Sobrevivência para rastrear."
+      },
+      {
+        nome: "Dois Talentos Extras",
+        descricao: "Você recebe dois poderes gerais à sua escolha no 1º nível."
+      },
+      {
+        nome: "Perícia Extra",
+        descricao: "Você se torna treinado em uma perícia à sua escolha (não precisa ser da sua classe)."
+      },
+      {
+        nome: "Veloz (Raposa)",
+        descricao: "+4 em testes de Iniciativa.",
+        variante: "raposa",
+        bonus: { ini: 4 }
+      }
+    ]
+  },
+
   trog: {
     nome: "Trog",
     descricao: "Trogloditas, homens-lagarto primitivos e subterrâneos. Uns poucos divergem da selvageria e escolhem caminhos surpreendentes como druidas, clérigos ou bucaneiros.",

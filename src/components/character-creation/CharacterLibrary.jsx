@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CLASSES from '../../data/classes';
 import RACES from '../../data/races';
+import { VELOX_PRESET } from '../../data/presets/velox';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -8,6 +9,72 @@ const CLASS_ICONS = {
   guerreiro: '⚔️', inventor: '⚙️', ladino: '🗡️', lutador: '👊',
   nobre: '👑', paladino: '⚔️',
 };
+
+const EXAMPLE_CHARS = [VELOX_PRESET];
+
+function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
+  const char = item.data || item;
+  const cls = CLASSES[char.classe] || {};
+  const race = RACES[char.raca] || {};
+  const s = char.stats || {};
+  return (
+    <div className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative">
+      <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl group-hover:opacity-10 transition-opacity">
+        {CLASS_ICONS[char.classe] || '⚔️'}
+      </div>
+      {isExample && (
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-amber-900/50 border border-amber-500/40 text-amber-400 text-[9px] font-black uppercase tracking-widest">
+          Exemplo {char.raca && RACES[char.raca]?.dlc ? `· ${RACES[char.raca].dlc}` : ''}
+        </div>
+      )}
+
+      <div className="flex items-center gap-5 mt-4">
+        <div className="w-20 h-20 rounded-3xl bg-gray-950 border border-gray-800 flex items-center justify-center overflow-hidden shadow-2xl shrink-0">
+          {char.portrait
+            ? <img src={char.portrait} alt={char.nome} className="w-full h-full object-cover" onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }} />
+            : null}
+          <span className={`w-full h-full flex items-center justify-center text-4xl ${char.portrait ? 'hidden' : ''}`}>
+            {CLASS_ICONS[char.classe] || '⚔️'}
+          </span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-2xl font-black text-white truncate tracking-tight">{char.nome}</p>
+          <p className="text-xs font-black text-amber-500/80 uppercase tracking-widest mt-1">
+            {race?.nome || char.raca} · {cls?.nome || char.classe}
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-2">
+        {[
+          { l: 'PV', v: s.pv, c: 'text-red-400' },
+          { l: 'PM', v: s.pm, c: 'text-blue-400' },
+          { l: 'DEF', v: s.def, c: 'text-sky-400' },
+          { l: 'ATK', v: s.atk != null ? (s.atk >= 0 ? '+' : '') + s.atk : '?', c: 'text-orange-400' }
+        ].map(stat => (
+          <div key={stat.l} className="bg-gray-950/80 rounded-2xl py-3 border border-gray-800/50 shadow-inner flex flex-col items-center">
+            <span className={`text-base font-black ${stat.c}`}>{stat.v ?? '?'}</span>
+            <span className="text-[9px] font-black text-gray-600 uppercase tracking-tighter">{stat.l}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-2 mt-auto">
+        <button onClick={() => onPlay?.(item)} className="flex-[2] py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
+          ▶ Jogar
+        </button>
+        <button onClick={() => onLoad(item)} className="flex-[2] py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-900/20 active:scale-95">
+          Editar
+        </button>
+        {!isExample && onDelete && (
+          <button onClick={() => onDelete(item)} className="flex-1 py-4 rounded-2xl bg-gray-950/80 border border-gray-800 hover:border-red-600 hover:text-red-500 text-gray-700 transition-all active:scale-90">
+            🗑
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompendium, onImport, onPlay, loading }) {
   const [search, setSearch] = useState('');
@@ -113,60 +180,15 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
               return (char.nome || '').toLowerCase().includes(q)
                 || race.toLowerCase().includes(q)
                 || cls.toLowerCase().includes(q);
-            }).map((item, idx) => {
-              const char = item.data || item;
-              const cls = CLASSES[char.classe] || {};
-              const race = RACES[char.raca] || {};
-              const s = char.stats || {};
-              return (
-                <div 
-                  key={item.id || idx} 
-                  className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative"
-                >
-                  <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl group-hover:opacity-10 transition-opacity">
-                    {CLASS_ICONS[char.classe] || '⚔️'}
-                  </div>
-
-                  <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-3xl bg-gray-950 border border-gray-800 flex items-center justify-center text-4xl shadow-2xl">
-                       {CLASS_ICONS[char.classe] || '⚔️'}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-2xl font-black text-white truncate tracking-tight">{char.nome}</p>
-                      <p className="text-xs font-black text-amber-500/80 uppercase tracking-widest mt-1">
-                        {race?.nome || char.raca} · {cls?.nome || char.classe}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-4 gap-2">
-                     {[
-                       { l: 'PV', v: s.pv, c: 'text-red-400' },
-                       { l: 'PM', v: s.pm, c: 'text-blue-400' },
-                       { l: 'DEF', v: s.def, c: 'text-sky-400' },
-                       { l: 'ATK', v: s.atk != null ? (s.atk >= 0 ? '+' : '') + s.atk : '?', c: 'text-orange-400' }
-                     ].map(stat => (
-                       <div key={stat.l} className="bg-gray-950/80 rounded-2xl py-3 border border-gray-800/50 shadow-inner flex flex-col items-center">
-                         <span className={`text-base font-black ${stat.c}`}>{stat.v ?? '?'}</span>
-                         <span className="text-[9px] font-black text-gray-600 uppercase tracking-tighter">{stat.l}</span>
-                       </div>
-                     ))}
-                  </div>
-
-                  <div className="flex gap-2 mt-auto">
-                    <button onClick={() => onPlay?.(item)} className="flex-[2] py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
-                      ▶ Jogar
-                    </button>
-                    <button onClick={() => onLoad(item)} className="flex-[2] py-4 rounded-2xl bg-amber-600 hover:bg-amber-500 text-gray-900 font-black text-sm uppercase tracking-widest transition-all shadow-lg shadow-amber-900/20 active:scale-95">
-                      Editar
-                    </button>
-                    <button onClick={() => onDelete(idx)} className="flex-1 py-4 rounded-2xl bg-gray-950/80 border border-gray-800 hover:border-red-600 hover:text-red-500 text-gray-700 transition-all active:scale-90">
-                      🗑
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            }).map((item, idx) => (
+              <CharCard
+                key={item.id || idx}
+                item={item}
+                onLoad={onLoad}
+                onPlay={onPlay}
+                onDelete={() => onDelete(idx)}
+              />
+            ))}
           </div>
         )}
 
@@ -188,6 +210,26 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
              </button>
           </div>
         )}
+
+        {/* Personagens de Exemplo */}
+        <div className="mt-16">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-500/30" />
+            <p className="text-amber-500/60 text-xs font-black uppercase tracking-[0.4em]">Personagens de Exemplo</p>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-500/30" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {EXAMPLE_CHARS.map((preset, idx) => (
+              <CharCard
+                key={`preset-${idx}`}
+                item={preset}
+                onLoad={() => onLoad({ data: preset, id: null, source: 'preset' })}
+                onPlay={() => onPlay?.({ data: preset, id: null, source: 'preset' })}
+                isExample
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
