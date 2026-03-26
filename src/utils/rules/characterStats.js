@@ -4,6 +4,7 @@ import { ORIGENS } from '../../data/origins';
 import { ITENS } from '../../data/items';
 import { MATERIAIS } from '../../data/modificacoes';
 import { PERICIAS } from '../../data/skills';
+import { MAGIC_ITEMS_ALL } from '../../data/magicItems';
 import {
   ATTR_KEYS, POINT_BUY_POOL, ATTR_TOTAL_COST,
   PM_ATTR_MAP, CLASS_WEALTH, DAMAGE_STEPS,
@@ -14,6 +15,46 @@ import {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function attrPointCost(v) { return ATTR_TOTAL_COST[String(v)] ?? 0; }
+
+/** Accumulates passive stat bonuses from all equipped magic items. */
+function getMagicItemBonuses(char) {
+  const bonuses = {
+    def: 0, pv: 0, pm: 0,
+    fort: 0, ref: 0, von: 0,
+    FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0,
+    ini: 0, deslocamento: 0, spellCD: 0, spellPM: 0,
+    pericias: {},
+  };
+
+  (char.equipamento || []).forEach(e => {
+    const id = typeof e === 'string' ? e : e.id;
+    const item = MAGIC_ITEMS_ALL.find(m => m.id === id);
+    if (!item?.bonus) return;
+    const b = item.bonus;
+
+    // Scalar fields
+    const scalarKeys = ['def', 'pv', 'pm', 'fort', 'ref', 'von', 'FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR', 'ini', 'deslocamento', 'spellCD', 'spellPM'];
+    scalarKeys.forEach(k => {
+      if (b[k]) bonuses[k] += b[k];
+    });
+
+    // saves shorthand — adds to all three saves
+    if (b.saves) {
+      bonuses.fort += b.saves;
+      bonuses.ref  += b.saves;
+      bonuses.von  += b.saves;
+    }
+
+    // Skill bonuses
+    if (b.pericias) {
+      Object.entries(b.pericias).forEach(([p, v]) => {
+        bonuses.pericias[p] = (bonuses.pericias[p] || 0) + v;
+      });
+    }
+  });
+
+  return bonuses;
+}
 
 function getRaceAttrBonus(raceData, escolha, variante) {
   const a = raceData?.atributos || {};
@@ -43,14 +84,21 @@ function buildAttrs(char, raceBonus) {
   const origem = ORIGENS[char.origem?.toLowerCase()] || null;
   const baseAttrsWithPowers = { ...char.atributos };
 
-  const allGenericPowers = [
-    ...(char.poderesGerais || []),
-    ...Object.values(char.levelChoices || {}),
-  ];
-  allGenericPowers.forEach(p => {
-    if ((p.nome === 'Aumento de Atributo' || p.id === 'Aumento de Atributo') && p.escolha) {
+  // Only levelChoices is the source of truth for progression powers (poderesGerais is browse-only).
+  Object.values(char.levelChoices || {}).forEach(p => {
+    if (p && (p.nome === 'Aumento de Atributo' || p.id === 'Aumento de Atributo') && p.escolha) {
       baseAttrsWithPowers[p.escolha] = (baseAttrsWithPowers[p.escolha] || 0) + 1;
     }
+  });
+
+  // Magic item attribute bonuses (applied before derived stats so CON/DES affect PV/DEF)
+  (char.equipamento || []).forEach(e => {
+    const id = typeof e === 'string' ? e : e.id;
+    const item = MAGIC_ITEMS_ALL.find(m => m.id === id);
+    if (!item?.bonus) return;
+    ATTR_KEYS.forEach(k => {
+      if (item.bonus[k]) baseAttrsWithPowers[k] = (baseAttrsWithPowers[k] || 0) + item.bonus[k];
+    });
   });
 
   const attrs = {};
@@ -311,6 +359,8 @@ export function computeStats(char) {
   // Aliado Guardião Mestre: +2 em todos os saves
   const aliadoResBonus = (aliado?.tipo === 'Guardião' && aliado?.nivel === 'mestre') ? 2 : 0;
 
+  const magicBonuses = getMagicItemBonuses(char);
+
   const pvResult   = computePV(cls, raceData, origem, allPowers, attrs, level);
   const pmResult   = computePM(char, cls, raceData, allPowers, attrs, level);
   const defResult  = computeDefense(char, allPowers, equipped, attrs, level, aliado);
@@ -320,7 +370,15 @@ export function computeStats(char) {
     allPowers.has('Esquiva'), allPowers.has('Vitalidade'), allPowers.has('Vontade de Ferro')
   );
 
-  const ini = attrs.DES + halfLevel + (aliado?.tipo === 'Vigilante' ? 2 : 0);
+  // Apply non-attribute magic item bonuses
+  pvResult.pv        += magicBonuses.pv;
+  pmResult.pm        += magicBonuses.pm;
+  defResult.def      += magicBonuses.def;
+  savesResult.fort   += magicBonuses.fort;
+  savesResult.ref    += magicBonuses.ref;
+  savesResult.von    += magicBonuses.von;
+
+  const ini = attrs.DES + halfLevel + (aliado?.tipo === 'Vigilante' ? 2 : 0) + magicBonuses.ini;
 
   // Penalidade de armadura em perícias
   const armorPenaltyPericias = PERICIAS.filter(p => p.penalidade).map(p => p.nome);
@@ -332,7 +390,7 @@ export function computeStats(char) {
   });
 
   // Deslocamento
-  const deslocamento = computeDeslocamento(char, allPowers, armorData);
+  const deslocamento = computeDeslocamento(char, allPowers, armorData) + magicBonuses.deslocamento;
 
   // CD de Magia
   const spellAttrMap = {
@@ -340,17 +398,33 @@ export function computeStats(char) {
     bardo: 'CAR', clerigo: 'SAB', druida: 'SAB', nobre: 'CAR', paladino: 'CAR'
   };
   const spellAttrKey = spellAttrMap[char.classe?.toLowerCase()];
-  const spellDC = 10 + halfLevel + (spellAttrKey ? (attrs[spellAttrKey] || 0) : 0);
+  const spellDC = 10 + halfLevel + (spellAttrKey ? (attrs[spellAttrKey] || 0) : 0) + magicBonuses.spellCD;
 
   // Modificadores de tamanho
   const sizeMod = SIZE_MODS[char.raca?.toLowerCase()] || { furtividade: 0, manobra: 0 };
 
-  // Dinheiro inicial
+  // Dinheiro inicial (T20 Advanced Character Creation)
   let startingWealth = '0 T$';
-  if (level === 1)       startingWealth = CLASS_WEALTH[char.classe?.toLowerCase()] || CLASS_WEALTH.padrao;
-  else if (level <= 4)   startingWealth = '100 T$';
-  else if (level <= 10)  startingWealth = '2.000 T$';
-  else                   startingWealth = '12.000 T$';
+  let startingWealthGold = 0;
+  let startingItemGrants = [];
+  if (level === 1) {
+    startingWealth = CLASS_WEALTH[char.classe?.toLowerCase()] || CLASS_WEALTH.padrao;
+    startingWealthGold = 0; // computed by dice roll in UI
+  } else if (level <= 4) {
+    startingWealth = '100 T$';
+    startingWealthGold = 100;
+  } else if (level <= 10) {
+    startingWealth = '2.000 T$';
+    startingWealthGold = 2000;
+    startingItemGrants = ['1 item superior (arma/armadura +1 ou item aprimorado até 1.000 T$)'];
+  } else {
+    startingWealth = '12.000 T$';
+    startingWealthGold = 12000;
+    startingItemGrants = [
+      '2 itens mágicos menores (anéis, amuletos, aprimoramentos)',
+      'ou substitua cada item por +2.000 T$ em ouro',
+    ];
+  }
 
   // Pontos disponíveis (compra)
   const pontosGastos = ATTR_KEYS.reduce((sum, k) => sum + attrPointCost(char.atributos?.[k] || 0), 0);
@@ -370,6 +444,8 @@ export function computeStats(char) {
     ref: savesResult.ref,
     von: savesResult.von,
     deslocamento, spellDC,
+    spellPMReduction: magicBonuses.spellPM,
+    magicSkillBonuses: magicBonuses.pericias,
     armorPenalty: defResult.armorPenalty,
     armorPenaltyPericias,
     sizeModFurtividade: sizeMod.furtividade,
@@ -378,6 +454,8 @@ export function computeStats(char) {
     languages,
     totalLangsCount: languages.length,
     startingWealth,
+    startingWealthGold,
+    startingItemGrants,
     maxLoad,
     detailedAttacks: calculateDetailedAttacks(char, { attrs, raceBonus, def: defResult.def, atk: atkResult.atk, ini, fort: savesResult.fort, ref: savesResult.ref, von: savesResult.von }),
     details: {
@@ -412,10 +490,10 @@ export function getAllTrainedSkills(char) {
 export function getAllProficiencies(char) {
   const cls = CLASSES[char.classe?.toLowerCase()];
   const base = cls?.proficiencias || [];
-  const fromPowers = (char.poderesGerais || [])
-    .filter(p => p.nome === 'Proficiência')
+  const fromLevelChoices = Object.values(char.levelChoices || {})
+    .filter(p => p?.nome === 'Proficiência' && p.escolha)
     .map(p => p.escolha);
-  return new Set([...base, ...fromPowers]);
+  return new Set([...base, ...fromLevelChoices]);
 }
 
 // ─── Poderes ──────────────────────────────────────────────────────────────────

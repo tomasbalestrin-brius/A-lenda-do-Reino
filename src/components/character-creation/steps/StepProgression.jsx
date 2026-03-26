@@ -24,14 +24,11 @@ export function StepProgression({ stats }) {
   const STACKABLE_POWERS = new Set(['Aumento de Atributo', 'Conhecimento Mágico']);
   const takenPowerNames = useMemo(() => {
     const names = new Set();
-    // De poderesGerais (StepPowers)
-    (char.poderesGerais || []).forEach(p => names.add(p.nome));
-    // De outros níveis
     Object.values(selecoes).forEach(choice => {
       if (choice?.nome && !STACKABLE_POWERS.has(choice.nome)) names.add(choice.nome);
     });
     return names;
-  }, [char.poderesGerais, selecoes]);
+  }, [selecoes]);
 
   const handleSelectPower = (lvl, power) => {
     const isRemove = selecoes[lvl]?.id === power.nome;
@@ -207,9 +204,14 @@ export function StepProgression({ stats }) {
     return names;
   }, [char.classSpells, char.racialSpells, selecoes]);
 
-  const allAvailableSpells = isConjurer
-    ? spellCircles.slice(0, maxCircle).flatMap(pool => Object.values(pool || {}))
-    : [];
+  // Per-level spell pool: only circles unlocked AT that specific level
+  const getSpellsForLevel = (lvl) => {
+    if (!isConjurer) return [];
+    const mc = isFullCaster
+      ? (lvl >= 17 ? 5 : lvl >= 13 ? 4 : lvl >= 9 ? 3 : lvl >= 5 ? 2 : 1)
+      : (lvl >= 7 ? 4 : lvl >= 5 ? 3 : lvl >= 3 ? 2 : 1);
+    return spellCircles.slice(0, mc).flatMap(pool => Object.values(pool || {}));
+  };
 
   return (
     <div className="flex flex-col gap-10 pb-10">
@@ -508,11 +510,19 @@ export function StepProgression({ stats }) {
               className="relative w-full max-w-4xl max-h-[80vh] bg-gray-900 rounded-[3rem] border border-white/10 shadow-2xl overflow-hidden flex flex-col"
             >
                <div className="p-8 border-b border-white/5 flex items-center justify-between bg-gray-950/50">
-                  <h3 className="text-2xl font-black text-white italic tracking-tighter">Selecionar Magia</h3>
+                  <div>
+                    <h3 className="text-2xl font-black text-white italic tracking-tighter">Selecionar Magia</h3>
+                    {(() => {
+                      const mc = isFullCaster
+                        ? (activeSpellSlot.lvl >= 17 ? 5 : activeSpellSlot.lvl >= 13 ? 4 : activeSpellSlot.lvl >= 9 ? 3 : activeSpellSlot.lvl >= 5 ? 2 : 1)
+                        : (activeSpellSlot.lvl >= 7 ? 4 : activeSpellSlot.lvl >= 5 ? 3 : activeSpellSlot.lvl >= 3 ? 2 : 1);
+                      return <p className="text-[10px] text-purple-400 font-black uppercase tracking-widest mt-1">Nível {activeSpellSlot.lvl} — até {mc}º círculo</p>;
+                    })()}
+                  </div>
                   <button onClick={() => setActiveSpellSlot(null)} className="text-slate-500 hover:text-white transition-colors">✕</button>
                </div>
                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto custom-scrollbar">
-                  {allAvailableSpells.map(s => {
+                  {getSpellsForLevel(activeSpellSlot.lvl).map(s => {
                     // Verificar se já foi escolhida em OUTRO slot (exceto o slot atual sendo editado)
                     const currentSlotSpellName = (() => {
                       const slotChoices = selecoes[activeSpellSlot.lvl];

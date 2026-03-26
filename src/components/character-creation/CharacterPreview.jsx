@@ -156,7 +156,7 @@ function StepFocusPanel({ currentStep, char, stats }) {
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-center bg-yellow-900/20 border border-yellow-700/30 rounded-lg px-3 py-2 flex-1">
             <span className="text-[9px] text-yellow-400 uppercase tracking-widest">Dinheiro</span>
-            <span className="text-sm font-black text-yellow-300">{char.dinheiro ?? 0} to</span>
+            <span className="text-sm font-black text-yellow-300">T$ {(char.dinheiro ?? 0).toLocaleString('pt-BR')}</span>
           </div>
           <div className="flex flex-col items-center bg-gray-900/40 border border-gray-700/30 rounded-lg px-3 py-2 flex-1">
             <span className="text-[9px] text-gray-400 uppercase tracking-widest">Itens</span>

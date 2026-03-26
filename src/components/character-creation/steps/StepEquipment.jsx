@@ -3,6 +3,7 @@ import { ITENS } from '../../../data/items';
 import { ORIGENS } from '../../../data/origins';
 import { CLASSES } from '../../../data/classes';
 import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../data/modificacoes';
+import { ACESSORIOS, ARMAS_MAGICAS, ARMADURAS_MAGICAS } from '../../../data/magicItems';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,6 +15,9 @@ export function StepEquipment() {
   const stats = useMemo(() => computeStats(char), [char]);
   const [setupPhase, setSetupPhase] = useState(!char.choices?.claimedStartingKit);
   const [customizingItem, setCustomizingItem] = useState(null); // { uid, id, mods: [], material: null }
+  const [magicSubTab, setMagicSubTab] = useState('acessorio');
+  const [editingGold, setEditingGold] = useState(false);
+  const [grantTab, setGrantTab] = useState('arma');
 
   // Auto-claim static items once
   useEffect(() => {
@@ -36,12 +40,32 @@ export function StepEquipment() {
   }, [char.choices?.claimedStartingKit, char.origem, updateChar]);
 
   const rollWealth = () => {
-    const wealthStr = stats.startingWealth || '4d6';
-    const [num, sides] = wealthStr.split('d').map(Number);
-    let total = 0;
-    for (let i = 0; i < num; i++) total += Math.floor(Math.random() * sides) + 1;
-    updateChar({ 
-      dinheiro: total * 10,
+    const level = char.level || 1;
+    let gold;
+    if (level === 1) {
+      const wealthStr = stats.startingWealth || '4d6';
+      const [num, sides] = wealthStr.split('d').map(Number);
+      let total = 0;
+      for (let i = 0; i < num; i++) total += Math.floor(Math.random() * sides) + 1;
+      gold = total * 10;
+    } else {
+      gold = stats.startingWealthGold || 0;
+    }
+
+    // Add free grants to equipment (no gold cost)
+    let grantEquip = [...(char.equipamento || [])];
+    const superiorId = char.choices?.superiorGrantId;
+    if (superiorId && level >= 5 && level <= 10) {
+      grantEquip.push({ id: superiorId, uid: `${superiorId}_superior_grant`, mods: [], material: null, isSuperiorGrant: true });
+    }
+    const magicIds = char.choices?.magicGrantIds || [];
+    magicIds.forEach(id => {
+      if (id) grantEquip.push({ id, uid: `${id}_magic_grant_${Date.now()}`, mods: [], material: null });
+    });
+
+    updateChar({
+      dinheiro: gold,
+      equipamento: grantEquip,
       choices: { ...(char.choices || {}), claimedStartingKit: true, initializingKit: false }
     });
     setSetupPhase(false);
@@ -58,9 +82,35 @@ export function StepEquipment() {
     { id: 'comida', label: 'Alimentação', icon: '🍲' },
     { id: 'aventura', label: 'Aventura', icon: '🎒' },
     { id: 'animal', label: 'Animais', icon: '🐎' },
+    { id: 'magico', label: 'Mágicos', icon: '✨' },
   ];
 
+  /** Renders a human-readable summary of an item's passive bonuses. */
+  const renderBonus = (bonus) => {
+    if (!bonus || Object.keys(bonus).length === 0) return null;
+    const parts = [];
+    if (bonus.def)         parts.push(`+${bonus.def} Def`);
+    if (bonus.pv)          parts.push(`+${bonus.pv} PV`);
+    if (bonus.pm)          parts.push(`+${bonus.pm} PM`);
+    if (bonus.saves)       parts.push(`+${bonus.saves} Saves`);
+    if (bonus.fort && !bonus.saves) parts.push(`+${bonus.fort} Fort`);
+    if (bonus.ref  && !bonus.saves) parts.push(`+${bonus.ref} Ref`);
+    if (bonus.von  && !bonus.saves) parts.push(`+${bonus.von} Von`);
+    if (bonus.FOR)         parts.push(`+${bonus.FOR} FOR`);
+    if (bonus.DES)         parts.push(`+${bonus.DES} DES`);
+    if (bonus.CON)         parts.push(`+${bonus.CON} CON`);
+    if (bonus.INT)         parts.push(`+${bonus.INT} INT`);
+    if (bonus.SAB)         parts.push(`+${bonus.SAB} SAB`);
+    if (bonus.CAR)         parts.push(`+${bonus.CAR} CAR`);
+    if (bonus.pericias)    Object.entries(bonus.pericias).forEach(([p, v]) => parts.push(`+${v} ${p}`));
+    if (bonus.deslocamento) parts.push(`+${bonus.deslocamento}m Desl.`);
+    if (bonus.spellCD)     parts.push(`+${bonus.spellCD} CD Mag`);
+    if (bonus.spellPM)     parts.push(`-${bonus.spellPM} PM Mag`);
+    return parts.length > 0 ? parts.join(' · ') : null;
+  };
+
   const filteredItems = useMemo(() => {
+    if (category === 'magico') return []; // handled separately
     const q = searchItem.trim().toLowerCase();
     return Object.values(ITENS).filter(item => {
       const matchCat = category === 'armadura'
@@ -73,6 +123,19 @@ export function StepEquipment() {
       return item.nome?.toLowerCase().includes(q) || item.descricao?.toLowerCase().includes(q);
     });
   }, [category, searchItem]);
+
+  const filteredMagicItems = useMemo(() => {
+    if (category !== 'magico') return [];
+    const q = searchItem.trim().toLowerCase();
+    const pool = magicSubTab === 'acessorio' ? ACESSORIOS
+      : magicSubTab === 'arma'    ? ARMAS_MAGICAS
+      : ARMADURAS_MAGICAS;
+    if (!q) return pool;
+    return pool.filter(item =>
+      item.nome?.toLowerCase().includes(q) ||
+      item.descricao?.toLowerCase().includes(q)
+    );
+  }, [category, magicSubTab, searchItem]);
 
   const toggleItem = (item) => {
     const equip = char.equipamento || [];
@@ -90,6 +153,23 @@ export function StepEquipment() {
         updateChar({ 
           equipamento: [...equip, { id: item.id, uid: `${item.id}_${Math.random().toString(36).substr(2, 9)}`, mods: [], material: null }],
           dinheiro: (char.dinheiro || 0) - (item.preco || 0)
+        });
+      }
+    }
+  };
+
+  const toggleMagicItem = (item) => {
+    const equip = char.equipamento || [];
+    const existingIndex = equip.findIndex(e => (typeof e === 'string' ? e : e.id) === item.id);
+    if (existingIndex > -1) {
+      const newEquip = [...equip];
+      newEquip.splice(existingIndex, 1);
+      updateChar({ equipamento: newEquip, dinheiro: (char.dinheiro || 0) + (item.preco || 0) });
+    } else {
+      if ((char.dinheiro || 0) >= item.preco) {
+        updateChar({
+          equipamento: [...equip, { id: item.id, uid: `${item.id}_${Math.random().toString(36).substr(2, 9)}`, mods: [], material: null }],
+          dinheiro: (char.dinheiro || 0) - (item.preco || 0),
         });
       }
     }
@@ -230,8 +310,92 @@ export function StepEquipment() {
               )}
             </div>
 
-            <div className="mt-12 pt-10 border-t border-white/5 flex flex-col items-center">
-              <div className="bg-gray-950/40 p-5 rounded-2xl mb-8 border border-white/5 flex items-center gap-4 text-[11px] text-slate-500 font-bold uppercase tracking-widest">
+            {/* ─── Level 5-10: 1 Item Superior Gratuito ─── */}
+            {(char.level || 1) >= 5 && (char.level || 1) <= 10 && (() => {
+              const grantCats = [
+                { id: 'arma', label: 'Arma', icon: '⚔️' },
+                { id: 'armadura', label: 'Armadura', icon: '🛡️' },
+                { id: 'esoterico', label: 'Esotérico', icon: '🔮' },
+              ];
+              const grantPool = Object.values(ITENS).filter(i => i.tipo === grantTab);
+              const selected = char.choices?.superiorGrantId;
+              return (
+                <div className="mt-10 pt-10 border-t border-white/5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="px-3 py-0.5 rounded-full bg-blue-950/40 border border-blue-500/30 text-blue-400 text-[9px] font-black uppercase tracking-widest">Bônus de Nível {char.level}</span>
+                    <p className="text-white font-black text-sm">🔧 Item Superior Gratuito</p>
+                  </div>
+                  <p className="text-slate-400 text-[11px] mb-5">Escolha 1 item — ele será adicionado com <strong className="text-white">1 modificação gratuita</strong> disponível no inventário.</p>
+                  <div className="flex gap-2 mb-4">
+                    {grantCats.map(c => (
+                      <button key={c.id} onClick={() => setGrantTab(c.id)}
+                        className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 transition-all ${grantTab === c.id ? 'bg-blue-600 border-blue-500 text-white' : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:border-gray-600'}`}>
+                        {c.icon} {c.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
+                    {grantPool.map(item => (
+                      <button key={item.id}
+                        onClick={() => updateChar({ choices: { ...(char.choices || {}), superiorGrantId: selected === item.id ? null : item.id } })}
+                        className={`p-3 rounded-2xl border-2 text-left transition-all ${selected === item.id ? 'bg-blue-600/20 border-blue-500 text-white' : 'bg-gray-900/40 border-white/5 text-slate-400 hover:border-blue-500/30'}`}>
+                        <p className="font-black text-xs uppercase truncate">{item.nome}</p>
+                        {item.dano && <p className="text-[9px] text-amber-400 mt-0.5">{item.dano}</p>}
+                        {item.def  && <p className="text-[9px] text-sky-400 mt-0.5">+{item.def} Def</p>}
+                        {selected === item.id && <p className="text-[9px] text-blue-400 font-black mt-1">✓ Selecionado</p>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* ─── Level 11+: 2 Itens Mágicos Menores Gratuitos ─── */}
+            {(char.level || 1) >= 11 && (() => {
+              const magicPool = ACESSORIOS.filter(a => a.subtipo === 'menor');
+              const granted = char.choices?.magicGrantIds || [];
+              const toggle = (id) => {
+                let next;
+                if (granted.includes(id)) next = granted.filter(x => x !== id);
+                else if (granted.length < 2) next = [...granted, id];
+                else return;
+                updateChar({ choices: { ...(char.choices || {}), magicGrantIds: next } });
+              };
+              return (
+                <div className="mt-10 pt-10 border-t border-white/5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="px-3 py-0.5 rounded-full bg-purple-950/40 border border-purple-500/30 text-purple-400 text-[9px] font-black uppercase tracking-widest">Bônus de Nível {char.level}</span>
+                    <p className="text-white font-black text-sm">✨ 2 Itens Mágicos Menores Gratuitos</p>
+                    <span className={`ml-auto text-[10px] font-black px-3 py-1 rounded-full border ${granted.filter(Boolean).length === 2 ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' : 'bg-gray-950 border-white/10 text-slate-500'}`}>
+                      {granted.filter(Boolean).length}/2 escolhidos
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto custom-scrollbar pr-1">
+                    {magicPool.map(item => {
+                      const isChosen = granted.includes(item.id);
+                      const isFull = granted.filter(Boolean).length >= 2 && !isChosen;
+                      const bonusTxt = renderBonus(item.bonus);
+                      return (
+                        <button key={item.id}
+                          disabled={isFull}
+                          onClick={() => toggle(item.id)}
+                          className={`p-4 rounded-2xl border-2 text-left transition-all ${isChosen ? 'bg-purple-600/20 border-purple-500 text-white' : isFull ? 'opacity-30 grayscale bg-gray-950 border-white/5 cursor-not-allowed' : 'bg-gray-900/40 border-white/5 text-slate-400 hover:border-purple-500/30'}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-black text-xs uppercase">{item.nome}</p>
+                            {isChosen && <span className="text-purple-400 text-sm">✓</span>}
+                          </div>
+                          {bonusTxt && <p className="text-[9px] text-emerald-400 font-black">{bonusTxt}</p>}
+                          <p className="text-[9px] text-slate-500 mt-0.5 uppercase font-bold">{item.slot}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="mt-12 pt-10 border-t border-white/5 flex flex-col items-center gap-6">
+              <div className="bg-gray-950/40 p-5 rounded-2xl border border-white/5 flex items-center gap-4 text-[11px] text-slate-500 font-bold uppercase tracking-widest flex-wrap">
                 <span className="text-amber-500">✔</span> Itens Automáticos
                 <span className="w-1 h-1 rounded-full bg-slate-700" />
                 <span>Mochila</span>
@@ -242,12 +406,15 @@ export function StepEquipment() {
                 <span className="w-1 h-1 rounded-full bg-slate-700" />
                 <span className="text-white">Itens de {char.origem}</span>
               </div>
-              
-              <button 
+
+              <button
                 onClick={rollWealth}
                 className="px-16 py-6 bg-amber-600 hover:bg-amber-500 text-gray-950 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-amber-900/40 active:scale-95 transition-all group"
               >
-                💰 Rolar Dinheiro Inicial ({stats.startingWealth})
+                {(char.level || 1) === 1
+                  ? `💰 Rolar Dinheiro Inicial (${stats.startingWealth})`
+                  : `💰 Receber ${stats.startingWealth}`
+                }
               </button>
             </div>
           </div>
@@ -274,7 +441,21 @@ export function StepEquipment() {
             <div className="px-10 py-6 bg-gray-950 border-2 border-amber-500/40 rounded-[2.5rem] flex flex-col items-center justify-center min-w-[180px] shadow-2xl shadow-amber-900/10 relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1 relative z-10">Patrimônio</span>
-                <span className="text-3xl font-black text-amber-500 tabular-nums relative z-10">T$ {char.dinheiro}</span>
+                {editingGold ? (
+                  <input
+                    autoFocus
+                    type="number"
+                    min="0"
+                    defaultValue={char.dinheiro || 0}
+                    onBlur={e => { updateChar({ dinheiro: Math.max(0, parseInt(e.target.value) || 0) }); setEditingGold(false); }}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') e.target.blur(); }}
+                    className="text-2xl font-black text-amber-500 bg-transparent text-center w-32 outline-none border-b border-amber-500 relative z-10"
+                  />
+                ) : (
+                  <button onClick={() => setEditingGold(true)} className="text-3xl font-black text-amber-500 tabular-nums relative z-10 hover:underline decoration-amber-500/40 decoration-dashed underline-offset-4">
+                    T$ {(char.dinheiro || 0).toLocaleString('pt-BR')}
+                  </button>
+                )}
             </div>
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pr-4 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
@@ -355,7 +536,89 @@ export function StepEquipment() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* ── Magic Items Tab ─────────────────────────────────────────────── */}
+      {category === 'magico' && (
+        <div className="flex flex-col gap-6">
+          {/* Sub-tabs */}
+          <div className="flex gap-2">
+            {[
+              { id: 'acessorio',  label: 'Acessórios' },
+              { id: 'arma',       label: 'Armas Mágicas' },
+              { id: 'armadura',   label: 'Armaduras Mágicas' },
+            ].map(st => (
+              <button
+                key={st.id}
+                onClick={() => { setMagicSubTab(st.id); setSearchItem(''); }}
+                className={`px-5 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all border shrink-0 ${
+                  magicSubTab === st.id
+                    ? 'bg-purple-700 border-purple-500 text-white shadow-lg shadow-purple-900/30'
+                    : 'bg-gray-900/40 border-gray-800 text-gray-500 hover:border-gray-600'
+                }`}
+              >
+                {st.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Magic item grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <AnimatePresence>
+              {filteredMagicItems.map(item => {
+                const isOwned = (char.equipamento || []).some(e => (typeof e === 'string' ? e : e.id) === item.id);
+                const canAfford = (char.dinheiro || 0) >= item.preco;
+                const bonusSummary = renderBonus(item.bonus);
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    onClick={() => toggleMagicItem(item)}
+                    className={`group p-4 rounded-3xl border transition-all cursor-pointer flex flex-col gap-3 relative overflow-hidden ${
+                      isOwned
+                        ? 'bg-purple-900/15 border-purple-500/50 shadow-lg shadow-purple-900/10'
+                        : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'
+                    } ${!isOwned && !canAfford ? 'opacity-50 grayscale' : ''}`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-2xl">✨</span>
+                      <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase ${isOwned ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-500'}`}>
+                        {isOwned ? 'Equipado' : `T$ ${item.preco.toLocaleString('pt-BR')}`}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-bold text-white text-sm">{item.nome}</p>
+                      {item.slot && (
+                        <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mt-0.5">
+                          Slot: {item.slot}
+                          {item.subtipo && ` · ${item.subtipo}`}
+                        </p>
+                      )}
+                      {bonusSummary ? (
+                        <p className="text-[10px] text-emerald-400 font-bold mt-1 leading-tight">{bonusSummary}</p>
+                      ) : (
+                        <p className="text-[10px] text-amber-500/70 font-bold mt-1 italic">Efeito ativo</p>
+                      )}
+                      <p className="text-[10px] text-gray-500 leading-relaxed mt-1 line-clamp-2">{item.descricao}</p>
+                    </div>
+                    {!isOwned && !canAfford && (
+                      <p className="text-[9px] text-rose-500 font-black uppercase tracking-widest">Ouro insuficiente</p>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+            {filteredMagicItems.length === 0 && (
+              <p className="text-slate-600 italic text-sm col-span-3 text-center py-8">Nenhum item encontrado.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Normal Item Grid ─────────────────────────────────────────────── */}
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ${category === 'magico' ? 'hidden' : ''}`}>
         <AnimatePresence>
           {filteredItems.map(item => {
             const ownedInstances = (char.equipamento || []).filter(e => (typeof e === 'string' ? e : e.id) === item.id);
@@ -376,7 +639,7 @@ export function StepEquipment() {
                   <div className="flex items-center justify-between">
                     <span className="text-2xl">{category === 'arma' ? '⚔️' : category === 'armadura' ? '🛡️' : '📦'}</span>
                     <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase ${isOwned ? 'bg-amber-500 text-black' : 'bg-gray-800 text-gray-500'}`}>
-                      {isOwned ? `${ownedInstances.length}x Possuído` : `T$ ${item.preco}`}
+                      {isOwned ? `${ownedInstances.length}x Possuído` : `T$ ${(item.preco || 0).toLocaleString('pt-BR')}`}
                     </span>
                   </div>
                   <div>
@@ -440,6 +703,12 @@ export function StepEquipment() {
               <div className="p-8 border-b border-white/5 bg-gradient-to-r from-amber-950/20 to-transparent">
                 <h3 className="text-2xl font-black text-white italic tracking-tighter">Customizar: {ITENS[customizingItem.id]?.nome}</h3>
                 <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mt-1">Melhorias e Materiais Especiais</p>
+                {customizingItem.isSuperiorGrant && !char.choices?.superiorGrantConsumed && (customizingItem.mods || []).length === 0 && (
+                  <div className="mt-3 flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-3 py-2">
+                    <span className="text-emerald-400 text-sm">🔧</span>
+                    <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wide">Modificação Gratuita Disponível — Item Superior</p>
+                  </div>
+                )}
               </div>
 
               <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
@@ -469,13 +738,15 @@ export function StepEquipment() {
                              const isSelected = (customizingItem.mods || []).includes(mod.id);
                              const currentModCount = (customizingItem.mods || []).length;
                              const isPrototype = char.choices?.prototipoUid === customizingItem.uid && currentModCount === 0;
-                             
+                             const isSuperiorGrantItem = customizingItem.isSuperiorGrant && !char.choices?.superiorGrantConsumed && currentModCount === 0;
+                             const isFree = isPrototype || isSuperiorGrantItem;
+
                              // Calc cost to ADD (price of the NEXT slot)
                              const nextSlot = currentModCount + 1;
-                             const addCost = isPrototype ? 0 : CUSTOS_MELHORIAS[nextSlot] || 0;
-                             
+                             const addCost = isFree ? 0 : CUSTOS_MELHORIAS[nextSlot] || 0;
+
                              // Calc refund if REMOVING (price of the CURRENT slot)
-                             const refundCost = isPrototype ? 0 : CUSTOS_MELHORIAS[currentModCount] || 0;
+                             const refundCost = isFree ? 0 : CUSTOS_MELHORIAS[currentModCount] || 0;
 
                              // Check requirement (e.g. Pungente requires Certeira)
                              const hasRequirement = !mod.requisito || (customizingItem.mods || []).includes(mod.requisito);
@@ -489,19 +760,24 @@ export function StepEquipment() {
                                  onClick={() => {
                                    let newMods;
                                    let newMoney = char.dinheiro || 0;
-                                   
+                                   let extraChoices = {};
+
                                    if (isSelected) {
                                      newMods = (customizingItem.mods || []).filter(mid => mid !== mod.id);
                                      newMoney += refundCost;
                                    } else {
                                      newMods = [...(customizingItem.mods || []), mod.id];
                                      newMoney -= addCost;
+                                     if (isSuperiorGrantItem) {
+                                       extraChoices = { choices: { ...char.choices, superiorGrantConsumed: true } };
+                                     }
                                    }
-                                   
+
                                    const newEquip = char.equipamento.map(e => e.uid === customizingItem.uid ? { ...e, mods: newMods } : e);
-                                   updateChar({ 
+                                   updateChar({
                                      equipamento: newEquip,
-                                     dinheiro: newMoney
+                                     dinheiro: newMoney,
+                                     ...extraChoices
                                    });
                                    setCustomizingItem({ ...customizingItem, mods: newMods });
                                  }}
@@ -519,7 +795,7 @@ export function StepEquipment() {
                                  </div>
                                  {!isSelected ? (
                                    <span className="text-[10px] font-black text-amber-600 bg-amber-600/10 px-2 py-1 rounded-lg">
-                                     {isPrototype ? 'GRÁTIS' : `T$ ${addCost}`}
+                                     {isFree ? 'GRÁTIS' : `T$ ${addCost}`}
                                    </span>
                                  ) : (
                                    <span className="text-[10px] font-black text-rose-500 bg-rose-500/10 px-2 py-1 rounded-lg group-hover:block hidden">

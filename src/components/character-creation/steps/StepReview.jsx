@@ -469,7 +469,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                     <span className="text-xl">💰</span>
                     <div>
                       <p className="text-[8px] uppercase font-black text-yellow-500/60 leading-none mb-1">Dinheiro</p>
-                      <p className="text-sm font-black text-white leading-none">T$ {char.dinheiro}</p>
+                      <p className="text-sm font-black text-white leading-none">T$ {(char.dinheiro || 0).toLocaleString('pt-BR')}</p>
                     </div>
                  </div>
                )}
