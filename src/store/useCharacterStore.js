@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { ORIGENS } from '../data/origins';
 
 // Estado inicial isolado para poder ser "resetado"
 const getInitialCharState = () => ({
@@ -62,10 +63,18 @@ export const useCharacterStore = create((set, get) => ({
       newChar.poderesGerais = [];
       newChar.levelChoices = {};
     }
+
+    // Se o nível mudou, limpa magias iniciais (círculos acessíveis podem mudar)
+    if (updates.level !== undefined && updates.level !== state.char.level) {
+      newChar.classSpells = [];
+    }
     
-    // Se a origem mudou, limpa benefícios de origem
+    // Se a origem mudou, limpa benefícios e remove perícias da origem anterior
     if (updates.origem && updates.origem !== state.char.origem) {
       newChar.origemBeneficios = [];
+      const oldOrigem = ORIGENS[state.char.origem?.toLowerCase()];
+      const oldOriginSkills = new Set(oldOrigem?.pericias || []);
+      newChar.pericias = (state.char.pericias || []).filter(s => !oldOriginSkills.has(s));
     }
 
     // Se o deus mudou, limpa benefícios de crença

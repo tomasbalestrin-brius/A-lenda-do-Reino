@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { PARCEIROS } from '../../../data/parceiros';
+import { ORIGENS } from '../../../data/origins';
 
 export function StepAllies() {
   const { char, updateChar } = useCharacterStore();
@@ -11,11 +12,16 @@ export function StepAllies() {
     .map(c => c?.nome)
     .filter(Boolean);
 
+  // origemBeneficios is an array of strings; check against origem's poder list
+  const origemPowers = (() => {
+    const origem = ORIGENS[char.origem?.toLowerCase()];
+    if (!origem) return [];
+    return (char.origemBeneficios || []).filter(b => origem.poderes?.includes(b));
+  })();
+
   const allPowers = new Set([
-     ...(char.poderesGerais || []).map(p => p.nome),
      ...levelPowerNames,
-     ...(char.crencasBeneficios || []).map(b => b.nome),
-     ...(char.origemBeneficios || []).filter(b => b.tipo === 'poder').map(b => b.nome)
+     ...origemPowers,
   ]);
 
   // Power names that grant an ally/partner (from powers.js and class pools)
@@ -53,7 +59,7 @@ export function StepAllies() {
              <p className="text-red-400 text-sm font-bold flex items-center gap-2">
                 <span>⚠️</span> Você não possui poderes que concedem um Aliado (ex: Parceiro, Aliado Animal).
              </p>
-             <p className="text-slate-500 text-xs pl-6">Para obter um aliado, volte ao passo <strong className="text-amber-400">XV. Poderes</strong> e escolha o poder <strong className="text-amber-400">Parceiro</strong> (aba Destino).</p>
+             <p className="text-slate-500 text-xs pl-6">Para obter um aliado, volte ao passo <strong className="text-amber-400">XVI. Progressão</strong> e escolha o poder <strong className="text-amber-400">Parceiro</strong> (aba Geral → Destino).</p>
           </div>
         ) : (
           <p className="text-slate-400 text-sm">Escolha um companheiro para ajudá-lo em sua jornada.</p>

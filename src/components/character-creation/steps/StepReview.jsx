@@ -57,6 +57,16 @@ const DEITY_ICONS = {
   thwor: '🥊', thyatis: '🔥', valkaria: '🗽', wynna: '✨',
 };
 
+const EditBtn = ({ step, onNavigate, label = 'Editar' }) =>
+  onNavigate ? (
+    <button
+      onClick={() => onNavigate(step)}
+      className="ml-auto text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-500 hover:text-amber-400 hover:border-amber-500/30 hover:bg-amber-950/20 transition-all"
+    >
+      ✏️ {label}
+    </button>
+  ) : null;
+
 const StatItem = React.memo(({ label, value, detail, color, icon }) => (
   <div className="bg-gray-950/80 p-6 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all cursor-help min-w-[120px]">
      <div className={`absolute top-0 inset-x-0 h-1.5 ${color} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />
@@ -99,7 +109,7 @@ const ALLY_TYPE_LABELS = {
 
 const ALLY_LEVEL_LABELS = { iniciante: 'Iniciante', veterano: 'Veterano', mestre: 'Mestre' };
 
-export function StepReview({ stats, onSave, onPlay }) {
+export function StepReview({ stats, onSave, onPlay, onNavigate }) {
   const { char, updateChar } = useCharacterStore();
   const cls = CLASSES[char.classe] || {};
   const race = RACES[char.raca] || {};
@@ -481,6 +491,7 @@ export function StepReview({ stats, onSave, onPlay }) {
               <div className="relative z-10 flex items-center gap-4">
                 <span className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,1)]" />
                 <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Perícias Treinadas</p>
+                <EditBtn step={11} onNavigate={onNavigate} />
               </div>
               <div className="relative z-10 flex-1 overflow-y-auto pr-3 custom-scrollbar space-y-3 max-h-[450px]">
                 {skillList.map(s => (
@@ -577,6 +588,7 @@ export function StepReview({ stats, onSave, onPlay }) {
                 <div className="flex items-center gap-4">
                   <span className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,1)]" />
                   <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Magias Conhecidas</p>
+                  <EditBtn step={9} onNavigate={onNavigate} />
                   {stats?.spellDC > 10 && (
                     <span className="ml-auto text-[10px] text-purple-400 font-black uppercase tracking-widest bg-purple-900/20 border border-purple-500/20 px-3 py-1 rounded-full">
                       CD {stats.spellDC}
@@ -605,14 +617,23 @@ export function StepReview({ stats, onSave, onPlay }) {
            <div className="bg-gray-950/60 rounded-[3rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-6 group hover:border-blue-500/20 transition-all">
               <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">
                  <span className="w-2 h-2 bg-blue-400 rounded-full" /> Dons e Talentos
+                 <EditBtn step={15} onNavigate={onNavigate} />
               </p>
               <div className="flex flex-wrap gap-3">
-                {[...(char.poderesGerais || []), ...Object.values(char.poderesProgressao || {}).filter(Boolean)].map((p, idx) => (
-                  <span key={idx} className="px-5 py-3 bg-blue-900/10 border border-blue-500/20 rounded-2xl text-[11px] font-black text-blue-300 uppercase tracking-wider flex items-center gap-3 hover:bg-blue-500/20 transition-colors">
-                    <span className="text-base">✦</span> {typeof p === 'string' ? p : p.nome}
-                  </span>
-                ))}
-                {(char.poderesGerais?.length === 0 && Object.keys(char.poderesProgressao || {}).length === 0) && <span className="text-[11px] text-slate-700 italic font-medium">Sua lenda ainda não despertou poderes especiais.</span>}
+                {(() => {
+                  const levelPowers = Object.values(char.levelChoices || {})
+                    .filter(c => c?.nome)
+                    .map(c => c.nome);
+                  const origemDef = ORIGENS[char.origem?.toLowerCase()];
+                  const origemPowers = (char.origemBeneficios || []).filter(b => origemDef?.poderes?.includes(b));
+                  const allPows = [...new Set([...levelPowers, ...origemPowers])];
+                  if (allPows.length === 0) return <span className="text-[11px] text-slate-700 italic font-medium">Sua lenda ainda não despertou poderes especiais.</span>;
+                  return allPows.map((nome, idx) => (
+                    <span key={idx} className="px-5 py-3 bg-blue-900/10 border border-blue-500/20 rounded-2xl text-[11px] font-black text-blue-300 uppercase tracking-wider flex items-center gap-3 hover:bg-blue-500/20 transition-colors">
+                      <span className="text-base">✦</span> {nome}
+                    </span>
+                  ));
+                })()}
               </div>
            </div>
 
@@ -620,6 +641,7 @@ export function StepReview({ stats, onSave, onPlay }) {
            <div className="bg-gray-950/60 rounded-[3rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-6 group hover:border-amber-500/20 transition-all">
               <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">
                  <span className="w-2 h-2 bg-amber-400 rounded-full" /> Arsenal da Jornada
+                 <EditBtn step={13} onNavigate={onNavigate} />
               </p>
               <div className="flex flex-wrap gap-3">
               {(char.equipamento || []).map(e => {

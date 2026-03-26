@@ -5,6 +5,7 @@ import { ITENS } from '../../data/items';
 import { MATERIAIS } from '../../data/modificacoes';
 import { PERICIAS } from '../../data/skills';
 import { MAGIC_ITEMS_ALL } from '../../data/magicItems';
+import { divindades as DEUSES } from '../../data/gods';
 import {
   ATTR_KEYS, POINT_BUY_POOL, ATTR_TOTAL_COST,
   PM_ATTR_MAP, CLASS_WEALTH, DAMAGE_STEPS,
@@ -426,6 +427,22 @@ export function computeStats(char) {
     ];
   }
 
+  // Magias concedidas pela divindade (automáticas, por círculo acessível)
+  const deitySpells = (() => {
+    if (!char.deus) return [];
+    const deity = DEUSES[char.deus?.toLowerCase()];
+    if (!deity?.devoto?.magiasConcedidas) return [];
+    const isFullCaster = ['arcanista', 'clerigo'].includes(char.classe?.toLowerCase());
+    const isHalfCaster = ['bardo', 'druida'].includes(char.classe?.toLowerCase());
+    if (!isFullCaster && !isHalfCaster) return [];
+    const maxCircle = isFullCaster
+      ? (level >= 9 ? 3 : level >= 5 ? 2 : 1)
+      : (level >= 5 ? 3 : level >= 3 ? 2 : 1);
+    return Object.entries(deity.devoto.magiasConcedidas)
+      .filter(([circle]) => Number(circle) <= maxCircle)
+      .map(([circle, nome]) => ({ nome, circle: Number(circle), source: 'deity' }));
+  })();
+
   // Pontos disponíveis (compra)
   const pontosGastos = ATTR_KEYS.reduce((sum, k) => sum + attrPointCost(char.atributos?.[k] || 0), 0);
 
@@ -456,6 +473,7 @@ export function computeStats(char) {
     startingWealth,
     startingWealthGold,
     startingItemGrants,
+    deitySpells,
     maxLoad,
     detailedAttacks: calculateDetailedAttacks(char, { attrs, raceBonus, def: defResult.def, atk: atkResult.atk, ini, fort: savesResult.fort, ref: savesResult.ref, von: savesResult.von }),
     details: {

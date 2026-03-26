@@ -56,8 +56,8 @@ const STEP_LABELS = [
   "Perícias (Int)",   // 12
   "Equipamento",      // 13
   "Poderes",          // 14
-  "Aliados",          // 15
-  "Progressão",       // 16
+  "Progressão",       // 15
+  "Aliados",          // 16
   "Revisão"           // 17
 ];
 const MAX_STEPS = STEP_LABELS.length;
@@ -381,13 +381,14 @@ export default function CharacterCreation() {
                       case 12: return <StepIntPericias stats={stats} />;
                       case 13: return <StepEquipment />;
                       case 14: return <StepPowers stats={stats} />;
-                      case 15: return <StepAllies />;
-                      case 16: return <StepProgression stats={stats} />;
+                      case 15: return <StepProgression stats={stats} />;
+                      case 16: return <StepAllies />;
                       case 17: return (
                         <StepReview
                           stats={stats}
                           onSave={handleSave}
                           onPlay={() => setView('play')}
+                          onNavigate={setStep}
                         />
                       );
                       default: return null;

@@ -20,6 +20,20 @@ export function StepSpells() {
     );
   }
 
+  // Bardo/Druida precisam escolher escolas antes de selecionar magias
+  if ((classe === 'bardo' || classe === 'druida') && (choices.escolasMagia || []).length < 3) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 bg-amber-950/20 rounded-[2.5rem] border border-amber-500/20 gap-4">
+        <span className="text-5xl">⚠️</span>
+        <h2 className="text-xl font-black text-amber-400 uppercase tracking-tight">Escolas de Magia não definidas</h2>
+        <p className="text-slate-400 text-sm text-center max-w-sm leading-relaxed">
+          Como <strong className="text-white">{cls?.nome}</strong>, você precisa escolher <strong className="text-amber-400">3 escolas de magia</strong> antes de selecionar suas magias iniciais.
+        </p>
+        <p className="text-slate-500 text-xs text-center">Volte ao passo <strong className="text-amber-400">V. Especialização de Classe</strong> para definir suas escolas.</p>
+      </div>
+    );
+  }
+
   // Determine limits and available spells
   const limits = useMemo(() => {
     if (classe === 'arcanista') return 3;

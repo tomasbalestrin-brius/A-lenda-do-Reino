@@ -219,7 +219,7 @@ export function StepProgression({ stats }) {
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl rotate-12">🔮</div>
         <div className="flex-1">
           <h2 className="text-4xl font-black text-white tracking-tighter mb-2 italic">
-            <span className="text-blue-400 mr-2">XVII.</span> Senda Evolutiva
+            <span className="text-blue-400 mr-2">XVI.</span> Senda Evolutiva
           </h2>
           <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">
             Sua jornada te tornou mais experiente. A cada nível superado, novas técnicas e dons despertam.
@@ -249,16 +249,25 @@ export function StepProgression({ stats }) {
                     <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
                     <h3 className="text-xl font-black text-white italic">Nível {lvl}</h3>
                   </div>
-                  {selectedPowerName ? (
-                    <div className="px-4 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-2">
-                       <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Poder Definido</span>
-                       <span className="text-xs">✨</span>
-                    </div>
-                  ) : (
-                    <div className="px-4 py-1.5 bg-rose-950/40 border border-rose-500/40 rounded-full flex items-center gap-2 animate-pulse">
-                       <span className="text-[10px] text-rose-400 font-black uppercase tracking-widest">Decisão Pendente</span>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {selectedPowerName ? (
+                      <>
+                        <div className="px-4 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-2">
+                          <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Poder Definido</span>
+                          <span className="text-xs">✨</span>
+                        </div>
+                        <button
+                          onClick={() => updateChar({ levelChoices: { ...selecoes, [lvl]: null } })}
+                          className="px-3 py-1.5 bg-rose-950/40 border border-rose-500/30 rounded-full text-rose-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-950/60 transition-all"
+                          title="Limpar escolha deste nível"
+                        >✕ Limpar</button>
+                      </>
+                    ) : (
+                      <div className="px-4 py-1.5 bg-rose-950/40 border border-rose-500/40 rounded-full flex items-center gap-2 animate-pulse">
+                        <span className="text-[10px] text-rose-400 font-black uppercase tracking-widest">Decisão Pendente</span>
+                      </div>
+                    )}
+                  </div>
                </div>
 
                <div className="p-8 space-y-8">

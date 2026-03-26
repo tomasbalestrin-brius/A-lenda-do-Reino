@@ -477,6 +477,40 @@ export function StepEquipment() {
         </div>
       </div>
 
+      {/* ── Itens Gratuitos (Grants) ─────────────────────────────────────────── */}
+      {(() => {
+        const grantItems = (char.equipamento || []).filter(e =>
+          typeof e !== 'string' && (e.isSuperiorGrant || e.uid?.includes('_magic_grant_'))
+        );
+        if (grantItems.length === 0) return null;
+        return (
+          <div className="p-6 rounded-[2.5rem] bg-emerald-950/20 border border-emerald-500/20 flex flex-col gap-4">
+            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.4em] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,1)]" /> Itens Gratuitos — Bônus de Nível
+            </p>
+            <div className="flex flex-wrap gap-3">
+              {grantItems.map(e => {
+                const item = ITENS[e.id];
+                const hasFreeMod = e.isSuperiorGrant && !char.choices?.superiorGrantConsumed && (e.mods || []).length === 0;
+                return (
+                  <div key={e.uid} className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 px-4 py-2.5 bg-emerald-900/20 border border-emerald-500/30 rounded-2xl">
+                      <span className="text-emerald-400 font-black text-xs uppercase">{item?.nome || e.id}</span>
+                      {hasFreeMod && (
+                        <span className="text-[8px] font-black bg-emerald-500 text-gray-950 px-2 py-0.5 rounded-full uppercase tracking-wide animate-pulse">
+                          MOD GRÁTIS
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-slate-500">Encontre esses itens na aba correspondente para customizá-los.</p>
+          </div>
+        );
+      })()}
+
       {char.classe === 'inventor' && (
         <div className="p-8 rounded-[3rem] bg-indigo-950/20 border border-indigo-500/20 mb-4">
            <h3 className="text-xl font-black text-indigo-400 uppercase tracking-tighter mb-4 flex items-center gap-3">

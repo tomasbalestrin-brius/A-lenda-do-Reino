@@ -157,16 +157,16 @@ export function canGoNext(step, char, stats) {
       return { ok: true, reason: null };
     }
 
-    case 15: // Aliados
-      return { ok: true, reason: null };
-
-    case 16: { // Progressão de Níveis
+    case 15: { // Progressão de Níveis
        const choices = char.levelChoices || {};
        const needed = (char.level || 1) - 1;
        const currentNum = Object.values(choices).filter(v => v && (v.id || v.type === 'attribute')).length;
        const ok = currentNum >= needed;
        return { ok, reason: ok ? null : `Escolha seus poderes para os níveis extras (Pendente: ${needed - currentNum}).` };
     }
+
+    case 16: // Aliados
+      return { ok: true, reason: null };
 
     default: return { ok: true, reason: null };
   }
@@ -195,7 +195,7 @@ export function shouldSkipStep(step, char, stats) {
     case 14: // Poderes Iniciais — apenas se level > 1
       return (char.level || 1) <= 1;
 
-    case 16: // Progressão de Nível
+    case 15: // Progressão de Nível
       return (char.level || 1) <= 1;
 
     default:
