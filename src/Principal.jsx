@@ -2,6 +2,9 @@ import React, { useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "./store/useAuthStore";
 import { AuthOverlay } from "./components/auth/AuthOverlay";
+import { PWAUpdateToast } from "./components/PWAUpdateToast";
+import { OfflineBanner } from "./components/OfflineBanner";
+import { LandscapeWarning } from "./components/LandscapeWarning";
 import "./index.css";
 
 const CharacterCreation = lazy(() => import("./components/CharacterCreation"));
@@ -38,9 +41,12 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white">
+      <OfflineBanner />
+      <LandscapeWarning />
       <Suspense fallback={<LoadingScreen />}>
         <CharacterCreation />
       </Suspense>
+      <PWAUpdateToast />
     </div>
   );
 }

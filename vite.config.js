@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png', 'assets/**/*.png'],
+      registerType: 'prompt',
+      includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png', 'offline.html', 'assets/**/*.png'],
       manifest: {
         name: 'A Lenda do Reino',
         short_name: 'Lenda do Reino',
@@ -34,6 +34,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff,woff2}'],
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/offline\.html$/],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

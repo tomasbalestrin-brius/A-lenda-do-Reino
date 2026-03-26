@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#020617" />
+  <title>Sem Conexão — A Lenda do Reino</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #020617;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow-amber { width: 40vw; height: 40vw; background: rgba(217,119,6,0.06); top: -10%; right: -5%; }
+    .glow-blue  { width: 40vw; height: 40vw; background: rgba(37,99,235,0.06); bottom: -10%; left: -5%; }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+    }
+
+    .icon-wrap {
+      width: 96px;
+      height: 96px;
+      border-radius: 2rem;
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin: 0 auto 2rem;
+      box-shadow: 0 0 40px rgba(239,68,68,0.1);
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #fff;
+      margin-bottom: 0.75rem;
+    }
+
+    p {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.35rem 1rem;
+      border-radius: 9999px;
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      font-size: 0.7rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      margin-bottom: 1.5rem;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #f87171;
+      animation: pulse 1.5s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba(248,113,113,1);
+    }
+    @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1rem 2.5rem;
+      border-radius: 9999px;
+      background: #d97706;
+      color: #0f172a;
+      font-weight: 900;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 8px 24px rgba(217,119,6,0.3);
+      text-decoration: none;
+    }
+    .btn:hover { background: #f59e0b; }
+    .btn:active { transform: scale(0.96); }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(255,255,255,0.05), transparent);
+      margin: 2rem 0;
+    }
+
+    .tip {
+      color: #475569;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    .brand {
+      margin-top: 3rem;
+      color: #f59e0b;
+      font-size: 0.65rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.5em;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="glow glow-amber"></div>
+  <div class="glow glow-blue"></div>
+
+  <div class="card">
+    <div class="badge">
+      <span class="dot"></span>
+      Sem conexão
+    </div>
+
+    <div class="icon-wrap">📡</div>
+
+    <h1>O Reino está inacessível</h1>
+    <p>Não foi possível conectar ao servidor.<br>Verifique sua conexão e tente novamente.</p>
+
+    <button class="btn" onclick="location.reload()">
+      ↺ Tentar novamente
+    </button>
+
+    <div class="divider"></div>
+
+    <p class="tip">Se o app já foi instalado, ele funcionará offline quando a conexão for restaurada.</p>
+
+    <p class="brand">A Lenda do Reino · Tormenta20</p>
+  </div>
+</body>
+</html>

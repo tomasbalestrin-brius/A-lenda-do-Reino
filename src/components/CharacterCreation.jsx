@@ -69,6 +69,7 @@ export default function CharacterCreation() {
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmBack, setConfirmBack] = useState(null); // { targetStep, message }
+  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar toggle
 
   // Handle shared character link (?char=base64)
   React.useEffect(() => {
@@ -260,10 +261,52 @@ export default function CharacterCreation() {
         </div>
       )}
       
+      {/* Mobile sidebar overlay backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-[19] bg-black/60 backdrop-blur-sm xs:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Hamburger button — only shown on very small screens when sidebar closed */}
+      {!sidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-[21] w-10 h-10 rounded-2xl bg-gray-900/90 border border-slate-800 flex items-center justify-center text-slate-400 hover:text-white transition-all active:scale-90 shadow-lg min-[420px]:hidden"
+          style={{ top: 'calc(env(safe-area-inset-top) + 1rem)' }}
+          aria-label="Abrir menu"
+        >
+          <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
+            <rect width="16" height="2" rx="1" fill="currentColor"/>
+            <rect y="5" width="12" height="2" rx="1" fill="currentColor"/>
+            <rect y="10" width="16" height="2" rx="1" fill="currentColor"/>
+          </svg>
+        </button>
+      )}
+
       {/* Sidebar Navigation */}
-      <div className="w-16 md:w-64 shrink-0 bg-[#040B16] border-r border-slate-800/60 shadow-2xl z-20 flex flex-col pt-6 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-        <button 
-          onClick={() => setView('library')} 
+      <div
+        className={`
+          shrink-0 bg-[#040B16] border-r border-slate-800/60 shadow-2xl z-20 flex flex-col pt-6 overflow-y-auto transition-all duration-300
+          w-64 md:w-64
+          max-[419px]:fixed max-[419px]:inset-y-0 max-[419px]:left-0 max-[419px]:z-[20]
+          ${sidebarOpen ? 'max-[419px]:translate-x-0' : 'max-[419px]:-translate-x-full'}
+          min-[420px]:w-16 min-[420px]:translate-x-0
+          md:w-64
+        `}
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {/* Close button on tiny screens */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="absolute top-4 right-4 z-10 w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:text-white transition-all min-[420px]:hidden"
+        >
+          ✕
+        </button>
+
+        <button
+          onClick={() => setView('library')}
           className="mx-auto md:mx-6 mb-8 mt-2 p-3 md:px-6 md:py-3 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95 group"
         >
           <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
@@ -300,7 +343,7 @@ export default function CharacterCreation() {
             return (
               <button
                 key={i}
-                onClick={() => i < step && setStep(i)}
+                onClick={() => { if (i < step) { setStep(i); setSidebarOpen(false); } }}
                 disabled={i > step}
                 className={`flex items-center gap-4 py-3 md:py-3.5 px-3 rounded-2xl transition-all relative overflow-hidden group ${
                   isCurrent ? 'bg-amber-900/20 text-amber-500' :
