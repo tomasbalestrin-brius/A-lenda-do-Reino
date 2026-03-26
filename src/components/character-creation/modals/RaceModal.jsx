@@ -42,7 +42,7 @@ export function RaceModal({ id, race, onClose, onConfirm, isSelected }) {
         initial={{ scale: 0.9, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]"
+        className="relative w-full max-w-4xl bg-gray-900 border border-white/10 rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row max-h-[90dvh] md:max-h-[85vh]"
       >
         {/* Left: Visual Content */}
         <div className="w-full md:w-2/5 relative h-56 md:h-auto overflow-hidden border-b md:border-b-0 md:border-r border-white/10 shrink-0">

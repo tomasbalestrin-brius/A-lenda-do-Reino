@@ -87,7 +87,7 @@ const AttributeRow = React.memo(({
         'border-white/5 hover:border-white/10'
       }`}
     >
-      <div className="flex flex-col md:flex-row items-start md:items-center gap-8 relative z-10">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8 relative z-10">
         <div className="w-full md:w-64 shrink-0">
            <div className="flex items-center gap-3 mb-1">
               <span className={`text-[9px] md:text-[10px] font-black uppercase tracking-[0.3em] ${
@@ -255,7 +255,7 @@ export function StepAttributes({ stats }) {
              <button
                key={m}
                onClick={() => updateChar({ attrMethod: m, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 }, rolagens: [] })}
-               className={`px-8 py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all ${
+               className={`px-5 md:px-8 py-3 md:py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all ${
                  char.attrMethod === m
                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-gray-950 shadow-xl shadow-amber-900/20'
                    : 'text-slate-500 hover:text-slate-300'
@@ -325,7 +325,7 @@ export function StepAttributes({ stats }) {
 
       {/* Dice Selection Area */}
       {!isBuy && (char.rolagens || []).length > 0 && (
-        <div className="bg-gray-950/40 p-10 rounded-[3rem] border border-white/10 backdrop-blur-sm space-y-8">
+        <div className="bg-gray-950/40 p-5 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-white/10 backdrop-blur-sm space-y-6 md:space-y-8">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                  <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />

@@ -46,7 +46,7 @@ export function StepLevel() {
         </div>
       </div>
 
-      <div className="bg-gray-900/40 rounded-[2.5rem] border border-white/5 p-12 shadow-xl backdrop-blur-sm relative overflow-hidden">
+      <div className="bg-gray-900/40 rounded-[2.5rem] border border-white/5 p-6 md:p-12 shadow-xl backdrop-blur-sm relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
 
         <div className="flex flex-col items-center gap-12">
@@ -56,10 +56,10 @@ export function StepLevel() {
               key={level}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className={`w-48 h-48 rounded-[3rem] bg-gradient-to-br ${getLevelColor(level)} flex flex-col items-center justify-center border-4 border-white/20 shadow-[0_0_50px_rgba(59,130,246,0.3)] relative z-10`}
+              className={`w-32 h-32 md:w-48 md:h-48 rounded-[2rem] md:rounded-[3rem] bg-gradient-to-br ${getLevelColor(level)} flex flex-col items-center justify-center border-4 border-white/20 shadow-[0_0_50px_rgba(59,130,246,0.3)] relative z-10`}
             >
-              <span className="text-white/50 text-xs font-black uppercase tracking-[0.4em] mb-1">Nível</span>
-              <span className="text-7xl font-black text-white italic leading-none">{level}</span>
+              <span className="text-white/50 text-[9px] md:text-xs font-black uppercase tracking-[0.4em] mb-1">Nível</span>
+              <span className="text-5xl md:text-7xl font-black text-white italic leading-none">{level}</span>
             </motion.div>
             <div className={`absolute inset-0 blur-3xl opacity-20 -z-0 bg-blue-500`} />
           </div>
