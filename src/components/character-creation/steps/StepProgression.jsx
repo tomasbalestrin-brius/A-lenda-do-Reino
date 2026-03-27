@@ -169,7 +169,7 @@ export function StepProgression({ stats }) {
   if (level === 1) {
     return (
       <div className="flex flex-col gap-6">
-        <div className="flex flex-col items-center justify-center p-20 gap-8 bg-blue-950/20 rounded-[3rem] border border-blue-500/10 backdrop-blur-md">
+        <div className="flex flex-col items-center justify-center p-8 md:p-20 gap-8 bg-blue-950/20 rounded-[2rem] md:rounded-[3rem] border border-blue-500/10 backdrop-blur-md">
           <div className="w-24 h-24 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-5xl shadow-2xl shadow-blue-900/20 animate-bounce">🛡️</div>
           <div className="text-center max-w-md">
             <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">Nível Heroico I</h2>
@@ -245,17 +245,17 @@ export function StepProgression({ stats }) {
               animate={{ opacity: 1, x: 0 }}
               className="bg-gray-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-xl backdrop-blur-sm"
             >
-               <div className="px-8 py-5 bg-gray-950/60 flex items-center justify-between border-b border-white/5">
-                  <div className="flex items-center gap-3">
-                    <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
-                    <h3 className="text-xl font-black text-white italic">Nível {lvl}</h3>
+               <div className="px-4 py-4 md:px-8 md:py-5 bg-gray-950/60 flex items-center justify-between gap-2 border-b border-white/5">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)] shrink-0" />
+                    <h3 className="text-base md:text-xl font-black text-white italic">Nível {lvl}</h3>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                     {selectedPowerName ? (
                       <>
-                        <div className="px-4 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-2">
-                          <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest">Poder Definido</span>
-                          <span className="text-xs">✨</span>
+                        <div className="px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-1.5 min-w-0">
+                          <span className="text-[9px] md:text-[10px] text-emerald-400 font-black uppercase tracking-widest truncate">Poder Definido</span>
+                          <span className="text-xs shrink-0">✨</span>
                         </div>
                         <button
                           onClick={() => updateChar({ levelChoices: { ...selecoes, [lvl]: null } })}
@@ -271,7 +271,7 @@ export function StepProgression({ stats }) {
                   </div>
                </div>
 
-               <div className="p-8 space-y-8">
+               <div className="p-4 md:p-8 space-y-6 md:space-y-8">
                  {/* Automatic Class Features */}
                  {autoSkills.length > 0 && (
                    <div className="space-y-4">

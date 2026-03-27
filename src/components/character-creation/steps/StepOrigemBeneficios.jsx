@@ -82,9 +82,9 @@ export function StepOrigemBeneficios({ stats }) {
                       : (isLocked ? 'bg-gray-900/20 border-white/5 opacity-40 grayscale pointer-events-none' : 'bg-gray-900/40 border-white/5 text-slate-400 hover:border-blue-500/50 hover:bg-gray-900')
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                     <span className="font-black text-base tracking-tight uppercase">{p}</span>
-                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center border font-black text-xs bg-blue-500/10 border-blue-500/20 text-blue-400">
+                  <div className="flex items-center justify-between gap-2">
+                     <span className="font-black text-base tracking-tight uppercase flex-1 min-w-0 truncate">{p}</span>
+                     <div className="w-10 h-10 rounded-2xl flex items-center justify-center border font-black text-xs bg-blue-500/10 border-blue-500/20 text-blue-400 shrink-0">
                         +2
                      </div>
                   </div>

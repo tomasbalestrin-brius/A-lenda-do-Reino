@@ -124,16 +124,16 @@ export function StepClassePericias() {
             </div>
             <div className="grid grid-cols-1 gap-3">
                {fixedObrig.map(p => (
-                 <div key={p} className="p-5 rounded-2xl bg-gray-950 border border-gray-800 flex items-center justify-between shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-black text-gray-300 uppercase tracking-tight">{p}</span>
+                 <div key={p} className="p-5 rounded-2xl bg-gray-950 border border-gray-800 flex items-center justify-between gap-2 shadow-inner">
+                    <div className="flex flex-col flex-1 min-w-0">
+                      <span className="text-sm font-black text-gray-300 uppercase tracking-tight truncate">{p}</span>
                       {PERICIAS_INFO[p] && (
-                        <span className="text-[9px] text-slate-600 mt-0.5 font-medium">
+                        <span className="text-[9px] text-slate-600 mt-0.5 font-medium truncate">
                           {PERICIAS_INFO[p].attr} · {PERICIAS_INFO[p].desc}
                         </span>
                       )}
                     </div>
-                    <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-[10px]">🔒</div>
+                    <div className="w-8 h-8 rounded-full bg-gray-900 border border-gray-800 flex items-center justify-center text-[10px] shrink-0">🔒</div>
                  </div>
                ))}
                
@@ -209,16 +209,16 @@ export function StepClassePericias() {
                           : 'bg-gray-900/60 border-white/5 text-slate-300 hover:border-amber-500/40 hover:bg-gray-950')
                      }`}
                    >
-                     <div className="flex flex-col gap-0.5">
+                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                         <span className="text-xs font-black uppercase tracking-tight truncate">{p}</span>
                         {PERICIAS_INFO[p] && !isOrigin && !isObrigChoice && (
-                          <span className={`text-[9px] font-medium ${isPicked ? 'text-gray-800' : 'text-slate-600'}`}>
+                          <span className={`text-[9px] font-medium truncate ${isPicked ? 'text-gray-800' : 'text-slate-600'}`}>
                             {PERICIAS_INFO[p].attr} · {PERICIAS_INFO[p].desc}
                           </span>
                         )}
                         {(isOrigin || isObrigChoice) && <span className="text-[8px] opacity-60 font-black">Já Adquirido</span>}
                      </div>
-                     {isPicked && <span className="text-lg">⚔️</span>}
+                     {isPicked && <span className="text-lg shrink-0 ml-2">⚔️</span>}
                    </motion.button>
                  );
                })}

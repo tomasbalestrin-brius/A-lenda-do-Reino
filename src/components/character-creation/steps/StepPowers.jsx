@@ -106,9 +106,9 @@ export function StepPowers({ stats }) {
           }
           return devotoPoderes.map(p => (
             <div key={p.nome} className="p-6 rounded-[2rem] border-2 border-purple-500/20 bg-purple-950/10 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <span className="font-black text-sm uppercase tracking-tight text-purple-300">{p.nome}</span>
-                <span className="text-[9px] text-purple-500/60 font-black uppercase">{deus.nome}</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-black text-sm uppercase tracking-tight text-purple-300 flex-1 min-w-0 truncate">{p.nome}</span>
+                <span className="text-[9px] text-purple-500/60 font-black uppercase shrink-0">{deus.nome}</span>
               </div>
               <p className="text-[11px] leading-relaxed font-medium text-slate-400 flex-1">{p.descricao}</p>
               <span className="text-[9px] font-black text-purple-500/40 uppercase tracking-widest border-t border-purple-500/10 pt-2">Concedido automaticamente — não ocupa slot</span>
@@ -130,10 +130,10 @@ export function StepPowers({ stats }) {
                 ? 'bg-gray-900/40 border-slate-800 text-slate-400'
                 : 'bg-gray-950/60 border-gray-900/50 opacity-40 grayscale'
             }`}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-black text-sm uppercase tracking-tight text-slate-200">{p.nome}</span>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="font-black text-sm uppercase tracking-tight text-slate-200 flex-1 min-w-0 truncate">{p.nome}</span>
                 {!eligibility.ok && (
-                  <span className="text-[9px] text-rose-400 font-black uppercase tracking-widest shrink-0 ml-2">🔒 {eligibility.reason}</span>
+                  <span className="text-[9px] text-rose-400 font-black uppercase tracking-widest shrink-0 ml-2 truncate max-w-[40%]">🔒 {eligibility.reason}</span>
                 )}
               </div>
               <p className="text-[11px] leading-relaxed font-medium text-slate-500">{p.descricao}</p>

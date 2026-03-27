@@ -317,7 +317,7 @@ export function StepAttributes({ stats }) {
              <button
                onClick={handleRoll}
                disabled={rolling}
-               className="px-16 py-6 rounded-[2.5rem] bg-gradient-to-r from-amber-500 to-amber-700 text-gray-950 font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(245,158,11,0.2)] disabled:opacity-50"
+               className="px-8 py-5 md:px-16 md:py-6 rounded-[2rem] md:rounded-[2.5rem] bg-gradient-to-r from-amber-500 to-amber-700 text-gray-950 font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_rgba(245,158,11,0.2)] disabled:opacity-50"
              >
                {rolling ? 'Invocando Sorte...' : 'Rolar Atributos'}
              </button>

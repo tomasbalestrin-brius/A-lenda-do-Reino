@@ -70,7 +70,7 @@ const EditBtn = ({ step, onNavigate, label = 'Editar' }) =>
   ) : null;
 
 const StatItem = React.memo(({ label, value, detail, color, icon }) => (
-  <div className="bg-gray-950/80 p-6 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all cursor-help min-w-[120px]">
+  <div className="bg-gray-950/80 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all cursor-help">
      <div className={`absolute top-0 inset-x-0 h-1.5 ${color} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />
      <span className="text-3xl font-black text-white mb-1">{value}</span>
      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
@@ -780,7 +780,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             whileTap={{ scale: 0.98 }}
             onClick={onSave}
             disabled={!char.nome?.trim()}
-            className="flex-[3] py-8 rounded-[3rem] bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 text-gray-950 font-black text-xl uppercase tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:grayscale transition-all relative overflow-hidden group/save"
+            className="flex-[3] py-5 md:py-8 rounded-[2rem] md:rounded-[3rem] bg-gradient-to-r from-amber-600 via-amber-500 to-amber-400 text-gray-950 font-black text-base md:text-xl uppercase tracking-[0.1em] md:tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 disabled:grayscale transition-all relative overflow-hidden group/save"
           >
             <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover/save:translate-x-[100%] transition-transform duration-1000 skew-x-12" />
             <span className="relative z-10 flex items-center justify-center gap-4">
@@ -792,7 +792,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             whileTap={{ scale: 0.98 }}
             onClick={onPlay}
             disabled={!char.nome?.trim()}
-            className="flex-1 py-8 rounded-[3rem] bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xl uppercase tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 transition-all"
+            className="flex-1 py-5 md:py-8 rounded-[2rem] md:rounded-[3rem] bg-emerald-600 hover:bg-emerald-500 text-white font-black text-base md:text-xl uppercase tracking-[0.1em] md:tracking-[0.3em] shadow-[0_15px_40px_rgba(0,0,0,0.4)] disabled:opacity-30 transition-all"
           >
             ▶ Jogar
           </motion.button>
