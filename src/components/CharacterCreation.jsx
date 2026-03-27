@@ -106,8 +106,9 @@ export default function CharacterCreation() {
   const stats = useMemo(() => computeStats(char), [
     char.raca, char.racaVariante, char.racaEscolha,
     char.classe, char.level, char.atributos,
-    char.poderesGerais, char.levelChoices, char.choices,
-    char.crencasBeneficios, char.equipamento, char.deus,
+    char.poderes, char.poderesGerais, char.poderesProgressao, char.levelChoices, char.choices,
+    char.pericias, char.periciasObrigEscolha, char.periciasClasseEscolha,
+    char.crencasBeneficios, char.equipamento, char.deus, char.aliado,
     char.origem, char.origemBeneficios,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   ]);
@@ -154,9 +155,12 @@ export default function CharacterCreation() {
   }
 
   function handleNext() {
-    if (step < MAX_STEPS - 1 && canGoNext(step, char, stats).ok) {
+    const latestChar = useCharacterStore.getState().char;
+    const latestStats = computeStats(latestChar);
+    
+    if (step < MAX_STEPS - 1 && canGoNext(step, latestChar, latestStats).ok) {
       let nextStep = step + 1;
-      while (nextStep < MAX_STEPS - 1 && shouldSkipStep(nextStep, char, stats)) {
+      while (nextStep < MAX_STEPS - 1 && shouldSkipStep(nextStep, latestChar, latestStats)) {
         nextStep++;
       }
       setStep(nextStep);
@@ -489,7 +493,7 @@ export default function CharacterCreation() {
                 <div className="w-8 h-8 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
               </div>
             }>
-            <AnimatePresence mode="popLayout" initial={false}>
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                  key={step}
                  initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 20 }}
@@ -506,7 +510,7 @@ export default function CharacterCreation() {
                       case 3: return <StepIdentity />;
                       case 4: return <StepClassSpecialization />;
                       case 5: return <StepOrigin onNext={handleNext} />;
-                      case 6: return <StepOrigemBeneficios />;
+                      case 6: return <StepOrigemBeneficios stats={stats} />;
                       case 7: return <StepDeus />;
                       case 8: return <StepLevel />;
                       case 9: return <StepSpells stats={stats} />;

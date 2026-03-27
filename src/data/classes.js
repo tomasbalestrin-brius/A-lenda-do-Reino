@@ -574,18 +574,54 @@ export const CLASSES = {
       1: [
         {
           nome: "Autoconfiança",
-          descricao: "Você soma seu Carisma na Defesa, desde que não esteja usando armadura pesada."
+          descricao: "Você pode usar seu Carisma em vez de Destreza na Defesa (mas continua não podendo somar um atributo na Defesa quando usa armadura pesada)."
+        },
+        {
+          nome: "Espólio",
+          descricao: "Você recebe um item a sua escolha com preço de até T$ 2.000."
         },
         {
           nome: "Orgulho",
-          descricao: "Você pode gastar 1 PM para somar seu Carisma em um teste qualquer, uma vez por rodada."
+          descricao: "Quando faz um teste de perícia, você pode gastar uma quantidade de PM a sua escolha (limitado pelo seu Carisma). Para cada PM que gastar, recebe +2 no teste."
         }
       ],
-      2: [{ nome: "Poder de Nobre", descricao: "Escolha um poder da lista de poderes de nobre." }]
+      2: [
+        { nome: "Riqueza", descricao: "Uma vez por aventura, pode fazer um teste de Carisma com bônus igual ao seu nível. Você recebe Tibares de ouro igual ao resultado." },
+        { nome: "Poder de Nobre", descricao: "Escolha um poder da lista de poderes de nobre." }
+      ],
+      3: [
+        { nome: "Gritar Ordens", descricao: "Gaste PM (limitado pelo Carisma). Até seu próximo turno, aliados em alcance curto recebem bônus em testes de perícia igual ao PM gasto." },
+        { nome: "Poder de Nobre", descricao: "Escolha um poder da lista de poderes de nobre." }
+      ],
+      5: [
+        { nome: "Presença Aristocrática", descricao: "Se uma criatura inteligente tentar machucá-lo, gaste 2 PM. Ela deve fazer um teste de Vontade (CD Car) ou perderá a ação." },
+        { nome: "Poder de Nobre", descricao: "Escolha um poder da lista de poderes de nobre." }
+      ],
+      20: [
+        { nome: "Realeza", descricao: "A CD de Presença Aristocrática aumenta em +5. Inimigos que falham por 10 ou mais passam a lutar ao seu lado." },
+        { nome: "Poder de Nobre", descricao: "Escolha um poder da lista de poderes de nobre." }
+      ]
     },
     poderes: [
-      { nome: "Rede de Contatos", descricao: "Em qualquer cidade, você pode encontrar um contato útil após 1 hora de socialização." },
-      { nome: "Aumento de Atributo", descricao: "+1 em um atributo." }
+      { nome: "Armadura Brilhante", descricao: "Você pode usar seu Carisma na Defesa quando usa armadura pesada (não soma Destreza).", requisitos: { nivel: 8 } },
+      { nome: "Aumento de Atributo", descricao: "+1 em um atributo.", stackable: true },
+      { nome: "Autoridade Feudal", descricao: "Gaste 1h e 2 PM para conclamar o povo. Eles contam como um parceiro iniciante até o fim da aventura.", requisitos: { nivel: 6 } },
+      { nome: "Educação Privilegiada", descricao: "Você se torna treinado em duas perícias de nobre a sua escolha." },
+      { nome: "Estrategista", descricao: "Gaste ação padrão e 1 PM por aliado (limite CAR). Eles ganham uma ação de movimento no próximo turno.", requisitos: { nivel: 6, attr: { INT: 1 }, pericia: ["Guerra"] } },
+      { nome: "Favor", descricao: "Gaste 5 PM e 1h de conversa para pedir favores a poderosos. CD depende do pedido (Diplomacia)." },
+      { nome: "General", descricao: "Aliados direcionados por Estrategista recebem 1d4 PM temporários.", requisitos: { poder: ["Estrategista"], nivel: 12 } },
+      { nome: "Grito Tirânico", descricao: "Palavras Afiadas causa d8 e atinge todos os inimigos em alcance curto por +2 PM.", requisitos: { poder: ["Palavras Afiadas"], nivel: 8 } },
+      { nome: "Inspirar Confiança", descricao: "Quando um aliado em alcance curto faz um teste, você pode gastar 2 PM para ele rolar novamente." },
+      { nome: "Inspirar Glória", descricao: "Gaste 5 PM para um aliado ganhar uma ação padrão adicional. Uma vez por cena por aliado.", requisitos: { poder: ["Inspirar Confiança"], nivel: 8 } },
+      { nome: "Jogo da Corte", descricao: "Gaste 1 PM para rolar novamente um teste de Diplomacia, Intuição ou Nobreza." },
+      { nome: "Liderar pelo Exemplo", descricao: "Gaste 2 PM. Até seu próximo turno, se passar num teste de perícia, aliados podem usar seu resultado.", requisitos: { nivel: 6 } },
+      { nome: "Língua de Ouro", descricao: "Gaste ação padrão e 6 PM para efeito de Enfeitiçar (sugerir ação e área) (CD Car).", requisitos: { poder: ["Língua de Prata"], nivel: 8 } },
+      { nome: "Língua de Prata", descricao: "Em testes de Carisma, gaste 2 PM para receber bônus igual a metade do seu nível." },
+      { nome: "Língua Rápida", descricao: "Mudar atitude com ação completa sofre penalidade de -5 (em vez de -10)." },
+      { nome: "Palavras Afiadas", descricao: "Gaste ação padrão e 1 PM (Diplomacia ou Intimidação vs Vontade). Causa 2d6 dano psíquico não letal." },
+      { nome: "Presença Majestosa", descricao: "Presença Aristocrática afeta qualquer criatura com Inteligência e pode ser usada repetidamente.", requisitos: { nivel: 16 } },
+      { nome: "Título", descricao: "Recebe 10 TO por nível por aventura ou ajuda de parceiro veterano.", requisitos: { poder: ["Autoridade Feudal"], nivel: 10 } },
+      { nome: "Voz Poderosa", descricao: "+2 em Diplomacia e Intimidação. Alcances de habilidades aumentam para médio." }
     ]
   },
 
@@ -605,19 +641,87 @@ export const CLASSES = {
       1: [
         {
           nome: "Abençoado",
-          descricao: "Você soma seu Carisma nos testes de resistência (Fortitude, Reflexos e Vontade)."
+          descricao: "Você soma seu Carisma no seu total de pontos de mana no 1º nível. Torna-se devoto de uma divindade ou do Bem."
         },
         {
-          nome: "Golpe Divino",
-          descricao: "Você pode gastar 1 PM para somar seu Carisma no teste de ataque e causar +1d8 de dano sagrado extra no próximo acerto."
+          nome: "Código do Herói",
+          descricao: "Deve manter palavra, ajudar inocentes, nunca mentir/roubar. Se violar, perde todos os PM até o próximo dia."
+        },
+        {
+          nome: "Golpe Divino (+1d8)",
+          descricao: "Gaste 2 PM em ataque corpo a corpo: soma Carisma no teste e +1d8 no dano."
         }
       ],
-      2: [{ nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }]
+      2: [
+        { nome: "Cura pelas Mãos (1d8+1 PV)", descricao: "Gaste ação movimento e 1 PM para curar 1d8+1 PV (corpo a corpo). Aumenta com níveis." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      3: [
+        { nome: "Aura Sagrada", descricao: "Gaste 1 PM (sustentada, curto). Você e aliados na aura somam seu Carisma nos testes de resistência." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      5: [
+        { nome: "Bênção da Justiça", descricao: "Escolha entre Égide Sagrada ou Montaria Sagrada." },
+        { nome: "Golpe Divino (+2d8)", descricao: "Dano extra aumenta para +2d8. Gasto total: 3 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      6: [
+        { nome: "Cura pelas Mãos (2d8+2 PV)", descricao: "Cura aumenta para 2d8+2. Gasto total: 2 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      9: [
+        { nome: "Golpe Divino (+3d8)", descricao: "Dano extra aumenta para +3d8. Gasto total: 4 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      10: [
+        { nome: "Cura pelas Mãos (3d8+3 PV)", descricao: "Cura aumenta para 3d8+3. Gasto total: 3 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      13: [
+        { nome: "Golpe Divino (+4d8)", descricao: "Dano extra aumenta para +4d8. Gasto total: 5 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      14: [
+        { nome: "Cura pelas Mãos (4d8+4 PV)", descricao: "Cura aumenta para 4d8+4. Gasto total: 4 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      17: [
+        { nome: "Golpe Divino (+5d8)", descricao: "Dano extra aumenta para +5d8. Gasto total: 6 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      18: [
+        { nome: "Cura pelas Mãos (5d8+5 PV)", descricao: "Cura aumenta para 5d8+5. Gasto total: 5 PM." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ],
+      20: [
+        { nome: "Vingador Sagrado", descricao: "Gaste ação completa e 10 PM. Recebe voo 18m, RD 20 e custo de Golpe Divino reduzido à metade." },
+        { nome: "Poder de Paladino", descricao: "Escolha um poder da lista de poderes de paladino." }
+      ]
     },
     poderes: [
-      { nome: "Cura pelas Mãos", descricao: "Você pode gastar 2 PM para curar um aliado pelo toque em uma quantidade de PV igual ao seu Carisma." },
-      { nome: "Aura de Coragem", descricao: "Aliados em alcance curto são imunes a efeitos de medo." },
-      { nome: "Aumento de Atributo", descricao: "+1 em um atributo." }
+      { nome: "Arma Sagrada", descricao: "Dado de dano do Golpe Divino aumenta para d12 com arma da divindade.", requisitos: { devoto: true } },
+      { nome: "Aumento de Atributo", descricao: "+1 em um atributo.", stackable: true },
+      { nome: "Aura Antimagia", descricao: "Aliados rolam novamente testes de resistência contra magia na aura.", requisitos: { nivel: 14 } },
+      { nome: "Aura Ardente", descricao: "Mortos-vivos na aura sofrem dano de luz (5 + CAR) no início de seus turnos.", requisitos: { nivel: 10 } },
+      { nome: "Aura de Cura", descricao: "Aliados na aura curam PV (5 + CAR) no início de seus turnos.", requisitos: { nivel: 6 } },
+      { nome: "Aura de Invencibilidade", descricao: "Você e aliados na aura ignoram o primeiro dano sofrido na cena.", requisitos: { nivel: 18 } },
+      { nome: "Aura Poderosa", descricao: "Alcance da aura sagrada aumenta para médio.", requisitos: { nivel: 6 } },
+      { nome: "Fulgor Divino", descricao: "Ao usar Golpe Divino, inimigos em alcance curto ficam ofuscados." },
+      { nome: "Julgamento Divino: Arrependimento", descricao: "Gaste 2 PM. Inimigo que acertar ataque deve passar em Vontade ou ser atordoado." },
+      { nome: "Julgamento Divino: Autoridade", descricao: "Gaste 1 PM (Diplomacia vs Vontade). Comande o alvo ('pare', 'largue')." },
+      { nome: "Julgamento Divino: Coragem", descricao: "Gaste 2 PM. Alvo imune a medo e +2 no ataque contra o ND mais alto." },
+      { nome: "Julgamento Divino: Iluminação", descricao: "Recupere 2 PM temporários ao acertar o inimigo marcado." },
+      { nome: "Julgamento Divino: Justiça", descricao: "Gaste 2 PM. Inimigo que causar dano sofre metade dele como dano de luz." },
+      { nome: "Julgamento Divino: Libertação", descricao: "Gaste 5 PM para cancelar uma condição negativa em alvo curto." },
+      { nome: "Julgamento Divino: Salvação", descricao: "Gaste 2 PM. Ao acertar o inimigo marcado, recupera 5 PV ." },
+      { nome: "Julgamento Divino: Vindicação", descricao: "Gaste 2 PM. Bônus de ataque (+1) e dano (+1d8) contra inimigo marcado. Aumenta a cada 5 níveis." },
+      { nome: "Julgamento Divino: Zelo", descricao: "Gaste 1 PM. Movimento dobrado na direção do inimigo marcado." },
+      { nome: "Orar", descricao: "Aprende uma magia divina de 1º círculo. Atributo chave Sabedoria.", stackable: true },
+      { nome: "Virtude Paladinesca: Caridade", descricao: "Custo de habilidades aplicadas a aliados é reduzido em -1 PM." },
+      { nome: "Virtude Paladinesca: Castidade", descricao: "Imune a encantamento e +5 em Intuição contra blesfes." },
+      { nome: "Virtude Paladinesca: Compaixão", descricao: "Cura pelas Mãos cura 2d6+1 por PM em alcance curto." },
+      { nome: "Virtude Paladinesca: Humildade", descricao: "Gaste ação completa no 1º turno para receber PM temporário igual ao CAR (até fim da cena)." },
+      { nome: "Virtude Paladinesca: Temperança", descricao: "Itens de consumo (alquimia, poção, comida) rendem duas doses." }
     ]
   }
 };

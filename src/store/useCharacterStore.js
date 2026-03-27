@@ -70,12 +70,14 @@ export const useCharacterStore = create((set, get) => ({
       newChar.classSpells = [];
     }
     
-    // Se a origem mudou, limpa benefícios e remove perícias da origem anterior
+    // Se a origem mudou, limpa benefícios e remove APENAS as perícias que eram benefícios da origem anterior
     if (updates.origem && updates.origem !== state.char.origem) {
-      newChar.origemBeneficios = [];
       const oldOrigem = ORIGENS[state.char.origem?.toLowerCase()];
-      const oldOriginSkills = new Set(oldOrigem?.pericias || []);
-      newChar.pericias = (state.char.pericias || []).filter(s => !oldOriginSkills.has(s));
+      const oldBenefits = state.char.origemBeneficios || [];
+      const skillsToRemove = oldBenefits.filter(b => oldOrigem?.pericias?.includes(b));
+      
+      newChar.origemBeneficios = [];
+      newChar.pericias = (state.char.pericias || []).filter(s => !skillsToRemove.includes(s));
     }
 
     // Se o deus mudou, limpa benefícios de crença

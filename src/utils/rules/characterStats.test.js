@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeStats } from './characterStats';
+import { ITENS } from '../../data/items';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -105,18 +106,18 @@ describe('computeStats — Defesa', () => {
   });
 
   it('Encouraçado com armadura pesada: +2 DEF base', () => {
-    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     const com = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [{ nome: 'Encouraçado' }],
     }));
     expect(com.def).toBe(sem.def + 2);
   });
 
   it('Encouraçado + Inexpugnável: +4 DEF (2 base + 2 por Inexpugnável)', () => {
-    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     const com = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [
         { nome: 'Encouraçado' },
         { nome: 'Inexpugnável' },
@@ -126,9 +127,9 @@ describe('computeStats — Defesa', () => {
   });
 
   it('Encouraçado + Fanático: +4 DEF (2 base + 2 por Fanático)', () => {
-    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     const com = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [
         { nome: 'Encouraçado' },
         { nome: 'Fanático' },
@@ -138,9 +139,9 @@ describe('computeStats — Defesa', () => {
   });
 
   it('Encouraçado + Fanático + Inexpugnável: +6 DEF (2 + 2 + 2)', () => {
-    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     const com = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [
         { nome: 'Encouraçado' },
         { nome: 'Fanático' },
@@ -163,9 +164,9 @@ describe('computeStats — Defesa', () => {
 
 describe('computeStats — Saves', () => {
   it('Inexpugnável com armadura pesada: +2 em Fortitude, Reflexos e Vontade', () => {
-    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     const com = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [{ nome: 'Inexpugnável' }],
     }));
     expect(com.fort).toBe(sem.fort + 2);
@@ -184,9 +185,9 @@ describe('computeStats — Saves', () => {
   });
 
   it('Inexpugnável NÃO afeta DEF (bônus vai só para saves)', () => {
-    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const sem = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     const com = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [{ nome: 'Inexpugnável' }],
     }));
     // DEF não muda com Inexpugnável (apenas Encouraçado afeta DEF)
@@ -216,23 +217,30 @@ describe('computeStats — Deslocamento', () => {
   });
 
   it('armadura pesada sem Fanático: -3m de deslocamento', () => {
-    const stats = computeStats(makeChar({ equipamento: ['loriga_segmentos'] }));
+    const stats = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
     expect(stats.deslocamento).toBe(6);
   });
 
   it('armadura pesada COM Fanático: sem penalidade de velocidade', () => {
     const stats = computeStats(makeChar({
-      equipamento: ['loriga_segmentos'],
+      equipamento: ['loriga_segmentada'],
       poderesGerais: [{ nome: 'Fanático' }],
     }));
     expect(stats.deslocamento).toBe(9);
   });
 
-  it('Fanático NÃO remove penalidade de armadura média', () => {
+  it('Fanático NÃO remove penalidade de armadura média (Simulada)', () => {
+    // Como JdA não tem média nativa, simulamos uma para testar a lógica do código
+    const itemMedio = { id: 'item_medio', nome: 'Item Médio', tipo: 'armadura', categoria: 'media' };
+    const oldItens = { ...ITENS };
+    ITENS.item_medio = itemMedio;
+
     const stats = computeStats(makeChar({
-      equipamento: ['cota_malha'],
+      equipamento: ['item_medio'],
       poderesGerais: [{ nome: 'Fanático' }],
     }));
+    
+    delete ITENS.item_medio;
     expect(stats.deslocamento).toBe(6);
   });
 });

@@ -169,6 +169,13 @@ function computePM(char, cls, raceData, allPowers, attrs, level) {
   details.push({ label: `Base (${pmBase}/nível)`, value: pmBase * level });
   if (pmMod !== 0) details.push({ label: `Atributo (${pmKey})`, value: pmMod });
 
+  // Paladino: Abençoado (Soma CAR no PM no 1º nível)
+  if (char.classe?.toLowerCase() === 'paladino') {
+    const carBonus = attrs.CAR || 0;
+    pm += carBonus;
+    details.push({ label: 'Abençoado (CAR)', value: carBonus });
+  }
+
   // Elfo: Sangue Mágico (+1 PM/nível)
   if (raceData?.habilidades?.some(h => h.nome === 'Sangue Mágico')) {
     pm += level;
@@ -223,10 +230,22 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado) {
 
   // Habilidades de classe
   const cls = char.classe?.toLowerCase();
+  
+  // Autoconfiança (Nobre): Usa CAR no lugar de DES na Defesa se não usar armadura pesada
   if (cls === 'nobre' && !isHeavyArmor) {
-    const val = Math.min(attrs.CAR || 0, level);
-    if (val > 0) details.push({ label: 'Autoconfiança', value: val });
+    const carMod = attrs.CAR || 0;
+    const desMod = attrs.DES || 0;
+    if (carMod > desMod) {
+      details.push({ label: 'Autoconfiança (CAR)', value: carMod - desMod });
+    }
   }
+
+  // Armadura Brilhante (Poder de Nobre): Usa CAR na Defesa mesmo com armadura pesada
+  if (cls === 'nobre' && isHeavyArmor && allPowers.has('Armadura Brilhante')) {
+    const carMod = attrs.CAR || 0;
+    if (carMod > 0) details.push({ label: 'Armadura Brilhante (CAR)', value: carMod });
+  }
+
   if (cls === 'bucaneiro' && !isHeavyArmor) {
     const val = Math.min(attrs.CAR || 0, level);
     if (val > 0) details.push({ label: 'Insolência', value: val });
@@ -604,6 +623,12 @@ export function calculateDetailedAttacks(char, stats) {
     if (allPowers.has('Foco em Arma') && char.choices?.focoArma === base.nome) bonusAtk += 2;
     if (allPowers.has('Armas da Ambição')) bonusAtk += 1;
     if (allPowers.has('Ataque Poderoso') && !base.distancia) bonusAtk -= 2;
+
+    // Paladino: Golpe Divino
+    if (char.classe?.toLowerCase() === 'paladino') {
+      const gdivinoAtk = attrs.CAR || 0;
+      bonusAtk = `${bonusAtk} (+${gdivinoAtk} se Golpe Divino)`;
+    }
 
     // 2. Dano
     let damage = base.dano;

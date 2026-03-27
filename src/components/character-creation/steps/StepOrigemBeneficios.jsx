@@ -12,28 +12,24 @@ export function StepOrigemBeneficios({ stats }) {
 
   const periciasOrigem = origem.pericias || [];
   const poderesOrigem = origem.poderes || [];
+  const totalAvailable = periciasOrigem.length + poderesOrigem.length;
+  const max = Math.min(2, totalAvailable);
   const choices = char.origemBeneficios || [];
-  const max = 2;
 
   function toggle(benefit) {
-    const isSkill = periciasOrigem.includes(benefit);
     const has = choices.includes(benefit);
     let next = [...choices];
-    let nextPericias = [...char.pericias];
 
     if (has) {
       next = next.filter(b => b !== benefit);
-      if (isSkill) nextPericias = nextPericias.filter(p => p !== benefit);
     } else if (choices.length < max) {
       next.push(benefit);
-      if (isSkill) nextPericias = [...new Set([...nextPericias, benefit])];
     } else {
       return;
     }
 
     updateChar({ 
-      origemBeneficios: next,
-      pericias: nextPericias
+      origemBeneficios: next
     });
   }
 
