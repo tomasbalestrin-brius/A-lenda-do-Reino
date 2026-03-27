@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCharacterStore } from '../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -74,6 +74,14 @@ export default function CharacterCreation() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirmBack, setConfirmBack] = useState(null); // { targetStep, message }
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar toggle
+  const activeStepRefDesktop = useRef(null);
+  const activeStepRefMobile = useRef(null);
+
+  // Auto-scroll sidebar to current step
+  useEffect(() => {
+    activeStepRefDesktop.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    activeStepRefMobile.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [step]);
 
   // Handle shared character link (?char=base64)
   React.useEffect(() => {
@@ -361,6 +369,7 @@ export default function CharacterCreation() {
                   return (
                     <button
                       key={i}
+                      ref={isCurrent ? activeStepRefMobile : null}
                       onClick={() => { if (i < step) { setStep(i); setSidebarOpen(false); } }}
                       disabled={i > step}
                       className={`flex items-center gap-3 py-3 px-3 rounded-2xl transition-all relative overflow-hidden ${
@@ -426,6 +435,7 @@ export default function CharacterCreation() {
             return (
               <button
                 key={i}
+                ref={isCurrent ? activeStepRefDesktop : null}
                 onClick={() => i < step && setStep(i)}
                 disabled={i > step}
                 className={`flex items-center gap-4 py-3 lg:py-3.5 px-3 rounded-2xl transition-all relative overflow-hidden group ${

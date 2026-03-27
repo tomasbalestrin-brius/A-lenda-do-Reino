@@ -212,7 +212,7 @@ export function StepEquipment() {
 
     return (
       <div className="flex flex-col gap-8">
-        <div className="bg-amber-950/20 p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-amber-500/20 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <div className="bg-amber-950/20 p-5 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-amber-500/20 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full" />
           
           <div className="relative z-10">
@@ -222,11 +222,11 @@ export function StepEquipment() {
             <h2 className="text-4xl font-black text-white mb-3 italic tracking-tighter">
               <span className="text-amber-500 mr-3">XIV.</span> Equipamento Inicial
             </h2>
-            <p className="text-slate-400 text-sm mb-10 max-w-2xl font-medium leading-relaxed">De acordo com as regras de Arton, todo herói começa com itens básicos e escolhas gratuitas baseadas em seu treinamento.</p>
+            <p className="text-slate-400 text-sm mb-5 md:mb-10 max-w-2xl font-medium leading-relaxed">De acordo com as regras de Arton, todo herói começa com itens básicos e escolhas gratuitas baseadas em seu treinamento.</p>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {/* Simple Weapon */}
-              <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
+              <div className="bg-gray-950/60 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                 <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Arma Simples Gratuita</label>
                 <div className="grid grid-cols-2 gap-2">
                   {simpleWeapons.map(w => (
@@ -242,7 +242,7 @@ export function StepEquipment() {
 
               {/* Martial Weapon */}
               {hasMartial && (
-                <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
+                <div className="bg-gray-950/60 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Arma Marcial Gratuita</label>
                   <div className="grid grid-cols-2 gap-2">
                     {martialWeapons.map(w => (
@@ -259,7 +259,7 @@ export function StepEquipment() {
 
               {/* Armor */}
               {!isArcanista && (
-                <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
+                <div className="bg-gray-950/60 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Armadura Gratuita</label>
                   <div className="grid grid-cols-1 gap-2">
                     {[...lightArmors, ...(hasHeavy ? heavyArmors : [])].map(a => (
@@ -285,7 +285,7 @@ export function StepEquipment() {
 
               {/* Shield */}
               {hasShields && (
-                <div className="bg-gray-950/60 p-8 rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
+                <div className="bg-gray-950/60 p-4 md:p-8 rounded-[1.5rem] md:rounded-[2.5rem] border border-white/5 hover:border-amber-500/20 transition-colors">
                   <label className="text-[10px] font-black text-amber-500 uppercase tracking-[0.2em] block mb-5">Escudo Gratuito</label>
                   <div className="grid grid-cols-1 gap-2">
                     <button onClick={() => selectFree('', 'shield')}
@@ -415,7 +415,7 @@ export function StepEquipment() {
 
               <button
                 onClick={rollWealth}
-                className="px-16 py-6 bg-amber-600 hover:bg-amber-500 text-gray-950 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-amber-900/40 active:scale-95 transition-all group"
+                className="px-6 py-4 md:px-16 md:py-6 bg-amber-600 hover:bg-amber-500 text-gray-950 rounded-[2rem] font-black uppercase tracking-[0.2em] text-sm shadow-2xl shadow-amber-900/40 active:scale-95 transition-all group"
               >
                 {(char.level || 1) === 1
                   ? `💰 Rolar Dinheiro Inicial (${stats.startingWealth})`
@@ -518,7 +518,7 @@ export function StepEquipment() {
       })()}
 
       {char.classe === 'inventor' && (
-        <div className="p-8 rounded-[3rem] bg-indigo-950/20 border border-indigo-500/20 mb-4">
+        <div className="p-4 md:p-8 rounded-[1.5rem] md:rounded-[3rem] bg-indigo-950/20 border border-indigo-500/20 mb-4">
            <h3 className="text-xl font-black text-indigo-400 uppercase tracking-tighter mb-4 flex items-center gap-3">
              <span className="text-3xl">⚙️</span> Protótipo do Inventor
            </h3>
@@ -629,7 +629,7 @@ export function StepEquipment() {
                       </span>
                     </div>
                     <div>
-                      <p className="font-bold text-white text-sm">{item.nome}</p>
+                      <p className="font-bold text-white text-sm truncate">{item.nome}</p>
                       {item.slot && (
                         <p className="text-[9px] font-black text-purple-400 uppercase tracking-widest mt-0.5">
                           Slot: {item.slot}
@@ -683,7 +683,7 @@ export function StepEquipment() {
                     </span>
                   </div>
                   <div>
-                    <p className="font-bold text-white text-sm">{item.nome}</p>
+                    <p className="font-bold text-white text-sm truncate">{item.nome}</p>
                     <p className="text-[10px] text-gray-500 leading-relaxed mt-1">
                       {item.dano && `Dano: ${item.dano}+${item.distancia ? 'DES' : 'FOR'} `}
                       {item.def && `Defesa: +${item.def} `}
@@ -740,7 +740,7 @@ export function StepEquipment() {
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               className="relative w-full max-w-2xl bg-gray-950 border border-amber-500/30 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
             >
-              <div className="p-8 border-b border-white/5 bg-gradient-to-r from-amber-950/20 to-transparent">
+              <div className="p-5 md:p-8 border-b border-white/5 bg-gradient-to-r from-amber-950/20 to-transparent">
                 <h3 className="text-2xl font-black text-white italic tracking-tighter">Customizar: {ITENS[customizingItem.id]?.nome}</h3>
                 <p className="text-xs text-slate-400 uppercase tracking-widest font-bold mt-1">Melhorias e Materiais Especiais</p>
                 {customizingItem.isSuperiorGrant && !char.choices?.superiorGrantConsumed && (customizingItem.mods || []).length === 0 && (
@@ -751,7 +751,7 @@ export function StepEquipment() {
                 )}
               </div>
 
-              <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
+              <div className="p-4 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {/* Mejoras */}
                   <div className="flex flex-col gap-4">
@@ -898,7 +898,7 @@ export function StepEquipment() {
                 </div>
               </div>
 
-              <div className="p-8 border-t border-white/5 flex justify-end">
+              <div className="p-4 md:p-8 border-t border-white/5 flex justify-end">
                 <button 
                   onClick={() => setCustomizingItem(null)}
                   className="px-10 py-3 bg-white hover:bg-slate-100 text-gray-950 rounded-2xl font-black uppercase tracking-widest text-xs transition-all"
