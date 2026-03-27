@@ -7,34 +7,36 @@ import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
 import { useCharacterPersistence } from '../hooks/useCharacterPersistence';
 import { ErrorBoundary } from './ErrorBoundary';
 
-// Lazy load PDF compendium (heavy dependency)
+// ─── Lazy: carregados sob demanda ────────────────────────────────────────────
 const PDFCompendium = React.lazy(() => import('./compendium/PDFCompendium').then(m => ({ default: m.PDFCompendium })));
 
-// Modals
-import { RaceModal } from './character-creation/modals/RaceModal';
-import { ClassModal } from './character-creation/modals/ClassModal';
-import { OriginModal } from './character-creation/modals/OriginModal';
-import { DeityModal } from './character-creation/modals/DeityModal';
+// Modals — lazy (só abrem ao clicar)
+const RaceModal   = React.lazy(() => import('./character-creation/modals/RaceModal').then(m => ({ default: m.RaceModal })));
+const ClassModal  = React.lazy(() => import('./character-creation/modals/ClassModal').then(m => ({ default: m.ClassModal })));
+const OriginModal = React.lazy(() => import('./character-creation/modals/OriginModal').then(m => ({ default: m.OriginModal })));
+const DeityModal  = React.lazy(() => import('./character-creation/modals/DeityModal').then(m => ({ default: m.DeityModal })));
 
-// Steps
-import { StepRace } from './character-creation/steps/StepRace';
+// Steps 0-3: eager (visíveis imediatamente ou logo no início)
+import { StepRace }     from './character-creation/steps/StepRace';
 import { StepHeritage } from './character-creation/steps/StepHeritage';
-import { StepClass } from './character-creation/steps/StepClass';
-import { StepClassSpecialization } from './character-creation/steps/StepClassSpecialization';
-import { StepOrigin } from './character-creation/steps/StepOrigin';
-import { StepOrigemBeneficios } from './character-creation/steps/StepOrigemBeneficios';
-import { StepDeus } from './character-creation/steps/StepDeus';
-import { StepAttributes } from './character-creation/steps/StepAttributes';
-import { StepLevel } from './character-creation/steps/StepLevel';
-import { StepClassePericias } from './character-creation/steps/StepClassePericias';
-import { StepIntPericias } from './character-creation/steps/StepIntPericias';
-import { StepEquipment } from './character-creation/steps/StepEquipment';
-import { StepAllies } from './character-creation/steps/StepAllies';
-import { StepPowers } from './character-creation/steps/StepPowers';
-import { StepProgression } from './character-creation/steps/StepProgression';
-import { StepSpells } from './character-creation/steps/StepSpells';
+import { StepClass }    from './character-creation/steps/StepClass';
 import { StepIdentity } from './character-creation/steps/StepIdentity';
-import { StepReview } from './character-creation/steps/StepReview';
+
+// Steps 4+: lazy (carregam conforme o usuário avança)
+const StepClassSpecialization = React.lazy(() => import('./character-creation/steps/StepClassSpecialization').then(m => ({ default: m.StepClassSpecialization })));
+const StepOrigin              = React.lazy(() => import('./character-creation/steps/StepOrigin').then(m => ({ default: m.StepOrigin })));
+const StepOrigemBeneficios    = React.lazy(() => import('./character-creation/steps/StepOrigemBeneficios').then(m => ({ default: m.StepOrigemBeneficios })));
+const StepDeus                = React.lazy(() => import('./character-creation/steps/StepDeus').then(m => ({ default: m.StepDeus })));
+const StepLevel               = React.lazy(() => import('./character-creation/steps/StepLevel').then(m => ({ default: m.StepLevel })));
+const StepSpells              = React.lazy(() => import('./character-creation/steps/StepSpells').then(m => ({ default: m.StepSpells })));
+const StepAttributes          = React.lazy(() => import('./character-creation/steps/StepAttributes').then(m => ({ default: m.StepAttributes })));
+const StepClassePericias      = React.lazy(() => import('./character-creation/steps/StepClassePericias').then(m => ({ default: m.StepClassePericias })));
+const StepIntPericias         = React.lazy(() => import('./character-creation/steps/StepIntPericias').then(m => ({ default: m.StepIntPericias })));
+const StepEquipment           = React.lazy(() => import('./character-creation/steps/StepEquipment').then(m => ({ default: m.StepEquipment })));
+const StepPowers              = React.lazy(() => import('./character-creation/steps/StepPowers').then(m => ({ default: m.StepPowers })));
+const StepProgression         = React.lazy(() => import('./character-creation/steps/StepProgression').then(m => ({ default: m.StepProgression })));
+const StepAllies              = React.lazy(() => import('./character-creation/steps/StepAllies').then(m => ({ default: m.StepAllies })));
+const StepReview              = React.lazy(() => import('./character-creation/steps/StepReview').then(m => ({ default: m.StepReview })));
 
 import { CharacterLibrary } from './character-creation/CharacterLibrary';
 import { CharacterPreview } from './character-creation/CharacterPreview';
@@ -89,12 +91,22 @@ export default function CharacterCreation() {
     } catch { /* link inválido — ignora */ }
   }, []);
 
-  const stats = useMemo(() => computeStats(char), [char]);
+  // Deps granulares: só recalcular quando campos que afetam stats mudarem
+  // (exclui nome, aparência, história, etc. que não influenciam cálculos)
+  const stats = useMemo(() => computeStats(char), [
+    char.raca, char.racaVariante, char.racaEscolha,
+    char.classe, char.level, char.atributos,
+    char.poderesGerais, char.levelChoices, char.choices,
+    char.crencasBeneficios, char.equipamento, char.deus,
+    char.origem, char.origemBeneficios,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ]);
 
   const {
     savedChars,
     loading,
     showResume,
+    storageUnavailable,
     handleResume: resumeAndGetStep,
     dismissResume,
     handleSave,
@@ -197,6 +209,14 @@ export default function CharacterCreation() {
   if (view === 'library') {
     return (
       <>
+        {storageUnavailable && (
+          <div className="fixed inset-x-0 top-0 z-[100] flex justify-center p-4 pointer-events-none">
+            <div className="bg-orange-950/90 border border-orange-500/30 px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+              <span className="text-lg">🔒</span>
+              <span className="text-orange-300 text-xs font-bold">Modo privado detectado — progresso não será salvo localmente.</span>
+            </div>
+          </div>
+        )}
         {showResume && (
           <div className="fixed inset-x-0 top-0 z-[100] flex justify-center p-4">
             <motion.div
@@ -450,6 +470,11 @@ export default function CharacterCreation() {
           {/* Mobile: push content below fixed header */}
           <div className="md:hidden" style={{ height: 'calc(env(safe-area-inset-top) + 60px)' }} />
           <ErrorBoundary onReset={() => setStep(0)}>
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center h-48">
+                <div className="w-8 h-8 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+              </div>
+            }>
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.div
                  key={step}
@@ -492,11 +517,12 @@ export default function CharacterCreation() {
                 </div>
               </motion.div>
             </AnimatePresence>
+            </React.Suspense>
           </ErrorBoundary>
         </div>
 
         {/* Bottom Navigation Bar */}
-        <div className="absolute bottom-6 inset-x-4 md:inset-x-12 z-40">
+        <div className="absolute inset-x-4 md:inset-x-12 z-40" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
            <div className="max-w-4xl mx-auto bg-gray-950/80 backdrop-blur-xl border border-white/10 p-4 rounded-[2.5rem] shadow-2xl flex items-center justify-between">
               <button
                 onClick={handlePrev}
@@ -579,8 +605,9 @@ export default function CharacterCreation() {
       
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none z-0">
-         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-600/5 blur-[150px] rounded-full" />
-         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/5 blur-[150px] rounded-full" />
+         {/* Orbs de fundo — blur desativado em mobile (GPU-heavy) */}
+         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-600/5 md:blur-[150px] rounded-full" />
+         <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/5 md:blur-[150px] rounded-full" />
          <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-[0.03] mix-blend-overlay" />
       </div>
 

@@ -124,7 +124,7 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
               placeholder="Buscar herói por nome, classe ou raça..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full bg-gray-900/60 border border-gray-800 rounded-2xl px-5 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-amber-500/40 text-sm font-medium"
+              className="w-full bg-gray-900/60 border border-gray-800 rounded-2xl px-5 py-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-amber-500/40 text-base font-medium"
             />
           </div>
         )}

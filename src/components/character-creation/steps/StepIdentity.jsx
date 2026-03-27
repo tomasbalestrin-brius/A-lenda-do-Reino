@@ -32,7 +32,7 @@ export function StepIdentity() {
             value={char.nome}
             onChange={(e) => handleChange('nome', e.target.value)}
             placeholder="Ex: Valerius de Valkaria"
-            className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold"
+            className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold text-base"
           />
         </div>
 
@@ -45,7 +45,7 @@ export function StepIdentity() {
               value={char.idade}
               onChange={(e) => handleChange('idade', e.target.value)}
               placeholder="Ex: 24 anos"
-              className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold"
+              className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold text-base"
             />
           </div>
           <div className="flex flex-col gap-2">
@@ -55,7 +55,7 @@ export function StepIdentity() {
               value={char.genero}
               onChange={(e) => handleChange('genero', e.target.value)}
               placeholder="Ex: Masculino"
-              className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold"
+              className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold text-base"
             />
           </div>
         </div>
@@ -68,7 +68,7 @@ export function StepIdentity() {
             onChange={(e) => handleChange('aparencia', e.target.value)}
             placeholder="Descreva as características físicas marcantes..."
             rows={2}
-            className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-sm leading-relaxed resize-none"
+            className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-base leading-relaxed resize-none"
           />
         </div>
 
@@ -80,7 +80,7 @@ export function StepIdentity() {
             onChange={(e) => handleChange('historia', e.target.value)}
             placeholder="Como seu herói começou sua jornada? Quais seus objetivos?"
             rows={4}
-            className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-sm leading-relaxed resize-none"
+            className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-base leading-relaxed resize-none"
           />
         </div>
       </div>

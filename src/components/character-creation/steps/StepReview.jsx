@@ -357,7 +357,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Card: Essência */}
-          <div className="lg:col-span-2 bg-gray-900/40 rounded-[3.5rem] border border-white/5 p-10 backdrop-blur-md shadow-2xl flex flex-col gap-10 relative overflow-hidden group/essence">
+          <div className="lg:col-span-2 bg-gray-900/40 rounded-[2rem] md:rounded-[3.5rem] border border-white/5 p-5 md:p-10 backdrop-blur-md shadow-2xl flex flex-col gap-10 relative overflow-hidden group/essence">
             <div className="absolute inset-0 z-0 opacity-0 group-hover/essence:opacity-5 transition-opacity duration-1000">
                {RACE_IMAGES[char.raca] && <img src={RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover scale-150 rotate-6" />}
             </div>
@@ -488,7 +488,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
           </div>
 
             {/* Card: Perícias */}
-            <div className="bg-gray-950/60 rounded-[3.5rem] border border-white/10 p-10 shadow-2xl flex flex-col gap-8 relative group/pericias">
+            <div className="bg-gray-950/60 rounded-[2rem] md:rounded-[3.5rem] border border-white/10 p-5 md:p-10 shadow-2xl flex flex-col gap-8 relative group/pericias">
               <div className="relative z-10 flex items-center gap-4">
                 <span className="w-3 h-3 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,1)]" />
                 <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Perícias Treinadas</p>
@@ -515,8 +515,8 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
 
           {/* ATAQUES DETALHADOS */}
           {(stats.detailedAttacks || []).length > 0 && (
-            <details open className="lg:col-span-3 bg-gray-950/60 rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden group/attacks">
-              <summary className="flex items-center gap-4 p-10 cursor-pointer list-none select-none group">
+            <details open className="lg:col-span-3 bg-gray-950/60 rounded-[2rem] md:rounded-[3.5rem] border border-white/10 shadow-2xl relative overflow-hidden group/attacks">
+              <summary className="flex items-center gap-4 p-5 md:p-10 cursor-pointer list-none select-none group">
                 <span className="w-3 h-3 bg-orange-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,1)] shrink-0" />
                 <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em] flex-1">
                   Arsenal de Combate
@@ -585,7 +585,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             const allSpells = [...(char.classSpells || []), ...(char.racialSpells || []), ...progressionSpells];
             if (allSpells.length === 0) return null;
             return (
-              <div className="bg-gray-950/60 rounded-[3.5rem] border border-purple-500/10 p-10 shadow-2xl flex flex-col gap-8">
+              <div className="bg-gray-950/60 rounded-[2rem] md:rounded-[3.5rem] border border-purple-500/10 p-5 md:p-10 shadow-2xl flex flex-col gap-8">
                 <div className="flex items-center gap-4">
                   <span className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,1)]" />
                   <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Magias Conhecidas</p>
@@ -615,7 +615,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            {/* Card: Poderes */}
-           <div className="bg-gray-950/60 rounded-[3rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-6 group hover:border-blue-500/20 transition-all">
+           <div className="bg-gray-950/60 rounded-[1.5rem] md:rounded-[3rem] border border-white/5 p-5 md:p-10 shadow-2xl flex flex-col gap-6 group hover:border-blue-500/20 transition-all">
               <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">
                  <span className="w-2 h-2 bg-blue-400 rounded-full" /> Dons e Talentos
                  <EditBtn step={15} onNavigate={onNavigate} />
@@ -639,7 +639,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
            </div>
 
            {/* Card: Equipamento */}
-           <div className="bg-gray-950/60 rounded-[3rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-6 group hover:border-amber-500/20 transition-all">
+           <div className="bg-gray-950/60 rounded-[1.5rem] md:rounded-[3rem] border border-white/5 p-5 md:p-10 shadow-2xl flex flex-col gap-6 group hover:border-amber-500/20 transition-all">
               <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">
                  <span className="w-2 h-2 bg-amber-400 rounded-full" /> Arsenal da Jornada
                  <EditBtn step={13} onNavigate={onNavigate} />
@@ -676,7 +676,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
 
           {/* Card: Aliado */}
           {char.aliado && (
-            <div className="md:col-span-2 bg-gray-950/60 rounded-[3rem] border border-emerald-500/10 p-10 shadow-2xl flex flex-col gap-6 group hover:border-emerald-500/20 transition-all">
+            <div className="md:col-span-2 bg-gray-950/60 rounded-[1.5rem] md:rounded-[3rem] border border-emerald-500/10 p-5 md:p-10 shadow-2xl flex flex-col gap-6 group hover:border-emerald-500/20 transition-all">
               <p className="text-[11px] uppercase font-black text-slate-500 tracking-[0.5em] mb-2 flex items-center gap-3">
                 <span className="w-2 h-2 bg-emerald-400 rounded-full" /> Aliado
               </p>
@@ -696,7 +696,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
 
         {/* Card: Identidade */}
         {(char.idade || char.genero || char.aparencia || char.historia) && (
-          <div className="bg-gray-900/40 rounded-[3.5rem] border border-white/5 p-10 shadow-2xl flex flex-col gap-8 backdrop-blur-md">
+          <div className="bg-gray-900/40 rounded-[2rem] md:rounded-[3.5rem] border border-white/5 p-5 md:p-10 shadow-2xl flex flex-col gap-8 backdrop-blur-md">
             <div className="flex items-center gap-4">
               <span className="w-3 h-3 bg-slate-400 rounded-full" />
               <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Identidade</p>
@@ -740,7 +740,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
           .flatMap(([, arr]) => arr);
         if (granted.length === 0) return null;
         return (
-          <div className="bg-gray-950/60 rounded-[3.5rem] border border-amber-500/10 p-10 shadow-2xl flex flex-col gap-6">
+          <div className="bg-gray-950/60 rounded-[2rem] md:rounded-[3.5rem] border border-amber-500/10 p-5 md:p-10 shadow-2xl flex flex-col gap-6">
             <div className="flex items-center gap-4">
               <span className="w-3 h-3 bg-amber-500 rounded-full shadow-[0_0_15px_rgba(245,158,11,0.8)]" />
               <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Habilidades de Classe</p>

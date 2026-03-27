@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useCharacterStore } from '../store/useCharacterStore';
 
@@ -6,9 +6,21 @@ const AUTOSAVE_KEY = 'lenda_autosave';
 const LOCAL_CHARS_KEY = 'lenda_personagens';
 const SCHEMA_VERSION = 2;
 
+/** Detecta se localStorage está disponível (falha em modo privado Safari) */
+function isStorageAvailable() {
+  try {
+    const test = '__storage_test__';
+    localStorage.setItem(test, test);
+    localStorage.removeItem(test);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Gerencia toda a persistência do personagem:
- * - Auto-save em localStorage
+ * - Auto-save em localStorage com debounce de 800ms
  * - Recovery de sessão anterior
  * - CRUD no Supabase com fallback em localStorage
  */
@@ -17,25 +29,44 @@ export function useCharacterPersistence({ char, step }) {
   const [savedChars, setSavedChars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showResume, setShowResume] = useState(false);
+  const [storageUnavailable, setStorageUnavailable] = useState(false);
+  const saveTimerRef = useRef(null);
 
-  // Auto-save ao mudar personagem ou step
+  // Verificar disponibilidade do localStorage uma vez
   useEffect(() => {
-    if (char.raca || char.classe) {
+    if (!isStorageAvailable()) {
+      setStorageUnavailable(true);
+    }
+  }, []);
+
+  // Auto-save com debounce de 800ms — evita JSON.stringify bloqueante a cada keystroke
+  useEffect(() => {
+    if (!char.raca && !char.classe) return;
+    if (storageUnavailable) return;
+
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
       try {
         localStorage.setItem(AUTOSAVE_KEY, JSON.stringify({ char, step }));
-      } catch (e) { /* quota exceeded — ignore */ }
-    }
-  }, [char, step]);
+      } catch { /* quota exceeded — ignore */ }
+    }, 800);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [char, step, storageUnavailable]);
 
   // Verifica auto-save ao montar
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (raw) {
-        const saved = JSON.parse(raw);
-        if (saved?.char?.raca || saved?.char?.classe) setShowResume(true);
-      }
-    } catch (e) { /* corrompido — ignora */ }
+    if (!storageUnavailable) {
+      try {
+        const raw = localStorage.getItem(AUTOSAVE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved?.char?.raca || saved?.char?.classe) setShowResume(true);
+        }
+      } catch { /* corrompido — ignora */ }
+    }
 
     fetchCharacters();
   }, []);
@@ -50,11 +81,15 @@ export function useCharacterPersistence({ char, step }) {
       if (error) throw error;
       setSavedChars(data || []);
     } catch {
-      try {
-        const localRaw = localStorage.getItem(LOCAL_CHARS_KEY);
-        const localParsed = localRaw ? JSON.parse(localRaw) : [];
-        setSavedChars(Array.isArray(localParsed) ? localParsed : []);
-      } catch {
+      if (!storageUnavailable) {
+        try {
+          const localRaw = localStorage.getItem(LOCAL_CHARS_KEY);
+          const localParsed = localRaw ? JSON.parse(localRaw) : [];
+          setSavedChars(Array.isArray(localParsed) ? localParsed : []);
+        } catch {
+          setSavedChars([]);
+        }
+      } else {
         setSavedChars([]);
       }
     } finally {
@@ -63,6 +98,7 @@ export function useCharacterPersistence({ char, step }) {
   }
 
   const handleResume = useCallback(() => {
+    if (storageUnavailable) { setShowResume(false); return 0; }
     try {
       const raw = localStorage.getItem(AUTOSAVE_KEY);
       if (raw) {
@@ -73,15 +109,15 @@ export function useCharacterPersistence({ char, step }) {
           return saved.step || 0;
         }
       }
-    } catch (e) { /* corrompido — recomeça */ }
+    } catch { /* corrompido — recomeça */ }
     setShowResume(false);
     return 0;
-  }, [loadChar]);
+  }, [loadChar, storageUnavailable]);
 
   const dismissResume = useCallback(() => {
-    localStorage.removeItem(AUTOSAVE_KEY);
+    if (!storageUnavailable) localStorage.removeItem(AUTOSAVE_KEY);
     setShowResume(false);
-  }, []);
+  }, [storageUnavailable]);
 
   async function handleSave() {
     if (!char.nome?.trim()) return;
@@ -100,11 +136,15 @@ export function useCharacterPersistence({ char, step }) {
         setSavedChars(prev => [data[0], ...prev]);
         updateChar({ id: data[0].id });
       }
-      localStorage.setItem(LOCAL_CHARS_KEY, JSON.stringify([data[0], ...savedChars.filter(c => c.id !== data[0].id)]));
+      if (!storageUnavailable) {
+        localStorage.setItem(LOCAL_CHARS_KEY, JSON.stringify([data[0], ...savedChars.filter(c => c.id !== data[0].id)]));
+      }
     } catch {
       const next = [...savedChars, entry];
       setSavedChars(next);
-      localStorage.setItem(LOCAL_CHARS_KEY, JSON.stringify(next));
+      if (!storageUnavailable) {
+        localStorage.setItem(LOCAL_CHARS_KEY, JSON.stringify(next));
+      }
     }
   }
 
@@ -126,13 +166,16 @@ export function useCharacterPersistence({ char, step }) {
     }
     const next = savedChars.filter((_, i) => i !== idx);
     setSavedChars(next);
-    localStorage.setItem(LOCAL_CHARS_KEY, JSON.stringify(next));
+    if (!storageUnavailable) {
+      localStorage.setItem(LOCAL_CHARS_KEY, JSON.stringify(next));
+    }
   }
 
   return {
     savedChars,
     loading,
     showResume,
+    storageUnavailable,
     handleResume,
     dismissResume,
     handleSave,

@@ -364,7 +364,7 @@ export function StepHeritage() {
                   value={searchPower}
                   onChange={e => setSearchPower(e.target.value)}
                   placeholder="Buscar poder por nome ou descrição..."
-                  className="w-full bg-gray-950/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500/40"
+                  className="w-full bg-gray-950/60 border border-white/10 rounded-2xl px-5 py-3 text-base text-slate-200 placeholder-slate-600 focus:outline-none focus:border-purple-500/40"
                 />
                 {searchPower && <button onClick={() => setSearchPower('')} className="absolute right-4 top-3 text-slate-500 hover:text-white text-lg">✕</button>}
               </div>

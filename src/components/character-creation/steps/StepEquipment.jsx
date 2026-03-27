@@ -12,7 +12,12 @@ export function StepEquipment() {
   const { char, updateChar } = useCharacterStore();
   const [category, setCategory] = useState('arma');
   const [searchItem, setSearchItem] = useState('');
-  const stats = useMemo(() => computeStats(char), [char]);
+  const stats = useMemo(() => computeStats(char), [
+    char.raca, char.racaVariante, char.classe, char.level,
+    char.atributos, char.poderesGerais, char.levelChoices,
+    char.choices, char.equipamento, char.origem, char.origemBeneficios,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ]);
   const [setupPhase, setSetupPhase] = useState(!char.choices?.claimedStartingKit);
   const [customizingItem, setCustomizingItem] = useState(null); // { uid, id, mods: [], material: null }
   const [magicSubTab, setMagicSubTab] = useState('acessorio');
@@ -206,7 +211,7 @@ export function StepEquipment() {
 
     return (
       <div className="flex flex-col gap-8">
-        <div className="bg-amber-950/20 p-12 rounded-[3.5rem] border border-amber-500/20 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <div className="bg-amber-950/20 p-6 md:p-12 rounded-[2rem] md:rounded-[3.5rem] border border-amber-500/20 backdrop-blur-xl shadow-2xl relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full" />
           
           <div className="relative z-10">
@@ -425,7 +430,7 @@ export function StepEquipment() {
 
   return (
     <div className="flex flex-col gap-10">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-10 rounded-[3rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-amber-950/20 p-6 md:p-10 rounded-[2rem] md:rounded-[3rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
         <div className="absolute top-0 right-0 p-8 opacity-5 text-8xl">💰</div>
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-1">
@@ -438,7 +443,7 @@ export function StepEquipment() {
         </div>
         
         <div className="flex flex-col items-end gap-2">
-            <div className="px-10 py-6 bg-gray-950 border-2 border-amber-500/40 rounded-[2.5rem] flex flex-col items-center justify-center min-w-[180px] shadow-2xl shadow-amber-900/10 relative group overflow-hidden">
+            <div className="px-6 md:px-10 py-4 md:py-6 bg-gray-950 border-2 border-amber-500/40 rounded-[2rem] md:rounded-[2.5rem] flex flex-col items-center justify-center w-full md:min-w-[180px] shadow-2xl shadow-amber-900/10 relative group overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1 relative z-10">Patrimônio</span>
                 {editingGold ? (
@@ -449,7 +454,7 @@ export function StepEquipment() {
                     defaultValue={char.dinheiro || 0}
                     onBlur={e => { updateChar({ dinheiro: Math.max(0, parseInt(e.target.value) || 0) }); setEditingGold(false); }}
                     onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') e.target.blur(); }}
-                    className="text-2xl font-black text-amber-500 bg-transparent text-center w-32 outline-none border-b border-amber-500 relative z-10"
+                    className="text-2xl font-black text-amber-500 bg-transparent text-center w-32 outline-none border-b border-amber-500 relative z-10 text-base"
                   />
                 ) : (
                   <button onClick={() => setEditingGold(true)} className="text-3xl font-black text-amber-500 tabular-nums relative z-10 hover:underline decoration-amber-500/40 decoration-dashed underline-offset-4">
@@ -563,7 +568,7 @@ export function StepEquipment() {
           value={searchItem}
           onChange={e => setSearchItem(e.target.value)}
           placeholder={`Buscar em ${categories.find(c => c.id === category)?.label || 'itens'}...`}
-          className="w-full bg-gray-900/60 border border-white/10 rounded-2xl px-5 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40"
+          className="w-full bg-gray-900/60 border border-white/10 rounded-2xl px-5 py-3 text-base text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/40"
         />
         {searchItem && (
           <button onClick={() => setSearchItem('')} className="absolute right-4 top-3 text-slate-500 hover:text-white text-lg">✕</button>

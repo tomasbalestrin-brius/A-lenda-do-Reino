@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
-      includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png', 'offline.html', 'assets/**/*.png'],
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'logo192.png', 'logo512.png', 'offline.html'],
       manifest: {
         name: 'A Lenda do Reino',
         short_name: 'Lenda do Reino',
@@ -30,13 +30,46 @@ export default defineConfig({
             type: 'image/png',
             purpose: 'any maskable'
           }
+        ],
+        shortcuts: [
+          {
+            name: 'Novo Personagem',
+            url: '/',
+            icons: [{ src: 'logo192.png', sizes: '192x192' }]
+          }
+        ],
+        screenshots: [
+          {
+            src: 'logo512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            form_factor: 'narrow'
+          }
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff,woff2}'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/offline\.html$/],
+        // PNGs removidos do precache — servidos via runtimeCaching (CacheFirst)
+        // Antes: 12MB de imagens de raça eram baixadas no install do SW
+        globPatterns: ['**/*.{js,css,html,ico,svg,json,woff,woff2}'],
+        navigateFallback: '/offline.html',
+        navigateFallbackDenylist: [/^\/assets\//],
+        clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
+          // Imagens (PNG/JPG/WebP) — CacheFirst, não bloqueiam o install do SW
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|webp|gif|svg)$/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'images-cache',
+              expiration: {
+                maxEntries: 80,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 dias
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          // Google Fonts
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
@@ -44,11 +77,23 @@ export default defineConfig({
               cacheName: 'google-fonts-cache',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 60 * 60 * 24 * 365 // <1 year
+                maxAgeSeconds: 60 * 60 * 24 * 365
               },
-              cacheableResponse: {
-                statuses: [0, 20300]
-              }
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          },
+          // Supabase API — NetworkFirst (dados precisam ser frescos)
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'supabase-cache',
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 // 1 dia como fallback offline
+              },
+              cacheableResponse: { statuses: [0, 200] }
             }
           }
         ]

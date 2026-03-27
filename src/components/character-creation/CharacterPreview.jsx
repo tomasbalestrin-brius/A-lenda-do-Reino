@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import CLASSES from '../../data/classes';
 import RACES from '../../data/races';
 import { ORIGENS } from '../../data/origins';
@@ -91,6 +91,13 @@ const STEP_FOCUS = {
 
 function StepFocusPanel({ currentStep, char, stats }) {
   const focus = STEP_FOCUS[currentStep];
+  // Memoize no topo do componente — getAllTrainedSkills é caro, não recalcular a cada render
+  const _allPericias = useMemo(
+    () => Array.from(getAllTrainedSkills(char)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [char.pericias, char.origemBeneficios, char.classe, char.racialSpells]
+  );
+
   if (!focus || !focus.hint) return null;
 
   const hint = focus.hint;
@@ -145,7 +152,7 @@ function StepFocusPanel({ currentStep, char, stats }) {
     }
 
     if (hint === 'Perícias Treinadas') {
-      const allPericias = Array.from(getAllTrainedSkills(char));
+      const allPericias = _allPericias;
       return allPericias.length > 0
         ? <div className="flex flex-wrap gap-1">{allPericias.slice(0, 8).map(p => <span key={p} className="text-[9px] bg-indigo-900/40 text-indigo-300 border border-indigo-700/30 px-2 py-0.5 rounded-full">{p}</span>)}{allPericias.length > 8 && <span className="text-[9px] text-gray-500">+{allPericias.length - 8}</span>}</div>
         : <p className="text-xs text-gray-500 italic">Nenhuma perícia ainda.</p>;
@@ -212,15 +219,22 @@ function StepFocusPanel({ currentStep, char, stats }) {
   );
 }
 
-export function CharacterPreview({ char, stats, currentStep }) {
+export const CharacterPreview = React.memo(function CharacterPreview({ char, stats, currentStep }) {
   const cls = CLASSES[char.classe];
   const race = RACES[char.raca];
   const spriteKey = `${char.raca}_${char.classe}`;
   const sprite = SPRITE_MAP[spriteKey] || SPRITE_MAP[`humano_${char.classe}`] || null;
 
   const chosenOriginBenefits = char.origemBeneficios || [];
-  const originPericias = (ORIGENS[char.origem]?.pericias || []).filter(p => chosenOriginBenefits.includes(p));
-  const allPericias = [...new Set([...originPericias, ...(char.pericias || [])])];
+  const originPericias = useMemo(
+    () => (ORIGENS[char.origem]?.pericias || []).filter(p => chosenOriginBenefits.includes(p)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [char.origem, char.origemBeneficios]
+  );
+  const allPericias = useMemo(
+    () => [...new Set([...originPericias, ...(char.pericias || [])])],
+    [originPericias, char.pericias]
+  );
 
   return (
     <div className="flex flex-col gap-3 pb-4">
@@ -421,4 +435,4 @@ export function CharacterPreview({ char, stats, currentStep }) {
       )}
     </div>
   );
-}
+});
