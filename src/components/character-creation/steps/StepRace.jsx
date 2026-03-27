@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import RACES from '../../../data/races';
 import { RaceModal } from '../modals/RaceModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 function attrBonusDisplay(race) {
   if (!race || !race.atributos) return [];
@@ -31,26 +32,26 @@ const RACE_ICONS = {
 };
 
 const RACE_IMAGES = {
-  humano: '/assets/images/races/humano.png',
-  anao: '/assets/images/races/anao.png',
-  dahllan: '/assets/images/races/dahllan.png',
-  elfo: '/assets/images/races/elfo.png',
-  goblin: '/assets/images/races/goblin.png',
-  lefou: '/assets/images/races/lefou.png',
-  qareen: '/assets/images/races/qareen.png',
-  minotauro: '/assets/images/races/minotauro.png',
-  osteon: '/assets/images/races/osteon.png',
-  hynne: '/assets/images/races/hynne.png',
-  kliren: '/assets/images/races/kliren.png',
-  trog: '/assets/images/races/trog.png',
-  medusa: '/assets/images/races/medusa.png',
-  sereia: '/assets/images/races/sereia.png',
-  suraggel: '/assets/images/races/suraggel_aggelus.png',
-  silfide: '/assets/images/races/silfide.png',
+  humano: '/assets/images/races/humano.webp',
+  anao: '/assets/images/races/anao.webp',
+  dahllan: '/assets/images/races/dahllan.webp',
+  elfo: '/assets/images/races/elfo.webp',
+  goblin: '/assets/images/races/goblin.webp',
+  lefou: '/assets/images/races/lefou.webp',
+  qareen: '/assets/images/races/qareen.webp',
+  minotauro: '/assets/images/races/minotauro.webp',
+  osteon: '/assets/images/races/osteon.webp',
+  hynne: '/assets/images/races/hynne.webp',
+  kliren: '/assets/images/races/kliren.webp',
+  trog: '/assets/images/races/trog.webp',
+  medusa: '/assets/images/races/medusa.webp',
+  sereia: '/assets/images/races/sereia.webp',
+  suraggel: '/assets/images/races/suraggel_aggelus.webp',
+  silfide: '/assets/images/races/silfide.webp',
 };
 
 export function StepRace({ onNext }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const races = Object.entries(RACES);
   const selectedRace = RACES[char.raca];
   const hasEscolha = selectedRace?.atributos?.escolha;

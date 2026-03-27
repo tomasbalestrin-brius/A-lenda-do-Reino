@@ -4,6 +4,7 @@ import { divindades as DEUSES } from '../../../data/gods';
 import CLASSES from '../../../data/classes';
 import { DeityModal } from '../modals/DeityModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 import { 
   Eye, Leaf, Swords, Sun, Ghost, Flame, Scale, Flower2, 
@@ -43,7 +44,7 @@ const DEITY_CLASS = {
 };
 
 export function StepDeus() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [filtro, setFiltro] = React.useState('todos');
   const deuses = Object.entries(DEUSES);
   const divineClasses = ['clerigo', 'druida', 'paladino'];

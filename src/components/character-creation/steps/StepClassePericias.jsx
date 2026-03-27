@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import CLASSES from '../../../data/classes';
 import { ORIGENS } from '../../../data/origins';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -44,7 +45,7 @@ const PERICIAS_INFO = {
 };
 
 export function StepClassePericias() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const cls = CLASSES[char.classe];
   
   if (!cls) return <div className="text-gray-500 italic p-12 text-center">Selecione uma classe no passo anterior.</div>;

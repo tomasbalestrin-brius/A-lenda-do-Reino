@@ -5,9 +5,10 @@ import GENERAL_POWERS from '../../../data/powers';
 import SPELLS from '../../../data/spellsData';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export function StepProgression({ stats }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [activeSpellSlot, setActiveSpellSlot] = useState(null); // { lvl, index }
 
   const cls = CLASSES[char.classe?.toLowerCase()];

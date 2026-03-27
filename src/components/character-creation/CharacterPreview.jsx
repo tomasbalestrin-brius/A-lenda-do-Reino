@@ -22,25 +22,25 @@ const CLASS_ICONS = {
 };
 
 const RACE_IMAGES = {
-  humano: '/assets/images/races/humano.png',
-  anao: '/assets/images/races/anao.png',
-  dahllan: '/assets/images/races/dahllan.png',
-  elfo: '/assets/images/races/elfo.png',
-  goblin: '/assets/images/races/goblin.png',
-  lefou: '/assets/images/races/lefou.png',
-  qareen: '/assets/images/races/qareen.png',
-  minotauro: '/assets/images/races/minotauro.png',
-  hynne: '/assets/images/races/hynne.png',
-  golem: '/assets/images/races/golem.png',
-  osteon: '/assets/images/races/osteon.png',
-  trog: '/assets/images/races/trog.png', // Fallback or missing
-  kliren: '/assets/images/races/kliren.png',
-  medusa: '/assets/images/races/medusa.png',
-  sereia: '/assets/images/races/sereia.png',
-  silfide: '/assets/images/races/silfide.png',
-  suraggel: '/assets/images/races/suraggel_aggelus.png', // Default to aggelus or handle variably
-  'suraggel_aggelus': '/assets/images/races/suraggel_aggelus.png',
-  'suraggel_sulfure': '/assets/images/races/suraggel_sulfure.png',
+  humano: '/assets/images/races/humano.webp',
+  anao: '/assets/images/races/anao.webp',
+  dahllan: '/assets/images/races/dahllan.webp',
+  elfo: '/assets/images/races/elfo.webp',
+  goblin: '/assets/images/races/goblin.webp',
+  lefou: '/assets/images/races/lefou.webp',
+  qareen: '/assets/images/races/qareen.webp',
+  minotauro: '/assets/images/races/minotauro.webp',
+  hynne: '/assets/images/races/hynne.webp',
+  golem: '/assets/images/races/golem.webp',
+  osteon: '/assets/images/races/osteon.webp',
+  trog: '/assets/images/races/trog.webp', // Fallback or missing
+  kliren: '/assets/images/races/kliren.webp',
+  medusa: '/assets/images/races/medusa.webp',
+  sereia: '/assets/images/races/sereia.webp',
+  silfide: '/assets/images/races/silfide.webp',
+  suraggel: '/assets/images/races/suraggel_aggelus.webp', // Default to aggelus or handle variably
+  'suraggel_aggelus': '/assets/images/races/suraggel_aggelus.webp',
+  'suraggel_sulfure': '/assets/images/races/suraggel_sulfure.webp',
 };
 
 const SPRITE_MAP = {

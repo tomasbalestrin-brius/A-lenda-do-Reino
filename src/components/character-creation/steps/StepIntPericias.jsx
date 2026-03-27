@@ -2,9 +2,10 @@ import React from 'react';
 import CLASSES from '../../../data/classes';
 import { ORIGENS } from '../../../data/origins';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export function StepIntPericias({ stats }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const cls = CLASSES[char.classe];
   if (!cls) return null;
 

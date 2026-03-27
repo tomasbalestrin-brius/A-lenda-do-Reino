@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ORIGENS } from '../../../data/origins';
 import { OriginModal } from '../modals/OriginModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const ORIGIN_ICONS = {
   acrobata: '🎪', amnésico: '🌫️', assistente_de_mago: '✨', capanga: '🔪',
@@ -15,7 +16,7 @@ const ORIGIN_ICONS = {
 };
 
 export function StepOrigin({ onNext }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [hoveredId, setHoveredId] = useState(null);
   const origins = Object.entries(ORIGENS);
 

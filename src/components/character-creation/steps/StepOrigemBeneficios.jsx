@@ -2,9 +2,10 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ORIGENS } from '../../../data/origins';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export function StepOrigemBeneficios({ stats }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const origem = ORIGENS[char.origem];
   
   if (!origem) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-3xl border border-white/5">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;

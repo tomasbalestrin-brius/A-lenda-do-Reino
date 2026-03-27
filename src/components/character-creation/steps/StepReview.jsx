@@ -8,6 +8,7 @@ import { ITENS } from '../../../data/items';
 import { MELHORIAS, MATERIAIS } from '../../../data/modificacoes';
 import DiceRollerBG3 from '../../DiceRollerBG3';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { getAllTrainedSkills, getAllOwnedPowers } from '../../../utils/rules/characterStats';
 
 import { exportToMarkdown } from '../../../utils/exportCharacter';
@@ -24,23 +25,23 @@ const RACE_ICONS = {
 };
 
 const RACE_IMAGES = {
-  humano: '/assets/images/races/humano.png',
-  anao: '/assets/images/races/anao.png',
-  dahllan: '/assets/images/races/dahllan.png',
-  elfo: '/assets/images/races/elfo.png',
-  goblin: '/assets/images/races/goblin.png',
-  lefou: '/assets/images/races/lefou.png',
-  qareen: '/assets/images/races/qareen.png',
-  minotauro: '/assets/images/races/minotauro.png',
-  hynne: '/assets/images/races/hynne.png',
-  golem: '/assets/images/races/golem.png',
-  osteon: '/assets/images/races/osteon.png',
-  trog: '/assets/images/races/trog.png',
-  kliren: '/assets/images/races/kliren.png',
-  medusa: '/assets/images/races/medusa.png',
-  sereia: '/assets/images/races/sereia.png',
-  silfide: '/assets/images/races/silfide.png',
-  suraggel: '/assets/images/races/suraggel_aggelus.png',
+  humano: '/assets/images/races/humano.webp',
+  anao: '/assets/images/races/anao.webp',
+  dahllan: '/assets/images/races/dahllan.webp',
+  elfo: '/assets/images/races/elfo.webp',
+  goblin: '/assets/images/races/goblin.webp',
+  lefou: '/assets/images/races/lefou.webp',
+  qareen: '/assets/images/races/qareen.webp',
+  minotauro: '/assets/images/races/minotauro.webp',
+  hynne: '/assets/images/races/hynne.webp',
+  golem: '/assets/images/races/golem.webp',
+  osteon: '/assets/images/races/osteon.webp',
+  trog: '/assets/images/races/trog.webp',
+  kliren: '/assets/images/races/kliren.webp',
+  medusa: '/assets/images/races/medusa.webp',
+  sereia: '/assets/images/races/sereia.webp',
+  silfide: '/assets/images/races/silfide.webp',
+  suraggel: '/assets/images/races/suraggel_aggelus.webp',
 };
 
 const CLASS_ICONS = {
@@ -111,7 +112,7 @@ const ALLY_TYPE_LABELS = {
 const ALLY_LEVEL_LABELS = { iniciante: 'Iniciante', veterano: 'Veterano', mestre: 'Mestre' };
 
 export function StepReview({ stats, onSave, onPlay, onNavigate }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const cls = CLASSES[char.classe] || {};
   const race = RACES[char.raca] || {};
   const orig = ORIGENS[char.origem] || {};

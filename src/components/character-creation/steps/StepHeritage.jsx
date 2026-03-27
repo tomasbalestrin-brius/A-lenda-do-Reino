@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import RACES from '../../../data/races';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { GENERAL_POWERS } from '../../../data/powers';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
@@ -23,13 +24,13 @@ const ALL_PERICIAS = [
 ];
 
 export function StepHeritage() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [somenteDisp, setSomenteDisp] = React.useState(false);
   const [searchPower, setSearchPower] = React.useState('');
   const raca = char.raca;
   const race = RACES[raca];
 
-  if (!race) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-[2.5rem] border border-dashed border-white/5 backdrop-blur-sm">Selecione uma raça no passo anterior para descobrir sua herança.</div>;
+  if (!race) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-[2.5rem] border border-dashed border-white/5 md:backdrop-blur-sm">Selecione uma raça no passo anterior para descobrir sua herança.</div>;
 
   const isSuraggel = raca === 'suraggel';
   const isHumano = raca === 'humano';
@@ -53,7 +54,7 @@ export function StepHeritage() {
 
   const renderSelection = (title, list, max, description) => {
     return (
-      <div className="bg-blue-950/20 rounded-[2.5rem] border border-blue-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+      <div className="bg-blue-950/20 rounded-[2.5rem] border border-blue-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
         <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">✨</div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
           <div>
@@ -101,7 +102,7 @@ export function StepHeritage() {
   const SpellHeritageSelection = ({ title, description, list, max }) => {
     const selectedSpells = char.racialSpells || [];
     return (
-      <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+      <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
         <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">✨</div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
           <div>
@@ -150,7 +151,7 @@ export function StepHeritage() {
     const variant = currentChoices.suraggel || null;
     return (
       <div className="flex flex-col gap-8">
-        <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+        <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
           <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">😇</div>
           <h2 className="text-3xl font-black text-white tracking-tight mb-2">Herança Suraggel</h2>
           <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Escolha sua linhagem sagrada ou profana. Esta escolha define seus instintos e poderes latentes.</p>
@@ -198,7 +199,7 @@ export function StepHeritage() {
     const availableAttrs = allAttrs.filter(a => !restricted.includes(a));
     
     return (
-      <div className="bg-amber-950/20 rounded-[2.5rem] border border-amber-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+      <div className="bg-amber-950/20 rounded-[2.5rem] border border-amber-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
         <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">📈</div>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 md:mb-8 gap-4">
           <div>
@@ -247,7 +248,7 @@ export function StepHeritage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden backdrop-blur-md">
+      <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
         <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
         <h2 className="text-3xl font-black text-white tracking-tight mb-2"><span className="text-amber-500 mr-2">II.</span> Herança: {race.nome}</h2>
         <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
@@ -257,7 +258,7 @@ export function StepHeritage() {
       {isLefou && renderAttrSelection(3, ['CAR'])}
       {isOsteon && renderAttrSelection(3, ['CON'])}
 
-      <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 backdrop-blur-sm shadow-xl">
+      <div className="bg-gray-950/40 rounded-[2.5rem] border border-white/5 p-8 md:backdrop-blur-sm shadow-xl">
         <div className="flex items-center gap-3 mb-6">
           <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)]" />
           <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Habilidades Raciais</h3>
@@ -277,7 +278,7 @@ export function StepHeritage() {
       <AnimatePresence>
         {isHumano && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
-            <div className="bg-blue-950/20 rounded-[2.5rem] border border-blue-500/10 p-8 backdrop-blur-md">
+            <div className="bg-blue-950/20 rounded-[2.5rem] border border-blue-500/10 p-8 md:backdrop-blur-md">
               <h3 className="text-sm font-black text-blue-400 uppercase tracking-[0.2em] mb-4">Tipo de Versatilidade</h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
@@ -307,7 +308,7 @@ export function StepHeritage() {
             )}
 
             {currentChoices.tipoVersatilidade === 'poder' && (
-              <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+              <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
                 <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">⚔️</div>
                 <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
                   <div>
@@ -416,7 +417,7 @@ export function StepHeritage() {
 
         {isLefou && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
-            <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 backdrop-blur-md">
+            <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 md:backdrop-blur-md">
               <h3 className="text-sm font-black text-red-400 uppercase tracking-[0.2em] mb-4">Deformidade</h3>
               <div className="grid grid-cols-2 gap-4">
                 {[
@@ -444,7 +445,7 @@ export function StepHeritage() {
               "A mácula da Tormenta concede bônus em suas competências."
             )}
             {currentChoices.tipoVersatilidade === 'poder' && (
-              <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+              <div className="bg-red-950/20 rounded-[2.5rem] border border-red-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
                 <h3 className="text-sm font-black text-red-400 uppercase tracking-[0.2em] mb-4">Escolha seu Poder da Tormenta</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                     {(GENERAL_POWERS.tormenta || []).map((p, idx) => {
@@ -502,7 +503,7 @@ export function StepHeritage() {
               </div>
             </div>
             {currentChoices.tipoVersatilidade === 'poder' ? (
-               <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+               <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
                  <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Escolha seu Poder Póstumo</h3>
                  <div className="flex flex-wrap gap-2 mb-6">
                     {[
@@ -579,7 +580,7 @@ export function StepHeritage() {
           return (
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-6">
               {/* Variant selection */}
-              <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl backdrop-blur-md">
+              <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl md:backdrop-blur-md">
                 <h3 className="text-sm font-black text-amber-400 uppercase tracking-[0.2em] mb-2">Variante Moreau</h3>
                 <p className="text-[11px] text-slate-400 font-medium mb-6">Escolha sua linhagem animal ancestral.</p>
                 <div className="grid grid-cols-3 gap-4">
@@ -600,7 +601,7 @@ export function StepHeritage() {
               {moreuVariant && renderAttrSelection(1)}
               {/* 2 Free powers */}
               {moreuVariant && (
-                <div className="bg-orange-950/20 rounded-[2.5rem] border border-orange-500/10 p-8 shadow-2xl backdrop-blur-md">
+                <div className="bg-orange-950/20 rounded-[2.5rem] border border-orange-500/10 p-8 shadow-2xl md:backdrop-blur-md">
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-sm font-black text-orange-400 uppercase tracking-[0.2em] mb-1">2 Talentos Raciais</h3>
@@ -644,7 +645,7 @@ export function StepHeritage() {
               )}
               {/* 1 Extra skill */}
               {moreuVariant && (
-                <div className="bg-teal-950/20 rounded-[2.5rem] border border-teal-500/10 p-8 shadow-2xl backdrop-blur-md">
+                <div className="bg-teal-950/20 rounded-[2.5rem] border border-teal-500/10 p-8 shadow-2xl md:backdrop-blur-md">
                   <div className="flex items-center justify-between mb-6">
                     <div>
                       <h3 className="text-sm font-black text-teal-400 uppercase tracking-[0.2em] mb-1">Perícia Extra</h3>
@@ -677,7 +678,7 @@ export function StepHeritage() {
         })()}
 
         {raca === 'golem' && (
-             <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden backdrop-blur-md">
+             <div className="bg-purple-950/20 rounded-[2.5rem] border border-purple-500/10 p-8 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
               <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl">🤖</div>
               <h3 className="text-sm font-black text-purple-400 uppercase tracking-[0.2em] mb-4">Propósito de Criação</h3>
               <p className="text-[11px] text-slate-400 font-medium mb-6">Golems não possuem origem, mas recebem um bônus especial de sua fabricação. Escolha um poder geral.</p>

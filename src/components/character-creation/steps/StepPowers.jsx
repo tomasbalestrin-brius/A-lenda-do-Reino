@@ -3,9 +3,10 @@ import GENERAL_POWERS from '../../../data/powers';
 import { divindades as DEUSES } from '../../../data/gods';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 export function StepPowers({ stats }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [activeTab, setActiveTab] = useState('combate');
   const [search, setSearch] = useState('');
 

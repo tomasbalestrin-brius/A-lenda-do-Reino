@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import CLASSES from '../../../data/classes';
 
 const LEVEL_COLORS = {
@@ -20,7 +21,7 @@ function getLevelColor(lvl) {
 }
 
 export function StepLevel() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const level = char.level || 1;
   const cls = CLASSES[char.classe?.toLowerCase()];
 

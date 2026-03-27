@@ -25,7 +25,8 @@ function isStorageAvailable() {
  * - CRUD no Supabase com fallback em localStorage
  */
 export function useCharacterPersistence({ char, step }) {
-  const { updateChar, loadChar } = useCharacterStore();
+  const updateChar = useCharacterStore(state => state.updateChar);
+  const loadChar = useCharacterStore(state => state.loadChar);
   const [savedChars, setSavedChars] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showResume, setShowResume] = useState(false);

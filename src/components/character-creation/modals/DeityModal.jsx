@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 import { 
   Eye, Leaf, Swords, Sun, Ghost, Flame, Scale, Flower2, 
@@ -17,7 +18,7 @@ const DEITY_ICONS = {
 };
 
 export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const { classe, crencasBeneficios } = char;
   
   if (!deus) return null;

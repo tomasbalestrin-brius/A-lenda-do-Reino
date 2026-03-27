@@ -1,6 +1,7 @@
 import React from 'react';
 import CLASSES from '../../../data/classes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -15,7 +16,7 @@ const MAGIAS_ESCOLAS = [
 ];
 
 export function StepClassSpecialization() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const { classe } = char;
   const cls = CLASSES[classe];
   

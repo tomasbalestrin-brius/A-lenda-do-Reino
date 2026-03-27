@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import CLASSES from '../../../data/classes';
 import { ClassModal } from '../modals/ClassModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -45,7 +46,7 @@ const ROLE_GROUPS = {
 };
 
 export function StepClass({ onNext }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [roleFilter, setRoleFilter] = React.useState('Todos');
   const allClasses = Object.entries(CLASSES);
   const classes = roleFilter === 'Todos'

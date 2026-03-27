@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCharacterStore } from '../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
 import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
@@ -65,8 +66,9 @@ const STEP_LABELS = [
 const MAX_STEPS = STEP_LABELS.length;
 
 export default function CharacterCreation() {
-  const { char, resetChar } = useCharacterStore();
+  const { char, resetChar } = useCharacterStore(useShallow(state => ({ char: state.char, resetChar: state.resetChar })));
   const { user, signOut } = useAuthStore();
+  const prefersReducedMotion = useReducedMotion();
   const [view, setView] = useState('library');
   const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -333,8 +335,10 @@ export default function CharacterCreation() {
             />
             <motion.div
               key="drawer"
-              initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 260 }}
+              initial={{ x: prefersReducedMotion ? 0 : '-100%', opacity: prefersReducedMotion ? 0 : 1 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: prefersReducedMotion ? 0 : '-100%', opacity: prefersReducedMotion ? 0 : 1 }}
+              transition={prefersReducedMotion ? { duration: 0.15 } : { type: 'spring', damping: 28, stiffness: 260 }}
               className="md:hidden fixed inset-y-0 left-0 w-72 z-[50] bg-[#040B16] border-r border-slate-800/60 shadow-2xl flex flex-col overflow-hidden"
               style={{ scrollbarWidth: 'none', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
@@ -478,10 +482,10 @@ export default function CharacterCreation() {
             <AnimatePresence mode="popLayout" initial={false}>
               <motion.div
                  key={step}
-                 initial={{ opacity: 0, x: 20 }}
+                 initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 20 }}
                  animate={{ opacity: 1, x: 0 }}
-                 exit={{ opacity: 0, x: -20 }}
-                 transition={{ duration: 0.3 }}
+                 exit={{ opacity: 0, x: prefersReducedMotion ? 0 : -20 }}
+                 transition={{ duration: prefersReducedMotion ? 0.1 : 0.3 }}
               >
                 <div className="max-w-4xl mx-auto">
                   {(() => {

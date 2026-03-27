@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { PARCEIROS } from '../../../data/parceiros';
 import { ORIGENS } from '../../../data/origins';
 
 export function StepAllies() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
 
   // Collect all power names from every source
   const levelPowerNames = Object.values(char.levelChoices || {})

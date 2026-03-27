@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 
 const POINT_POOL = 10;
 const ATTR_MIN = -1;
@@ -189,7 +190,7 @@ const AttributeRow = React.memo(({
 });
 
 export function StepAttributes({ stats }) {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [rolling, setRolling] = useState(false);
   const remaining = stats.pontosDisponiveis || 0;
   const isBuy = (char.attrMethod || 'buy') === 'buy';

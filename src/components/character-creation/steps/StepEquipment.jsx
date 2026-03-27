@@ -5,11 +5,12 @@ import { CLASSES } from '../../../data/classes';
 import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../data/modificacoes';
 import { ACESSORIOS, ARMAS_MAGICAS, ARMADURAS_MAGICAS } from '../../../data/magicItems';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function StepEquipment() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [category, setCategory] = useState('arma');
   const [searchItem, setSearchItem] = useState('');
   const stats = useMemo(() => computeStats(char), [

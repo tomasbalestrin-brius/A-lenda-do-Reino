@@ -2,10 +2,11 @@ import React, { useMemo, useState } from 'react';
 import SPELLS from '../../../data/spellsData';
 import CLASSES from '../../../data/classes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function StepSpells() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [search, setSearch] = React.useState('');
   const { classe, classSpells, choices } = char;
   

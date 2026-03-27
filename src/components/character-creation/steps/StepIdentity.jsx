@@ -1,9 +1,10 @@
 import React from 'react';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
 
 export function StepIdentity() {
-  const { char, updateChar } = useCharacterStore();
+  const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
 
   const handleChange = (field, value) => {
     updateChar({ [field]: value });
