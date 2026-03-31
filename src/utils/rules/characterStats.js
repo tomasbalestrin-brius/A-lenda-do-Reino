@@ -25,6 +25,7 @@ import {
 class BonusRegistry {
   constructor() {
     this.registry = {}; // { [stat]: { [sourceType]: [ { name, value } ] } }
+    this.situational = []; // [ { stat, value, name, condition } ]
   }
 
   add(stat, value, name, type = 'Habilidade') {
@@ -50,15 +51,84 @@ class BonusRegistry {
     return total;
   }
 
+  addSituational(stat, value, name, condition) {
+    if (!value) return;
+    this.situational.push({ stat, value, name, condition });
+  }
+
+  getSituational(stat) {
+    return this.situational.filter(s => s.stat === stat);
+  }
+
   getDetails(stat) {
     if (!this.registry[stat]) return [];
     const details = [];
     Object.entries(this.registry[stat]).forEach(([type, list]) => {
+      if (list.length === 0) return;
       const highest = list.reduce((prev, current) => (prev.value > current.value) ? prev : current);
-      details.push({ label: `${highest.name} (${type})`, value: highest.value });
+      const lowest = list.reduce((prev, current) => (prev.value < current.value) ? prev : current);
+      const bestValue = highest.value > 0 ? highest.value : (lowest.value < 0 ? lowest.value : 0);
+      const bestSource = highest.value > 0 ? highest : (lowest.value < 0 ? lowest : list[0]);
+      
+      details.push({ label: `${bestSource.name} (${type})`, value: bestValue });
     });
     return details;
   }
+}
+
+/** Processes automated impacts from powers and items. */
+function applyAutomatedImpacts(char, allPowers, registry, context) {
+  const { attrs, level, classData } = context;
+
+  // Process Powers with metadata
+  allPowers.forEach(power => {
+    if (!power.impacto) return;
+    const imp = power.impacto;
+
+    switch (imp.tipo) {
+      case 'bonus_estatico':
+        if (imp.pv_por_nivel) registry.add('pv', imp.pv_por_nivel * level, power.nome);
+        if (imp.pm_por_nivel) registry.add('pm', imp.pm_por_nivel * level, power.nome);
+        if (imp.def) registry.add('def', imp.def, power.nome);
+        if (imp.fort) registry.add('fort', imp.fort, power.nome);
+        if (imp.ref) registry.add('ref', imp.ref, power.nome);
+        if (imp.von) registry.add('von', imp.von, power.nome);
+        if (imp.atk) registry.add('atk_geral', imp.atk, power.nome);
+        break;
+
+      case 'somar_attr_dano':
+        // This is handled in attack calculation, but we can register it
+        break;
+
+      case 'aumento_atributo':
+        // Handled in buildAttrs
+        break;
+        
+      case 'bonus_escala_tormenta':
+        const tormentaPowers = Array.from(allPowers).filter(p => {
+          const powerObj = [...GENERAL_POWERS.combate, ...GENERAL_POWERS.destino, ...GENERAL_POWERS.magia, ...GENERAL_POWERS.tormenta].find(x => x.nome === p);
+          return powerObj?.impacto?.tipo === 'bonus_escala_tormenta' || powerObj?.requisitos?.poderTormenta || powerObj?.requisitos?.tormenta;
+        });
+        const countT = tormentaPowers.length;
+        if (imp.def) {
+          registry.add('def', imp.def + (countT - 1), power.nome);
+        }
+        if (imp.pericia) {
+          const statKey = imp.pericia.toLowerCase();
+          registry.add(statKey, imp.valor_base + (countT - 1) * 2, power.nome);
+        }
+        break;
+
+      case 'arma_extra':
+        // Handled in calculateDetailedAttacks
+        break;
+
+      case 'bonus_condicional':
+        // register for UI visibility, even if not added to total
+        registry.add(`condicional_${imp.condicao}`, imp.valor, power.nome);
+        break;
+    }
+  });
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -84,27 +154,34 @@ function getMagicItemBonuses(char) {
   (char.equipamento || []).forEach(e => {
     const id = typeof e === 'string' ? e : e.id;
     const item = MAGIC_ITEMS_ALL.find(m => m.id === id);
-    if (!item?.bonus) return;
-    const b = item.bonus;
+    if (!item) return;
 
-    // Scalar fields
-    const scalarKeys = ['def', 'pv', 'pm', 'fort', 'ref', 'von', 'FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR', 'ini', 'deslocamento', 'spellCD', 'spellPM'];
-    scalarKeys.forEach(k => {
-      if (b[k]) bonuses[k] += b[k];
-    });
+    if (item.bonus) {
+      const b = item.bonus;
+      // Scalar fields
+      const scalarKeys = ['def', 'pv', 'pm', 'fort', 'ref', 'von', 'FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR', 'ini', 'deslocamento', 'spellCD', 'spellPM'];
+      scalarKeys.forEach(k => {
+        if (b[k]) bonuses[k] += b[k];
+      });
 
-    // saves shorthand — adds to all three saves
-    if (b.saves) {
-      bonuses.fort += b.saves;
-      bonuses.ref  += b.saves;
-      bonuses.von  += b.saves;
+      // saves shorthand — adds to all three saves
+      if (b.saves) {
+        bonuses.fort += b.saves;
+        bonuses.ref  += b.saves;
+        bonuses.von  += b.saves;
+      }
+
+      // Skill bonuses
+      if (b.pericias) {
+        Object.entries(b.pericias).forEach(([p, v]) => {
+          bonuses.pericias[p] = (bonuses.pericias[p] || 0) + v;
+        });
+      }
     }
 
-    // Skill bonuses
-    if (b.pericias) {
-      Object.entries(b.pericias).forEach(([p, v]) => {
-        bonuses.pericias[p] = (bonuses.pericias[p] || 0) + v;
-      });
+    // Process specific impacts (automated spellPM from Cajado etc)
+    if (item.impacto?.tipo === 'reduzir_custo_magia') {
+      bonuses.spellPM += item.impacto.valor || 0;
     }
   });
 
@@ -311,15 +388,42 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado, registr
   }
 
   if (clsName === 'bucaneiro' && !isHeavyArmor) {
-    registry.add('def', Math.min(attrs.CAR || 0, level), 'Insolência', 'Habilidade');
+    const insolenciaBonus = Math.min(attrs.CAR || 0, level);
+    if (insolenciaBonus > 0) registry.add('def', insolenciaBonus, 'Insolência (CAR)', 'Habilidade');
   }
   if (clsName === 'lutador' && !isHeavyArmor) {
-    registry.add('def', Math.min(attrs.CON || 0, level), 'Casca Grossa', 'Habilidade');
+    const cascaGrossaBonus = Math.min(attrs.CON || 0, level);
+    if (cascaGrossaBonus > 0) registry.add('def', cascaGrossaBonus, 'Casca Grossa (CON)', 'Habilidade');
+  }
+
+  // Audautoconfiança (Nobre) / Braços Calejados (Lutador-Poder)
+  if (allPowers.has('Braços Calejados')) {
+    const forMod = attrs.FOR || 0;
+    if (forMod > 0) registry.add('def', forMod, 'Braços Calejados (FOR)', 'Habilidade');
   }
 
   // Poderes
   if (allPowers.has('Esquiva')) registry.add('def', 2, 'Esquiva', 'Habilidade');
-  if (allPowers.has('Pele de Ferro') && clsName === 'barbaro' && !isHeavyArmor) registry.add('def', 2, 'Pele de Ferro', 'Habilidade');
+  // Pele de Ferro (Bárbaro)
+  if (allPowers.has('Pele de Ferro') && clsName === 'barbaro' && !isHeavyArmor) {
+    registry.add('def', 2, 'Pele de Ferro', 'Habilidade');
+  }
+
+  // Fúria (Bárbaro): +2 Atk/Dano (Situacional)
+  if (clsName === 'barbaro') {
+    const furiaBonus = 2 + Math.floor((level - 1) / 5);
+    registry.addSituational('atk', furiaBonus, 'Fúria', 'Em Fúria');
+    registry.addSituational('dano', furiaBonus, 'Fúria', 'Em Fúria');
+  }
+
+  // Inspiração (Bardo)
+  if (clsName === 'bardo') {
+    const inspBonus = 1 + Math.floor((level - 1) / 4);
+    registry.addSituational('pericia', inspBonus, 'Inspiração', 'Inspirado');
+    if (allPowers.has('Inspiração Marcial')) {
+      registry.addSituational('dano', inspBonus, 'Inspiração Marcial', 'Inspirado');
+    }
+  }
   
   if (allPowers.has('Encouraçado') && isHeavyArmor) {
     const encPrereqPowers = ['Fanático', 'Inexpugnável'];
@@ -332,6 +436,22 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado, registr
   if (allPowers.has('Combate Defensivo')) registry.add('def', 5, 'Combate Defensivo', 'Habilidade');
   if (allPowers.has('Escamas Dracônicas')) registry.add('def', 2, 'Escamas Dracônicas', 'Habilidade');
   if (allPowers.has('Solidez') && shieldData) registry.add('def', 2, 'Solidez', 'Habilidade');
+
+  // Cavaleiro Logic
+  if (clsName === 'cavaleiro') {
+    if (allPowers.has('Duelo')) {
+      registry.addSituational('atk', 2, 'Duelo', 'Em Duelo');
+      registry.addSituational('def', 2, 'Duelo', 'Em Duelo');
+    }
+    if (allPowers.has('Baluarte')) {
+      const baluarteDef = 2 + Math.floor((attrs.CON || 0) / 2);
+      registry.addSituational('def', baluarteDef, 'Baluarte', 'Baluarte Ativo');
+    }
+    if (allPowers.has('Orgulho')) {
+      registry.addSituational('atk', 2, 'Orgulho', 'Orgulho Ativo');
+      registry.addSituational('def', 2, 'Orgulho', 'Orgulho Ativo');
+    }
+  }
 
   if (allPowers.has('Carapaça')) {
     const tormentaCount = Array.from(allPowers).filter(p =>
@@ -380,6 +500,15 @@ function computeSaves(allPowers, attrs, halfLevel, aliadoResBonus, isHeavyArmor,
   if (allPowers.has('Inexpugnável') && isHeavyArmor) registry.add('von', 2, 'Inexpugnável', 'Habilidade');
   if (profPenalty) registry.add('von', -5, 'Sem Proficiência', 'Penalidade');
   if (strPenalty) registry.add('von', -2, 'Requisito de FOR Insuficiente', 'Penalidade');
+
+  // Baluarte (Cavaleiro) - Bônus em resistências
+  const isCavaleiro = [...allPowers].some(p => p.toLowerCase().includes('cavaleiro') || p === 'Baluarte');
+  if (isCavaleiro) {
+    const baluarteRes = 2 + Math.floor((attrs.CON || 0) / 2);
+    registry.addSituational('fort', baluarteRes, 'Baluarte', 'Baluarte Ativo');
+    registry.addSituational('ref', baluarteRes, 'Baluarte', 'Baluarte Ativo');
+    registry.addSituational('von', baluarteRes, 'Baluarte', 'Baluarte Ativo');
+  }
 
   return {
     fort: registry.calculate('fort'),
@@ -478,6 +607,12 @@ export function computeStats(char) {
   scalarKeys.forEach(k => {
     if (magicBonuses[k]) registry.add(k, magicBonuses[k], 'Item Mágico', 'Item_Magico');
   });
+
+  // Prepare context for automated impacts
+  const context = { attrs, level, cls, raceData, equipped, aliado };
+
+  // Apply Automated Impacts from Powers
+  applyAutomatedImpacts(char, allPowers, registry, context);
 
   const pvResult   = computePV(cls, raceData, origem, allPowers, attrs, level, registry);
   const pmResult   = computePM(char, cls, raceData, allPowers, attrs, level, registry);
@@ -767,10 +902,26 @@ export function calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini
   });
 
   const isLutador = char.classe?.toLowerCase() === 'lutador';
+  let brigaDano = '1d6';
+  if (isLutador) {
+    if (level >= 20) brigaDano = '2d10';
+    else if (level >= 17) brigaDano = '2d8';
+    else if (level >= 13) brigaDano = '2d6';
+    else if (level >= 9) brigaDano = '1d10';
+    else if (level >= 5) brigaDano = '1d8';
+  } else if (!allPowers.has('Estilo Desarmado')) {
+    brigaDano = '1d3';
+  }
+
+  // Pugilista: Aumenta em um passo o dano desarmado
+  if (allPowers.has('Pugilista')) {
+    brigaDano = increaseDamageStep(brigaDano, 1);
+  }
+
   const unarmedData = {
     uid: 'unarmed-strike',
     nome: 'Ataque Desarmado',
-    dano: isLutador ? '1d6' : '1d3',
+    dano: brigaDano,
     critico: 20,
     multiplicador: 2,
     empunhadura: 'leve',
@@ -778,8 +929,27 @@ export function calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini
     subtipo: 'corpo_a_corpo'
   };
 
-  const finalWeapons = weapons.length > 0 ? weapons : [unarmedData];
+  const finalWeapons = weapons.length > 0 ? [...weapons] : [unarmedData];
   if (isLutador && weapons.length > 0) finalWeapons.push(unarmedData);
+
+  // Add extra attacks from powers/items (e.g., Dentes Afiados, Braços Extras)
+  allPowers.forEach(pName => {
+    const power = [...GENERAL_POWERS.combate, ...GENERAL_POWERS.destino, ...GENERAL_POWERS.magia, ...GENERAL_POWERS.tormenta].find(x => x.nome === pName);
+    if (power?.impacto?.tipo === 'arma_extra') {
+      const imp = power.impacto;
+      finalWeapons.push({
+        uid: `extra-${imp.nome.toLowerCase()}`,
+        nome: imp.nome,
+        dano: imp.dano,
+        critico: 20,
+        multiplicador: 2,
+        empunhadura: 'leve',
+        tipo: 'arma',
+        subtipo: 'corpo_a_corpo',
+        isExtra: true
+      });
+    }
+  });
 
   return finalWeapons.map(e => {
     const isCustom  = typeof e !== 'string' && e.id;
@@ -817,6 +987,7 @@ export function calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini
     if (allPowers.has('Foco em Arma') && char.choices?.focoArma === base.nome) bonusAtk += 2;
     if (allPowers.has('Armas da Ambição')) bonusAtk += 1;
     if (allPowers.has('Ataque Poderoso') && !base.distancia) bonusAtk -= 2;
+    if (allPowers.has('Balística') && base.descricao?.includes('fogo')) bonusAtk += attrs.INT || 0;
 
     // Paladino: Golpe Divino
     if (char.classe?.toLowerCase() === 'paladino') {
@@ -844,6 +1015,16 @@ export function calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini
     if (allPowers.has('Estilo de Duas Mãos') && base.empunhadura === 'duas_maos') damageBonus += 5;
     if (allPowers.has('Estilo de Arremesso') && base.arremessavel) damageBonus += 2;
     if (allPowers.has('Ataque Poderoso') && !base.distancia) damageBonus += 5;
+    if (allPowers.has('Arqueiro') && base.distancia && !base.arremessavel) damageBonus += Math.min(attrs.SAB || 0, level);
+    if (allPowers.has('Esgrimista') && (base.empunhadura === 'leve' || base.agil)) damageBonus += Math.min(attrs.INT || 0, level);
+
+    // Guerreiro: Ataque Especial
+    const isGuerreiro = char.classe?.toLowerCase() === 'guerreiro';
+    if (isGuerreiro) {
+      const gBonus = 4 + (Math.floor((level - 1) / 4) * 4);
+      registry.addSituational('atk', gBonus, 'Ataque Especial', 'Gasto de PM');
+      registry.addSituational('dano', gBonus, 'Ataque Especial', 'Gasto de PM');
+    }
 
     // 3. Crítico
     let critMargin = base.critico || 20;
@@ -857,6 +1038,14 @@ export function calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini
     }
     if (allPowers.has('Armas da Ambição')) critMargin -= 1;
     if (mods.includes('macica'))   critMult += 1;
+    
+    // Encantos Mágicos
+    let magicExtraDano = '';
+    if (mods.includes('ameaçadora')) critMargin -= 2;
+    if (mods.includes('afiada')) critMargin -= 1;
+    if (mods.includes('flamejante')) magicExtraDano += ' + 1d6 (Fogo)';
+    if (mods.includes('gélida')) magicExtraDano += ' + 1d6 (Frio)';
+    if (mods.includes('elétrica')) magicExtraDano += ' + 1d6 (Eletricidade)';
 
     // 4. Dano extra de aliado
     let aliadoExtraDano = '';
@@ -876,7 +1065,7 @@ export function calculateDetailedAttacks(char, { attrs, raceBonus, def, atk, ini
     }
 
     // Materiais Especiais
-    let danoStr = `${damage}${damageBonus !== 0 ? (damageBonus > 0 ? '+' : '') + damageBonus : ''}${aliadoExtraDano}`;
+    let danoStr = `${damage}${damageBonus !== 0 ? (damageBonus > 0 ? '+' : '') + damageBonus : ''}${magicExtraDano}${aliadoExtraDano}`;
     if (material?.nome === 'Gelo Eterno') {
       danoStr += ' + 2 (Frio)';
     }

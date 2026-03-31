@@ -69,21 +69,22 @@ const EditBtn = ({ step, onNavigate, label = 'Editar' }) =>
     </button>
   ) : null;
 
-const StatItem = React.memo(({ label, value, detail, color, icon }) => (
+const StatItem = React.memo(({ label, value, detail, situational, color, icon }) => (
   <div className="bg-gray-950/80 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-amber-500/30 transition-all cursor-help">
      <div className={`absolute top-0 inset-x-0 h-1.5 ${color} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />
      <span className="text-3xl font-black text-white mb-1">{value}</span>
      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
      
      {/* Detailed Breakdown Tooltip */}
-     {detail && detail.length > 0 && (
+     {((detail && detail.length > 0) || (situational && situational.length > 0)) && (
        <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 bg-gray-900/98 border border-white/10 p-5 rounded-[2rem] opacity-0 group-hover/stat:opacity-100 pointer-events-none transition-all z-50 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl scale-95 group-hover/stat:scale-100">
           <div className="text-[11px] font-black text-amber-500 uppercase tracking-widest mb-4 pb-2 border-b border-white/5 flex items-center justify-between">
             <span>Fontes de {label}</span>
             <span className="text-[9px] text-slate-500">JdA Stacking</span>
           </div>
           <div className="space-y-2.5">
-             {detail.map((d, i) => (
+             {/* Passive Bonuses */}
+             {detail?.map((d, i) => (
                <div key={i} className="flex justify-between items-center text-[10px] font-bold">
                  <span className="text-slate-400 max-w-[170px] truncate">{d.label}</span>
                  <span className="text-white bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 shrink-0">
@@ -91,6 +92,20 @@ const StatItem = React.memo(({ label, value, detail, color, icon }) => (
                  </span>
                </div>
              ))}
+             
+             {/* Situational Bonuses (Dotted line separator) */}
+             {situational?.length > 0 && (
+               <div className="pt-2 border-t border-dashed border-white/10 flex flex-col gap-2">
+                 <p className="text-[8px] font-black text-amber-500/50 uppercase tracking-widest">Situacionais (Se Ativo)</p>
+                 {situational.map((s, i) => (
+                   <div key={`sit-${i}`} className="flex justify-between items-center text-[10px] font-bold italic text-amber-200/80">
+                     <span className="max-w-[170px] truncate">{s.name} ({s.condition})</span>
+                     <span className="shrink-0">+{s.value}</span>
+                   </div>
+                 ))}
+               </div>
+             )}
+
              <div className="pt-3 border-t border-white/10 mt-3 flex justify-between items-center text-[12px] font-black">
                 <span className="text-slate-500 uppercase">Resultado Final</span>
                 <span className="text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">{value}</span>
@@ -288,16 +303,13 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             {/* Key stat pills */}
             <div className="flex flex-wrap gap-2 mt-5 justify-center md:justify-start">
               {[
-                { label: 'PV', value: stats?.pv || 0, color: 'bg-red-900/40 border-red-500/30 text-red-300' },
-                { label: 'PM', value: stats?.pm || 0, color: 'bg-blue-900/40 border-blue-500/30 text-blue-300' },
-                { label: 'DEF', value: stats?.def || 0, color: 'bg-sky-900/40 border-sky-500/30 text-sky-300' },
-                { label: 'ATK', value: (stats?.atk >= 0 ? '+' : '') + (stats?.atk || 0), color: 'bg-orange-900/40 border-orange-500/30 text-orange-300' },
-                { label: 'INI', value: (stats?.ini >= 0 ? '+' : '') + (stats?.ini || 0), color: 'bg-green-900/40 border-green-500/30 text-green-300' },
-              ].map(({ label, value, color }) => (
-                <span key={label} className={`px-4 py-2 rounded-2xl border font-black text-sm flex items-center gap-2 ${color}`}>
-                  <span className="text-[9px] uppercase tracking-widest opacity-60">{label}</span>
-                  <span>{value}</span>
-                </span>
+                { label: 'PV', value: stats?.pv || 0, detail: stats?.details?.pv, color: 'bg-red-500' },
+                { label: 'PM', value: stats?.pm || 0, detail: stats?.details?.pm, color: 'bg-blue-500' },
+                { label: 'DEF', value: stats?.def || 0, detail: stats?.details?.def, situational: stats?.situational?.def, color: 'bg-sky-500' },
+                { label: 'ATK', value: (stats?.atk >= 0 ? '+' : '') + (stats?.atk || 0), detail: stats?.details?.atk, situational: stats?.situational?.atk, color: 'bg-orange-500' },
+                { label: 'INI', value: (stats?.ini >= 0 ? '+' : '') + (stats?.ini || 0), detail: stats?.details?.ini, color: 'bg-green-500' },
+              ].map((s, i) => (
+                <StatItem key={i} {...s} />
               ))}
             </div>
           </div>

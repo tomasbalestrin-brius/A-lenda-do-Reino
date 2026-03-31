@@ -4,7 +4,8 @@ export const GENERAL_POWERS = {
     {
       nome: "Acuidade com Arma",
       descricao: "Quando usa uma arma corpo a corpo leve ou uma arma de arremesso, você pode usar sua Destreza em vez de Força nos testes de ataque e rolagens de dano.",
-      requisitos: { attr: { DES: 1 } }
+      requisitos: { attr: { DES: 1 } },
+      impacto: { tipo: 'substituir_attr_atk', de: 'FOR', para: 'DES', condicao: 'arma_leve_ou_arremesso' }
     },
     {
       nome: "Arma Secundária Grande",
@@ -14,7 +15,8 @@ export const GENERAL_POWERS = {
     {
       nome: "Arremesso Potente",
       descricao: "Quando usa uma arma de arremesso, você pode usar sua Força em vez de Destreza nos testes de ataque. Se você possuir o poder Ataque Poderoso, poderá usá-lo com armas de arremesso.",
-      requisitos: { attr: { FOR: 1 }, poder: ["Estilo de Arremesso"] }
+      requisitos: { attr: { FOR: 1 }, poder: ["Estilo de Arremesso"] },
+      impacto: { tipo: 'substituir_attr_atk', de: 'DES', para: 'FOR', condicao: 'arma_arremesso' }
     },
     {
       nome: "Arremesso Múltiplo",
@@ -34,7 +36,8 @@ export const GENERAL_POWERS = {
     {
       nome: "Ataque Poderoso",
       descricao: "Sempre que faz um ataque corpo a corpo, você pode sofrer –2 no teste de ataque para receber +5 na rolagem de dano.",
-      requisitos: { attr: { FOR: 1 } }
+      requisitos: { attr: { FOR: 1 } },
+      impacto: { tipo: 'modificador_ataque', atk: -2, dano: 5, condicao: 'corpo_a_corpo' }
     },
     {
       nome: "Ataque Preciso",
@@ -89,7 +92,8 @@ export const GENERAL_POWERS = {
     {
       nome: "Esquiva",
       descricao: "Você recebe +2 na Defesa e Reflexos.",
-      requisitos: { attr: { DES: 1 } }
+      requisitos: { attr: { DES: 1 } },
+      impacto: { tipo: 'bonus_estatico', def: 2, ref: 2 }
     },
     {
       nome: "Estilo de Arma e Escudo",
@@ -99,7 +103,8 @@ export const GENERAL_POWERS = {
     {
       nome: "Estilo de Arremesso",
       descricao: "Você pode sacar armas de arremesso como uma ação livre e recebe +2 nas rolagens de dano com elas.",
-      requisitos: { pericia: ["Pontaria"] }
+      requisitos: { pericia: ["Pontaria"] },
+      impacto: { tipo: 'bonus_dano', valor: 2, condicao: 'arma_arremesso' }
     },
     {
       nome: "Estilo de Disparo",
@@ -109,22 +114,26 @@ export const GENERAL_POWERS = {
     {
       nome: "Estilo de Duas Armas",
       descricao: "Se estiver empunhando duas armas (e uma leve) e fizer a ação agredir, pode fazer dois ataques. Sofre –2 nos testes de ataque (0 se Ambidestria).",
-      requisitos: { attr: { DES: 2 }, pericia: ["Luta"] }
+      requisitos: { attr: { DES: 2 }, pericia: ["Luta"] },
+      impacto: { tipo: 'modificador_duas_armas', penalidade: -2 }
     },
     {
       nome: "Estilo de Duas Mãos",
       descricao: "Se estiver usando uma arma corpo a corpo com as duas mãos, você recebe +5 nas rolagens de dano. Não pode ser usado com armas leves.",
-      requisitos: { attr: { FOR: 2 }, pericia: ["Luta"] }
+      requisitos: { attr: { FOR: 2 }, pericia: ["Luta"] },
+      impacto: { tipo: 'bonus_dano', valor: 5, condicao: 'arma_duas_maos' }
     },
     {
       nome: "Estilo de Uma Arma",
       descricao: "Se estiver usando uma arma corpo a corpo em uma mão e nada na outra, você recebe +2 na Defesa e nos testes de ataque com essa arma.",
-      requisitos: { pericia: ["Luta"] }
+      requisitos: { pericia: ["Luta"] },
+      impacto: { tipo: 'bonus_estatico', def: 2, atk: 2, condicao: 'uma_arma_mao_livre' }
     },
     {
       nome: "Estilo Desarmado",
       descricao: "Seus ataques desarmados causam 1d6 pontos de dano e podem causar dano letal ou não letal.",
-      requisitos: { pericia: ["Luta"] }
+      requisitos: { pericia: ["Luta"] },
+      impacto: { tipo: 'base_dano_desarmado', dado: '1d6' }
     },
     {
       nome: "Fanático",
@@ -199,7 +208,43 @@ export const GENERAL_POWERS = {
     {
       nome: "Aumento de Atributo",
       descricao: "Você recebe +1 em um atributo a sua escolha. Você pode escolher este poder várias vezes para atributos diferentes, ou até duas vezes para o mesmo atributo.",
-      requisitos: {}
+      requisitos: {},
+      impacto: { tipo: 'aumento_atributo', valor: 1 }
+    },
+    {
+      nome: "Ambidestria",
+      descricao: "Se estiver empunhando duas armas (e uma delas for leve) e fizer a ação agredir, você pode fazer dois ataques. Se possuir este poder, a penalidade em ambos os testes de ataque diminui para 0.",
+      requisitos: { attr: { DES: 2 }, poder: ["Estilo de Duas Armas"] },
+      impacto: { tipo: 'reduzir_penalidade', valor: 2, condicao: 'duas_armas' }
+    },
+    {
+      nome: "Arqueiro",
+      descricao: "Quando usa uma arma de disparo, você soma sua Sabedoria nas rolagens de dano (limitado pelo seu nível).",
+      requisitos: { attr: { SAB: 1 }, poder: ["Estilo de Disparo"] },
+      impacto: { tipo: 'somar_attr_dano', attr: 'SAB', limite: 'nivel', condicao: 'arma_disparo' }
+    },
+    {
+      nome: "Balística",
+      descricao: "Você soma sua Inteligência em testes de ataque com armas de fogo.",
+      requisitos: { attr: { INT: 1 }, pericia: ["Pontaria"] },
+      impacto: { tipo: 'somar_attr_atk', attr: 'INT', condicao: 'arma_fogo' }
+    },
+    {
+      nome: "Bote",
+      descricao: "Se você fizer uma investida, pode gastar 1 PM para fazer um ataque adicional com outra arma que esteja empunhando.",
+      requisitos: { poder: ["Estilo de Duas Armas"] }
+    },
+    {
+      nome: "Lutador de Chão",
+      descricao: "Você recebe +2 em testes de ataque para agarrar e derrubar. Quando agarra uma criatura, pode gastar 1 PM para fazer uma manobra derrubar contra ela como uma ação livre.",
+      requisitos: { pericia: ["Luta"] },
+      impacto: { tipo: 'bonus_manobra', valor: 2, manobra: ['agarrar', 'derrubar'] }
+    },
+    {
+      nome: "Pugilista",
+      descricao: "Seus ataques desarmados causam dano como se fossem uma categoria de tamanho maior.",
+      requisitos: { poder: ["Estilo Desarmado"] },
+      impacto: { tipo: 'aumentar_passo_dano', valor: 1, condicao: 'desarmado' }
     }
   ],
   destino: [
@@ -221,12 +266,14 @@ export const GENERAL_POWERS = {
     {
       nome: "Atlético",
       descricao: "Você recebe +2 em Atletismo e +3m em seu deslocamento.",
-      requisitos: { attr: { FOR: 2 } }
+      requisitos: { attr: { FOR: 2 } },
+      impacto: { tipo: 'bonus_estatico', pericia: 'Atletismo', valor: 2, deslocamento: 3 }
     },
     {
       nome: "Atraente",
       descricao: "Você recebe +2 em testes de perícias baseadas em Carisma contra criaturas que possam se sentir atraídas por você.",
-      requisitos: { attr: { CAR: 1 } }
+      requisitos: { attr: { CAR: 1 } },
+      impacto: { tipo: 'bonus_condicional', valor: 2, condicao: 'atração', alvo: ['Diplomacia', 'Enganação', 'Jogatina', 'Nobreza'] }
     },
     {
       nome: "Comandar",
@@ -284,9 +331,22 @@ export const GENERAL_POWERS = {
       requisitos: {}
     },
     {
+      nome: "Visão Biocêntrica",
+      descricao: "Você recebe +2 em Percepção e enxerga no escuro. Esse bônus aumenta em +2 para cada outro poder da Tormenta que você possui.",
+      requisitos: { poderTormenta: 1 },
+      impacto: { tipo: 'bonus_escala_tormenta', pericia: 'Percepção', valor_base: 2 }
+    },
+    {
+      nome: "Cérebro Aberrante",
+      descricao: "Você recebe +2 em Vontade contra efeitos mentais. Esse bônus aumenta em +2 para cada outro poder da Tormenta que você possui.",
+      requisitos: { poderTormenta: 1 },
+      impacto: { tipo: 'bonus_escala_tormenta', pericia: 'Vontade', valor_base: 2, condicao: 'efeitos_mentais' }
+    },
+    {
       nome: "Torcida",
       descricao: "Você recebe +2 em testes de perícia e Defesa quando tem a torcida a seu favor em alcance médio.",
-      requisitos: { attr: { CAR: 1 } }
+      requisitos: { attr: { CAR: 1 } },
+      impacto: { tipo: 'bonus_condicional', valor: 2, condicao: 'torcida', alvo: ['pericia', 'Defesa'] }
     },
     {
       nome: "Treinamento em Perícia",
@@ -301,7 +361,8 @@ export const GENERAL_POWERS = {
     {
       nome: "Vontade de Ferro",
       descricao: "Você recebe +1 PM para cada dois níveis de personagem e +2 em Vontade.",
-      requisitos: { attr: { SAB: 1 } }
+      requisitos: { attr: { SAB: 1 } },
+      impacto: { tipo: 'bonus_estatico', von: 2, pm_por_nivel: 0.5 }
     }
   ],
   magia: [
@@ -374,8 +435,9 @@ export const GENERAL_POWERS = {
     },
     {
       nome: "Carapaça",
-      descricao: "+1 na Defesa. Bônus aumenta com outros poderes.",
-      requisitos: { tormenta: true }
+      descricao: "Você recebe +1 na Defesa. Esse bônus aumenta em +1 para cada outro poder da Tormenta que você possui.",
+      requisitos: { tormenta: true },
+      impacto: { tipo: 'bonus_escala_tormenta', def: 1 }
     },
     {
       nome: "Corpo Aberrante",
@@ -389,8 +451,9 @@ export const GENERAL_POWERS = {
     },
     {
       nome: "Dentes Afiados",
-      descricao: "Arma natural de mordida (1d4, x2, corte). Pode fazer ataque extra com 1 PM.",
-      requisitos: { tormenta: true }
+      descricao: "Você recebe um ataque extra com mordida (dano 1d4, perfuração). Se já tiver mordida, aumenta o passo de dano.",
+      requisitos: { poderTormenta: 1 },
+      impacto: { tipo: 'arma_extra', nome: 'Mordida', dano: '1d4', tipo_dano: 'Perfuração' }
     },
     {
       nome: "Desprezar a Realidade",
