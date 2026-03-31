@@ -43,6 +43,7 @@ const getInitialCharState = () => ({
   historia: '',
   
   levelChoices: {}, // Stores choices per level: { 2: { type: 'power', id: '...' }, 3: ... }
+  spellEnhancements: {}, // Stores extra PM costs for spells: { 'bola_de_fogo': { pm: 2, desc: 'Aumenta dano' } }
   choices: {}
 });
 

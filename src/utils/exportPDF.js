@@ -1,28 +1,13 @@
-/**
- * Exporta a ficha do personagem como PDF imprimível (A4 landscape).
- * Abre uma nova janela com HTML/CSS otimizado para impressão e dispara window.print().
- */
 export function exportToPDF(char, stats) {
-  const signStr = (n) => (n > 0 ? `+${n}` : String(n));
+  const signStr = (n) => (n >= 0 ? `+${n}` : String(n));
   const attrKeys = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
-  const attrLabels = { FOR: 'Força', DES: 'Destreza', CON: 'Constituição', INT: 'Inteligência', SAB: 'Sabedoria', CAR: 'Carisma' };
 
-  const trainedSkills = (() => {
-    const set = new Set();
-    const cls = char.classe;
-    // from all sources merged in stats
-    if (stats?.allTrainedSkills) stats.allTrainedSkills.forEach(s => set.add(s));
-    return Array.from(set);
-  })();
+  // All spells including enhancements
+  const progressionSpells = Object.values(char.levelChoices || {})
+    .filter(c => c?.spells?.length > 0)
+    .flatMap(c => c.spells.filter(Boolean));
+  const allSpells = [...(char.classSpells || []), ...(char.racialSpells || []), ...progressionSpells];
 
-  const allPowers = [
-    ...(char.poderesGerais || []).map(p => typeof p === 'string' ? p : p.nome),
-    ...(char.poderes || []).map(p => typeof p === 'string' ? p : p.nome),
-    ...Object.values(char.levelChoices || {}).filter(Boolean).map(p => p.nome || p.id),
-    ...(char.crencasBeneficios || []).map(p => typeof p === 'string' ? p : p.nome),
-  ].filter(Boolean);
-
-  const allSpells = [...(char.classSpells || []), ...(char.racialSpells || [])];
   const weapons = stats?.detailedAttacks || [];
   const level = char.level || 1;
 
@@ -39,452 +24,326 @@ export function exportToPDF(char, stats) {
     'Pontaria','Reflexos','Religião','Sobrevivência','Vontade',
   ];
 
-  const trainedSet = new Set([
-    ...(char.pericias || []),
-    ...Object.values(char.periciasObrigEscolha || {}),
-    ...(char.periciasClasseEscolha || []),
-    ...(char.origemBeneficios || []).filter(b => b && !b.includes(' ')),
-  ]);
+  const allPowers = [
+    ...(char.poderesGerais || []).map(p => typeof p === 'string' ? p : p.nome),
+    ...(char.poderes || []).map(p => typeof p === 'string' ? p : p.nome),
+    ...Object.values(char.levelChoices || {}).filter(c => c?.nome).map(p => p.nome),
+    ...(char.crencasBeneficios || []).map(p => typeof p === 'string' ? p : p.nome),
+  ].filter(Boolean);
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8"/>
-<title>Ficha — ${char.nome || 'Personagem'}</title>
+<title>Ficha Lendária — ${char.nome || 'Personagem'}</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=UnifrakturMaguntia&display=swap');
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  @page { size: A4 portrait; margin: 12mm 10mm; }
+  @page { size: A4 portrait; margin: 8mm 8mm; }
 
   body {
     font-family: 'Crimson Text', Georgia, serif;
-    background: #fff;
-    color: #1a1a1a;
-    font-size: 9.5pt;
-    line-height: 1.3;
+    background: #fdf5e6;
+    background-image: radial-gradient(#fff9f0 1px, transparent 0);
+    background-size: 24px 24px;
+    color: #2a1b0a;
+    font-size: 9pt;
+    line-height: 1.25;
   }
 
-  /* ── Layout ── */
-  .sheet { width: 100%; }
-  .row { display: flex; gap: 6px; margin-bottom: 6px; }
+  /* ── Parchment Texture Effect ── */
+  body::before {
+    content: ""; position: fixed; inset: 0; z-index: -1;
+    background: linear-gradient(to bottom right, #fdf5e6, #f3e5ab);
+    opacity: 0.8;
+  }
+
+  .sheet { width: 100%; position: relative; }
+
+  /* ── Typography & Decoration ── */
+  .ornament { font-family: 'Cinzel', serif; color: #8b0000; text-align: center; font-size: 14pt; margin: 4px 0; }
+  
+  .row { display: flex; gap: 8px; margin-bottom: 8px; }
   .col { flex: 1; }
   .col-2 { flex: 2; }
   .col-3 { flex: 3; }
 
   /* ── Sections ── */
   .section {
-    border: 1.5px solid #8b0000;
-    border-radius: 4px;
-    overflow: hidden;
+    background: rgba(255, 255, 255, 0.4);
+    border: 2px solid #5d4037;
+    border-radius: 2px;
+    position: relative;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 8px;
     break-inside: avoid;
   }
-  .section-title {
-    background: #8b0000;
-    color: #ffd700;
-    font-family: 'Cinzel', serif;
-    font-size: 7pt;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 2px 8px;
+  .section::before {
+    content: ""; position: absolute; inset: 1px; border: 1px solid rgba(93, 64, 55, 0.2); pointer-events: none;
   }
-  .section-body { padding: 5px 7px; }
+  .section-title {
+    background: #5d4037;
+    color: #ede7f6;
+    font-family: 'Cinzel', serif;
+    font-size: 7.5pt;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-bottom: 2px solid #3e2723;
+    display: flex; justify-content: space-between;
+  }
+  .section-body { padding: 6px 8px; }
 
   /* ── Header ── */
   .header {
-    background: linear-gradient(135deg, #1a0000 0%, #3d0000 50%, #1a0000 100%);
-    color: #ffd700;
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    border: 2px solid #8b0000;
+    border-bottom: 4px double #8b0000;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    display: flex; align-items: flex-end; justify-content: space-between;
   }
+  .char-identity { flex: 1; }
   .char-name {
-    font-family: 'Cinzel', serif;
-    font-size: 20pt;
-    font-weight: 900;
-    letter-spacing: 0.05em;
+    font-family: 'UnifrakturMaguntia', cursive;
+    font-size: 32pt;
+    color: #5d4037;
     line-height: 1;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: -4px;
+    filter: drop-shadow(1px 1px 0px #fff);
   }
-  .char-subtitle {
-    font-size: 8.5pt;
-    color: #ffcc80;
-    margin-top: 2px;
-    font-style: italic;
-  }
-  .level-badge {
-    background: #ffd700;
-    color: #1a0000;
+  .char-stats-summary {
     font-family: 'Cinzel', serif;
     font-size: 9pt;
-    font-weight: 900;
-    padding: 6px 14px;
-    border-radius: 4px;
-    text-align: center;
-    min-width: 60px;
+    font-weight: 700;
+    color: #8b0000;
+    border-top: 1px solid #8b0000;
+    padding-top: 2px;
   }
-  .level-badge .num { font-size: 22pt; display: block; line-height: 1; }
+  .level-badge {
+    text-align: center; border-left: 2px solid #8b0000; padding-left: 15px;
+  }
+  .level-badge .label { font-size: 7pt; font-family: 'Cinzel', serif; font-weight: 900; display: block; color: #8b0000; }
+  .level-badge .value { font-size: 28pt; font-weight: 900; line-height: 1; font-family: 'Cinzel', serif; color: #5d4037; }
 
   /* ── Attributes ── */
-  .attrs-grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 4px;
+  .attrs-box { display: flex; gap: 4px; justify-content: space-between; }
+  .attr-item {
+    border: 1.5px solid #5d4037;
+    background: #fff;
+    width: 48px; height: 55px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    position: relative;
   }
-  .attr-box {
-    border: 1px solid #c0a060;
-    border-radius: 3px;
-    text-align: center;
-    padding: 3px 2px;
-    background: #fffbf0;
-  }
-  .attr-label {
-    font-family: 'Cinzel', serif;
-    font-size: 6.5pt;
-    font-weight: 700;
-    color: #8b0000;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-  .attr-val {
-    font-size: 15pt;
-    font-weight: 700;
-    font-family: 'Cinzel', serif;
-    color: #1a0000;
-    line-height: 1.1;
-  }
-  .attr-sub {
-    font-size: 6pt;
-    color: #888;
-  }
+  .attr-val { font-size: 16pt; font-weight: 900; color: #8b0000; font-family: 'Cinzel', serif; line-height: 1; }
+  .attr-lbl { font-size: 6.5pt; font-weight: 900; font-family: 'Cinzel', serif; text-transform: uppercase; color: #5d4037; }
 
-  /* ── Stats bar ── */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 4px;
-  }
-  .stat-box {
-    border: 1px solid #c0a060;
-    border-radius: 3px;
-    text-align: center;
-    padding: 3px 2px;
-    background: #fffbf0;
-  }
-  .stat-label { font-size: 6pt; color: #8b0000; font-weight: 700; font-family:'Cinzel',serif; text-transform:uppercase; letter-spacing:0.06em; }
-  .stat-val { font-size: 14pt; font-weight: 700; font-family:'Cinzel',serif; color: #1a0000; line-height:1; }
-  .stat-desc { font-size: 5.5pt; color: #888; }
+  /* ── Combat Grid ── */
+  .combat-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
+  .combat-item { border: 1px solid #5d4037; padding: 4px; text-align: center; background: white; }
+  .combat-lbl { font-size: 6pt; font-weight: 900; font-family: 'Cinzel', serif; color: #8b0000; display: block; }
+  .combat-val { font-size: 14pt; font-weight: 900; font-family: 'Cinzel', serif; line-height: 1; }
 
   /* ── Skills ── */
-  .skills-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1px 8px;
-  }
+  .skills-rows { column-count: 2; column-gap: 15px; }
   .skill-row {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 1px 0;
-    border-bottom: 0.5px solid #e8dcc0;
-    font-size: 8pt;
+    display: flex; justify-content: space-between; border-bottom: 0.5px solid #5d403744;
+    padding: 1.5px 0; font-size: 8pt;
   }
-  .skill-check {
-    width: 10px;
-    height: 10px;
-    border: 1px solid #8b0000;
-    border-radius: 50%;
-    background: #fff;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 7pt;
-    color: #8b0000;
-  }
-  .skill-trained .skill-check { background: #8b0000; color: #ffd700; }
-  .skill-name { flex: 1; }
-  .skill-trained .skill-name { font-weight: 600; }
-  .skill-bonus { font-weight: 700; color: #8b0000; font-size: 8pt; min-width: 20px; text-align: right; }
+  .skill-row.trained { font-weight: 700; color: #8b0000; }
+  .skill-bonus { min-width: 25px; text-align: right; font-family: 'Cinzel', serif; }
 
-  /* ── Powers ── */
-  .power-list { column-count: 2; column-gap: 10px; }
-  .power-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 3px;
-    margin-bottom: 2px;
-    break-inside: avoid;
-    font-size: 8pt;
-  }
-  .power-dot { color: #8b0000; flex-shrink: 0; margin-top: 1px; }
-
-  /* ── Weapons ── */
+  /* ── Weapons Table ── */
   .weapon-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
-  .weapon-table th {
-    background: #8b0000;
-    color: #ffd700;
-    font-family: 'Cinzel', serif;
-    font-size: 6.5pt;
-    font-weight: 700;
-    padding: 2px 4px;
-    letter-spacing: 0.05em;
-    text-align: left;
-  }
-  .weapon-table td { padding: 2px 4px; border-bottom: 0.5px solid #e8dcc0; vertical-align: middle; }
-  .weapon-table tr:nth-child(even) td { background: #fffbf0; }
+  .weapon-table th { font-family: 'Cinzel', serif; background: #5d4037; color: white; padding: 2px 4px; font-size: 7pt; text-align: left; }
+  .weapon-table td { padding: 3px 4px; border-bottom: 1px solid #5d403722; }
+  .weapon-type { font-size: 6.5pt; color: #666; font-style: italic; }
 
-  /* ── Spells ── */
-  .spell-item { font-size: 8pt; padding: 1px 0; border-bottom: 0.5px solid #e8dcc0; display: flex; gap: 4px; }
-  .spell-circle { color: #8b0000; font-weight: 700; font-size: 7pt; flex-shrink: 0; }
-  .spell-name { flex: 1; }
-  .spell-pm { color: #666; font-size: 7pt; }
+  /* ── Trackers ── */
+  .tracker-group { display: flex; gap: 2px; flex-wrap: wrap; margin-top: 4px; }
+  .t-box { width: 10px; height: 10px; border: 1px solid #5d4037; }
 
-  /* ── HP/PM tracker boxes ── */
-  .tracker { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 3px; }
-  .tracker-box {
-    width: 12px;
-    height: 12px;
-    border: 1px solid #8b0000;
-    border-radius: 2px;
-    background: #fff;
-    flex-shrink: 0;
-  }
+  .identity-text { font-size: 8pt; color: #4e342e; text-align: justify; line-height: 1.4; border-top: 1px dashed #5d403744; padding-top: 5px; margin-top: 5px; }
 
-  /* ── Identity ── */
-  .identity-row { display: flex; gap: 8px; margin-bottom: 3px; }
-  .identity-field { flex: 1; }
-  .field-label { font-size: 6pt; color: #8b0000; font-weight: 700; font-family: 'Cinzel', serif; text-transform: uppercase; letter-spacing: 0.08em; }
-  .field-val { font-size: 8.5pt; border-bottom: 0.5px solid #c0a060; min-height: 14px; padding-bottom: 1px; }
-  .text-area { border: 0.5px solid #c0a060; border-radius: 2px; min-height: 40px; width: 100%; padding: 3px; font-size: 7.5pt; color: #444; font-style: italic; }
-
-  /* ── Footer ── */
-  .footer {
-    margin-top: 8px;
-    padding-top: 4px;
-    border-top: 1px solid #c0a060;
-    display: flex;
-    justify-content: space-between;
-    font-size: 6.5pt;
-    color: #888;
-    font-style: italic;
-  }
+  /* ── Special Traits ── */
+  .traits-list { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
+  .trait-pill { padding: 2px 6px; background: #fffde7; border: 1px solid #f9a825; border-radius: 10px; font-size: 7.5pt; font-weight: 700; color: #c62828; }
 
   @media print {
-    body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
     .no-print { display: none !important; }
+    body { background-image: none; print-color-adjust: exact; }
   }
 </style>
 </head>
 <body>
-<div class="sheet">
 
-  <!-- PRINT BUTTON (hidden on print) -->
-  <div class="no-print" style="text-align:right;margin-bottom:8px;">
-    <button onclick="window.print()" style="background:#8b0000;color:#ffd700;font-family:'Cinzel',serif;font-size:10pt;font-weight:700;padding:8px 20px;border:none;border-radius:4px;cursor:pointer;letter-spacing:0.1em;">
-      🖨️ IMPRIMIR FICHA
-    </button>
-    <button onclick="window.close()" style="background:#333;color:#fff;font-family:'Cinzel',serif;font-size:10pt;font-weight:700;padding:8px 16px;border:none;border-radius:4px;cursor:pointer;margin-left:8px;letter-spacing:0.1em;">
-      ✕ FECHAR
-    </button>
+<div class="sheet">
+  <div class="no-print" style="margin-bottom:15px; text-align:right;">
+     <button onclick="window.print()" style="padding:10px 25px; font-family:'Cinzel'; font-weight:900; background:#8b0000; color:white; border:none; cursor:pointer;">IMPRIMIR PDF</button>
   </div>
 
-  <!-- HEADER -->
-  <div class="header">
-    <div>
-      <div class="char-name">${char.nome || 'Sem Nome'}</div>
-      <div class="char-subtitle">${raceLabel} · ${classeLabel} · ${origemLabel} · ${deusLabel}</div>
-      <div class="char-subtitle" style="margin-top:2px;color:#ffaa44;">
-        ${char.genero ? char.genero + ' · ' : ''}${char.idade ? 'Idade: ' + char.idade + ' · ' : ''}
-        Desl. ${stats?.deslocamento ?? 9}m · Idiomas: ${(stats?.languages || ['Comum']).join(', ')}
+  <header class="header">
+    <div class="char-identity">
+      <h1 class="char-name">${char.nome || 'Lenda Sem Nome'}</h1>
+      <div class="char-stats-summary">
+        ${raceLabel} · ${classeLabel} · ${origemLabel} · Devoto de ${deusLabel}
+      </div>
+      <div style="font-size:7.5pt; color:#5d4037; margin-top:2px;">
+         ${char.genero ? char.genero + ' · ' : ''}${char.idade ? char.idade + ' anos · ' : ''}
+         Deslocamento ${stats?.deslocamento || 9}m · Idiomas: ${(stats?.languages || ['Comum']).join(', ')}
       </div>
     </div>
     <div class="level-badge">
-      <span class="num">${level}</span>
-      NÍVEL
+       <span class="label">Nível</span>
+       <span class="value">${level}</span>
     </div>
-  </div>
+  </header>
 
-  <!-- ROW 1: Attributes + Combat Stats -->
   <div class="row">
     <div class="col-2">
       <div class="section">
-        <div class="section-title">⚔ Atributos</div>
+        <div class="section-title">Atributos Primordiais</div>
         <div class="section-body">
-          <div class="attrs-grid">
-            ${attrKeys.map(k => `
-            <div class="attr-box">
-              <div class="attr-label">${k}</div>
-              <div class="attr-val">${signStr(stats?.attrs?.[k] ?? 0)}</div>
-              <div class="attr-sub">base ${signStr(char.atributos?.[k] ?? 0)}</div>
-            </div>`).join('')}
+          <div class="attrs-box">
+             ${attrKeys.map(k => `
+               <div class="attr-item">
+                 <span class="attr-lbl">${k}</span>
+                 <span class="attr-val">${signStr(stats?.attrs?.[k] || 0)}</span>
+                 <span style="font-size:6pt; color:#888;">base ${char.atributos?.[k] || 0}</span>
+               </div>
+             `).join('')}
           </div>
         </div>
       </div>
-    </div>
-    <div class="col-3">
-      <div class="section">
-        <div class="section-title">🛡 Estatísticas de Combate</div>
-        <div class="section-body">
-          <div class="stats-grid">
-            <div class="stat-box"><div class="stat-label">PV Máx</div><div class="stat-val">${stats?.pv ?? '—'}</div><div class="stat-desc">Vida</div></div>
-            <div class="stat-box"><div class="stat-label">PM Máx</div><div class="stat-val">${stats?.pm ?? '—'}</div><div class="stat-desc">Mana</div></div>
-            <div class="stat-box"><div class="stat-label">Defesa</div><div class="stat-val">${stats?.def ?? '—'}</div><div class="stat-desc">DEF</div></div>
-            <div class="stat-box"><div class="stat-label">Ataque</div><div class="stat-val">${signStr(stats?.atk ?? 0)}</div><div class="stat-desc">ATK</div></div>
-            <div class="stat-box"><div class="stat-label">Iniciativa</div><div class="stat-val">${signStr(stats?.ini ?? 0)}</div><div class="stat-desc">INI</div></div>
-            <div class="stat-box"><div class="stat-label">Fortitude</div><div class="stat-val">${signStr(stats?.fort ?? 0)}</div><div class="stat-desc">FORT</div></div>
-            <div class="stat-box"><div class="stat-label">Reflexos</div><div class="stat-val">${signStr(stats?.ref ?? 0)}</div><div class="stat-desc">REF</div></div>
-            <div class="stat-box"><div class="stat-label">Vontade</div><div class="stat-val">${signStr(stats?.von ?? 0)}</div><div class="stat-desc">VON</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ROW 2: HP/PM trackers -->
-  <div class="row">
-    <div class="col">
       <div class="section">
-        <div class="section-title">❤ Pontos de Vida</div>
+        <div class="section-title">Estatísticas Vitais</div>
         <div class="section-body">
-          <div class="tracker">
-            ${Array.from({ length: Math.min(stats?.pv ?? 20, 60) }).map(() => '<div class="tracker-box"></div>').join('')}
+          <div class="combat-stats">
+            <div class="combat-item"><span class="combat-lbl">Vida (PV)</span><span class="combat-val">${stats?.pv}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Mana (PM)</span><span class="combat-val">${stats?.pm}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Defesa</span><span class="combat-val">${stats?.def}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Ataque</span><span class="combat-val">${signStr(stats?.atk)}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Iniciativa</span><span class="combat-val">${signStr(stats?.ini)}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Fortitude</span><span class="combat-val">${signStr(stats?.fort)}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Reflexos</span><span class="combat-val">${signStr(stats?.ref)}</span></div>
+            <div class="combat-item"><span class="combat-lbl">Vontade</span><span class="combat-val">${signStr(stats?.von)}</span></div>
           </div>
-          ${(stats?.pv ?? 20) > 60 ? `<div style="font-size:7pt;color:#888;margin-top:2px;">+${(stats?.pv ?? 20) - 60} caixas adicionais</div>` : ''}
-        </div>
-      </div>
-    </div>
-    <div class="col">
-      <div class="section">
-        <div class="section-title">✨ Pontos de Mana</div>
-        <div class="section-body">
-          <div class="tracker">
-            ${Array.from({ length: Math.min(stats?.pm ?? 10, 40) }).map(() => '<div class="tracker-box"></div>').join('')}
-          </div>
-          ${(stats?.pm ?? 10) > 40 ? `<div style="font-size:7pt;color:#888;margin-top:2px;">+${(stats?.pm ?? 10) - 40} adicionais</div>` : ''}
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- ROW 3: Skills + Powers -->
-  <div class="row">
-    <div class="col">
+          <div style="margin-top:8px;">
+            <span class="combat-lbl">Rastreador de Vitalidade</span>
+            <div class="tracker-group">${Array.from({length: Math.min(stats?.pv || 0, 80)}).map(()=>'<div class="t-box"></div>').join('')}</div>
+            <span class="combat-lbl" style="margin-top:5px;">Rastreador de Energia (PM)</span>
+            <div class="tracker-group">${Array.from({length: Math.min(stats?.pm || 0, 50)}).map(()=>'<div class="t-box"></div>').join('')}</div>
+          </div>
+        </div>
+      </div>
+
       <div class="section">
-        <div class="section-title">🎓 Perícias</div>
+        <div class="section-title">Perícias & Conhecimento</div>
         <div class="section-body">
-          <div class="skills-grid">
+          <div class="skills-rows">
             ${ALL_PERICIAS.map(p => {
-              const isTrained = trainedSet.has(p);
-              const bonus = isTrained ? (Math.floor(level / 2) + (level >= 15 ? 6 : level >= 7 ? 4 : 2)) : Math.floor(level / 2);
-              return `<div class="skill-row ${isTrained ? 'skill-trained' : ''}">
-                <div class="skill-check">${isTrained ? '✓' : ''}</div>
-                <div class="skill-name">${p}</div>
-                <div class="skill-bonus">${signStr(bonus)}</div>
-              </div>`;
+               const s = stats?.skills?.[p] || { total: Math.floor(level/2), isTrained: false };
+               return `
+                 <div class="skill-row ${s.isTrained ? 'trained' : ''}">
+                   <span>${s.isTrained ? '✦ ' : ''}${p}</span>
+                   <span class="skill-bonus">${signStr(s.total)}</span>
+                 </div>
+               `;
             }).join('')}
           </div>
         </div>
       </div>
     </div>
+
     <div class="col">
-      <div class="section" style="margin-bottom:6px;">
-        <div class="section-title">⚡ Poderes & Habilidades</div>
-        <div class="section-body">
-          ${allPowers.length > 0
-            ? `<div class="power-list">${allPowers.map(p => `<div class="power-item"><span class="power-dot">◆</span><span>${p}</span></div>`).join('')}</div>`
-            : '<div style="font-size:8pt;color:#888;font-style:italic;">Nenhum poder selecionado.</div>'
-          }
-        </div>
+      <div class="traits-list">
+         ${(stats?.traits || []).map(t => `<span class="trait-pill">${t}</span>`).join('')}
+         <span class="trait-pill" style="background:#e3f2fd; border-color:#2196f3; color:#0d47a1;">Carga: ${stats?.totalWeight?.toFixed(1) || 0}/${stats?.maxLoad || 10}kg</span>
       </div>
 
-      ${weapons.length > 0 ? `
-      <div class="section" style="margin-bottom:6px;">
-        <div class="section-title">⚔ Ataques</div>
+      <div class="section">
+        <div class="section-title">Arsenal de Combate</div>
         <div class="section-body">
           <table class="weapon-table">
-            <thead><tr>
-              <th>Arma</th><th>Ataque</th><th>Dano</th><th>Crítico</th><th>Alcance</th>
-            </tr></thead>
+            <thead>
+              <tr><th>Arma</th><th>Ataque</th><th>Dano</th><th>Tipo</th><th>Crítico</th></tr>
+            </thead>
             <tbody>
-              ${weapons.map(w => `<tr>
-                <td>${w.nome}</td>
-                <td>${signStr(w.bonusAtk)}</td>
-                <td>${w.dano}</td>
-                <td>${w.critico}</td>
-                <td>${w.alcance}</td>
-              </tr>`).join('')}
+              ${weapons.map(w => `
+                <tr>
+                  <td><strong>${w.nome}</strong></td>
+                  <td style="color:#8b0000; font-weight:700;">${signStr(w.bonusAtk)}</td>
+                  <td>${w.dano}</td>
+                  <td class="weapon-type">${w.tipoDano || '—'}</td>
+                  <td>${w.critico}</td>
+                </tr>
+              `).join('')}
             </tbody>
           </table>
         </div>
-      </div>` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-title">Poderes & Talentos</div>
+        <div class="section-body">
+           <ul style="list-style:none; font-size:8pt; column-count:1;">
+             ${allPowers.map(p => `<li style="margin-bottom:2px; border-bottom:0.5px solid #eee;">📜 ${p}</li>`).join('')}
+           </ul>
+        </div>
+      </div>
 
       ${allSpells.length > 0 ? `
       <div class="section">
-        <div class="section-title">🔮 Magias Conhecidas</div>
+        <div class="section-title">Arcanismo & Magia</div>
         <div class="section-body">
-          ${allSpells.map(s => {
-            const name = typeof s === 'string' ? s : (s.nome || s);
-            const pm = typeof s === 'object' && s.custo_pm ? s.custo_pm + ' PM' : '';
-            const circ = typeof s === 'object' && s.circulo ? s.circulo + 'º' : '';
-            return `<div class="spell-item">
-              ${circ ? `<span class="spell-circle">${circ}</span>` : ''}
-              <span class="spell-name">${name}</span>
-              ${pm ? `<span class="spell-pm">${pm}</span>` : ''}
-            </div>`;
+          <div style="font-size:7pt; color:#8b0000; margin-bottom:5px; font-weight:700; border-bottom:1px solid #8b0000;">CD de Resistência: ${stats?.spellDC}</div>
+          ${allSpells.map(spell => {
+            const s = typeof spell === 'string' ? { nome: spell } : spell;
+            const spellId = s.nome.toLowerCase().replace(/\\s+/g, '_');
+            const enh = char.spellEnhancements?.[spellId];
+            return `
+              <div style="border-bottom:1px solid #5d403722; padding:3px 0;">
+                <div style="display:flex; justify-content:space-between;">
+                   <strong>${s.nome}</strong>
+                   <span style="font-size:7.5pt; color:#5d4037;">${s.circulo ? s.circulo + 'º' : '—'} Círc.</span>
+                </div>
+                ${enh?.desc ? `<div style="font-size:7pt; color:#666; font-style:italic;">Nota: ${enh.desc} (+${enh.pm} PM)</div>` : ''}
+              </div>
+            `;
           }).join('')}
         </div>
-      </div>` : ''}
+      </div>
+      ` : ''}
     </div>
   </div>
 
-  <!-- ROW 4: Identity -->
-  <div class="row">
-    <div class="col">
-      <div class="section">
-        <div class="section-title">📜 Identidade & História</div>
-        <div class="section-body">
-          <div class="identity-row">
-            <div class="identity-field"><div class="field-label">Nome</div><div class="field-val">${char.nome || ''}</div></div>
-            <div class="identity-field"><div class="field-label">Raça</div><div class="field-val">${raceLabel}</div></div>
-            <div class="identity-field"><div class="field-label">Classe</div><div class="field-val">${classeLabel}</div></div>
-            <div class="identity-field"><div class="field-label">Nível</div><div class="field-val">${level}</div></div>
-            <div class="identity-field"><div class="field-label">Origem</div><div class="field-val">${origemLabel}</div></div>
-            <div class="identity-field"><div class="field-label">Divindade</div><div class="field-val">${deusLabel}</div></div>
-          </div>
-          <div class="identity-row">
-            <div class="identity-field"><div class="field-label">Idade</div><div class="field-val">${char.idade || ''}</div></div>
-            <div class="identity-field"><div class="field-label">Gênero</div><div class="field-val">${char.genero || ''}</div></div>
-            <div class="identity-field col-2"><div class="field-label">Aparência</div><div class="field-val">${char.aparencia || ''}</div></div>
-          </div>
-          <div style="margin-top:4px;">
-            <div class="field-label">História</div>
-            <div class="text-area">${char.historia || ''}</div>
-          </div>
+  <div class="section">
+    <div class="section-title">Identidade & Crônicas</div>
+    <div class="section-body">
+      <div class="row">
+        <div class="col" style="font-size:8pt;">
+           <strong>Aparência:</strong> ${char.aparencia || 'Sem descrição.'}
         </div>
+      </div>
+      <div class="identity-text">
+        ${char.historia || 'Sua lenda ainda está sendo escrita nas Terras de Arton...'}
       </div>
     </div>
   </div>
 
-  <div class="footer">
-    <span>⚔ Tormenta20 — A Lenda do Reino</span>
-    <span>Ficha gerada em ${new Date().toLocaleDateString('pt-BR')}</span>
-    <span>${char.nome || 'Personagem'} · Nível ${level} · ${classeLabel}</span>
-  </div>
-
+  <footer style="margin-top:10px; text-align:center; font-size:7pt; font-family:'Cinzel'; color:#8b0000; border-top:1px solid #8b0000; padding-top:5px;">
+    ⚔ TORMENTA 20 — A LENDA DO REINO · GERADO EM ${new Date().toLocaleDateString('pt-BR')} ⚔
+  </footer>
 </div>
+
 </body>
 </html>`;
 
   const win = window.open('', '_blank', 'width=900,height=1200');
   if (!win) {
-    alert('Permita pop-ups para gerar a ficha PDF.');
+    alert('Permita pop-ups para gerar a ficha lendária.');
     return;
   }
   win.document.write(html);

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // BG3 Inspired Dice Roller
 export default function DiceRollerBG3({ skillName, modifier, onClose }) {
@@ -123,14 +123,22 @@ export default function DiceRollerBG3({ skillName, modifier, onClose }) {
           </div>
         </div>
 
-        {/* Critical Text */}
-        <div className={`absolute -bottom-16 w-64 text-center transition-all duration-500 ${
-          showResult && isCritSuccess ? 'opacity-100 translate-y-0 text-amber-400 font-black tracking-widest uppercase text-xl' :
-          showResult && isCritFail ? 'opacity-100 translate-y-0 text-red-500 font-black tracking-widest uppercase text-xl' :
+        {/* Critical Text & VFX */}
+        <div className={`absolute -bottom-16 w-64 text-center transition-all duration-700 ${
+          showResult && isCritSuccess ? 'opacity-100 translate-y-0 text-amber-400 font-black tracking-[0.3em] uppercase text-xl drop-shadow-[0_0_15px_rgba(251,191,36,0.8)] animate-bounce' :
+          showResult && isCritFail ? 'opacity-100 translate-y-0 text-red-500 font-black tracking-[0.3em] uppercase text-xl drop-shadow-[0_0_15px_rgba(220,38,38,0.8)]' :
           'opacity-0 translate-y-4'
         }`}>
-          {isCritSuccess ? 'Sucesso Cr├¡tico!' : isCritFail ? 'Falha Cr├¡tica!' : ''}
+          {isCritSuccess ? 'Sucesso Crítico!' : isCritFail ? 'Falha Crítica!' : ''}
         </div>
+        
+        {/* Legendary Burst (only on 20) */}
+        {showResult && isCritSuccess && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 bg-amber-400/20 blur-[100px] animate-pulse rounded-full" />
+            <div className="absolute -inset-20 border-4 border-amber-500/20 rounded-full animate-ping" />
+          </div>
+        )}
       </div>
 
       {/* Dismiss Instruction */}

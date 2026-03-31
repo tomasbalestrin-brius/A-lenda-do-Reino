@@ -70,28 +70,35 @@ const EditBtn = ({ step, onNavigate, label = 'Editar' }) =>
   ) : null;
 
 const StatItem = React.memo(({ label, value, detail, color, icon }) => (
-  <div className="bg-gray-950/80 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-white/20 transition-all cursor-help">
+  <div className="bg-gray-950/80 p-4 md:p-6 rounded-[1.5rem] md:rounded-[2rem] border border-white/5 flex flex-col items-center justify-center shadow-2xl relative group/stat hover:border-amber-500/30 transition-all cursor-help">
      <div className={`absolute top-0 inset-x-0 h-1.5 ${color} opacity-30 rounded-t-[2rem] group-hover/stat:opacity-60 transition-opacity`} />
      <span className="text-3xl font-black text-white mb-1">{value}</span>
      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{label}</span>
      
      {/* Detailed Breakdown Tooltip */}
-     <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-56 bg-gray-900/95 border border-white/10 p-4 rounded-3xl opacity-0 group-hover/stat:opacity-100 pointer-events-none transition-all z-50 shadow-[0_20px_50px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-        <div className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-3 pb-2 border-b border-white/5">Breakdown: {label}</div>
-        <div className="space-y-2">
-           {detail?.map((d, i) => (
-             <div key={i} className="flex justify-between items-center text-[10px] font-bold">
-               <span className="text-slate-400">{d.label}</span>
-               <span className="text-white bg-white/5 px-2 py-0.5 rounded-lg">{d.value >= 0 ? '+' : ''}{d.value}</span>
+     {detail && detail.length > 0 && (
+       <div className="absolute bottom-full mb-4 left-1/2 -translate-x-1/2 w-64 bg-gray-900/98 border border-white/10 p-5 rounded-[2rem] opacity-0 group-hover/stat:opacity-100 pointer-events-none transition-all z-50 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl scale-95 group-hover/stat:scale-100">
+          <div className="text-[11px] font-black text-amber-500 uppercase tracking-widest mb-4 pb-2 border-b border-white/5 flex items-center justify-between">
+            <span>Fontes de {label}</span>
+            <span className="text-[9px] text-slate-500">JdA Stacking</span>
+          </div>
+          <div className="space-y-2.5">
+             {detail.map((d, i) => (
+               <div key={i} className="flex justify-between items-center text-[10px] font-bold">
+                 <span className="text-slate-400 max-w-[170px] truncate">{d.label}</span>
+                 <span className="text-white bg-white/5 px-2.5 py-1 rounded-lg border border-white/5 shrink-0">
+                   {d.value >= 0 ? '+' : ''}{d.value}
+                 </span>
+               </div>
+             ))}
+             <div className="pt-3 border-t border-white/10 mt-3 flex justify-between items-center text-[12px] font-black">
+                <span className="text-slate-500 uppercase">Resultado Final</span>
+                <span className="text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]">{value}</span>
              </div>
-           ))}
-           <div className="pt-2 border-t border-white/5 mt-2 flex justify-between items-center text-[11px] font-black">
-              <span className="text-slate-500 uppercase">Total</span>
-              <span className="text-amber-500">{value}</span>
-           </div>
-        </div>
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-900 rotate-45 border-r border-b border-white/10" />
-     </div>
+          </div>
+          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-900 rotate-45 border-r border-b border-white/10" />
+       </div>
+     )}
   </div>
 ));
 
@@ -218,6 +225,21 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className="relative rounded-[3.5rem] overflow-hidden border border-white/5 shadow-[0_0_80px_rgba(0,0,0,0.6)]"
       >
+        {/* Equipment Warning Card */}
+        {hasEquipmentPenalty && (
+          <div className="p-6 bg-rose-950/30 border-b border-rose-500/40 backdrop-blur-xl flex flex-col md:flex-row items-center gap-6">
+            <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-2xl shrink-0 animate-pulse">⚠️</div>
+            <div className="flex-1">
+              <h3 className="text-sm font-black text-rose-400 uppercase tracking-tighter mb-1">Aviso de Equipamento</h3>
+              <p className="text-slate-400 text-[11px] font-medium">
+                {stats.profPenalty && "Você está usando itens sem a proficiência necessária (-5 em testes). "}
+                {stats.strPenalty && "Você não possui Força mínima (15) para sua armadura pesada (Desl. -3m e Perícias -2)."}
+              </p>
+            </div>
+            <button onClick={() => onNavigate(9)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl border border-rose-500/30 text-[10px] font-black uppercase tracking-widest transition-all">Corrigir</button>
+          </div>
+        )}
+
         {/* Full bleed portrait bg */}
         <div className="absolute inset-0 z-0">
           {(char.portrait || RACE_IMAGES[char.raca]) && (
@@ -228,12 +250,16 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 p-6 md:p-10 min-w-0">
-          {/* Portrait */}
-          <div className="shrink-0 w-24 h-24 md:w-36 md:h-36 rounded-[2rem] border-2 border-amber-500/50 overflow-hidden shadow-[0_0_60px_rgba(245,158,11,0.25)] bg-gray-950">
-            {(char.portrait || RACE_IMAGES[char.raca])
-              ? <img src={char.portrait || RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
-              : <span className="w-full h-full flex items-center justify-center text-6xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
-            }
+          {/* Portfolio Aura & Portrait */}
+          <div className="relative group/auras">
+            {/* Animated Aura (The Legend Glow) */}
+            <div className="absolute -inset-4 bg-gradient-to-tr from-amber-500/20 via-purple-500/10 to-blue-500/20 rounded-[2.5rem] blur-2xl opacity-0 group-hover/auras:opacity-100 transition-opacity duration-1000 animate-pulse" />
+            <div className="shrink-0 w-24 h-24 md:w-36 md:h-36 rounded-[2rem] border-2 border-amber-500/50 overflow-hidden shadow-[0_0_60px_rgba(245,158,11,0.25)] bg-gray-950 relative z-10">
+              {(char.portrait || RACE_IMAGES[char.raca])
+                ? <img src={char.portrait || RACE_IMAGES[char.raca]} alt="" className="w-full h-full object-cover" />
+                : <span className="w-full h-full flex items-center justify-center text-6xl">{CLASS_ICONS[char.classe] || '⚔️'}</span>
+              }
+            </div>
           </div>
 
           {/* Identity */}
@@ -332,6 +358,23 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
           </div>
         </motion.div>
 
+        {/* Traits Grid */}
+        {stats.traits && stats.traits.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.traits.map((trait, i) => (
+              <div key={i} className="p-4 rounded-[1.5rem] bg-gray-950/40 border border-white/5 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-lg shrink-0">
+                  {trait.includes('Cura') ? '💊' : trait.includes('Imun') ? '🛡️' : '✨'}
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mb-1">Traço de Raça</p>
+                  <p className="text-[11px] text-slate-300 font-medium leading-relaxed">{trait}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Card: Essência */}
           <div className="lg:col-span-2 bg-gray-900/40 rounded-[2rem] md:rounded-[3.5rem] border border-white/5 p-5 md:p-10 backdrop-blur-md shadow-2xl flex flex-col gap-10 relative overflow-hidden group/essence">
@@ -389,15 +432,15 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             </div>
 
             {/* Atributos */}
-            <div className="relative z-10 mt-6 grid grid-cols-3 md:grid-cols-6 gap-3">
+            <div className="relative z-10 mt-6 grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3">
               {ATTR_LABELS.map(({ key, label, color, bg }) => {
                 const val = stats?.attrs?.[key] ?? 0;
                 return (
-                  <div key={key} className="bg-gray-950/80 rounded-2xl border border-white/5 p-3 flex flex-col items-center gap-1 relative overflow-hidden">
-                    <div className={`absolute top-0 inset-x-0 h-1 ${bg} opacity-20 rounded-t-2xl`} />
-                    <span className={`text-xl font-black ${color}`}>{val >= 0 ? '+' : ''}{val}</span>
-                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{key}</span>
-                    <span className="text-[7px] text-slate-700 font-medium hidden md:block">{label}</span>
+                  <div key={key} className="bg-gray-950/80 rounded-xl md:rounded-2xl border border-white/5 p-2 md:p-3 flex flex-col items-center gap-1 relative overflow-hidden">
+                    <div className={`absolute top-0 inset-x-0 h-1 ${bg} opacity-20`} />
+                    <span className={`text-lg md:text-xl font-black ${color}`}>{val >= 0 ? '+' : ''}{val}</span>
+                    <span className="text-[7px] md:text-[8px] font-black text-slate-600 uppercase tracking-widest">{key}</span>
+                    <span className="text-[6px] md:text-[7px] text-slate-700 font-medium hidden md:block">{label}</span>
                   </div>
                 );
               })}
@@ -412,35 +455,63 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
 
             {/* Resistências */}
             <div className="relative z-10 mt-6 grid grid-cols-3 gap-4">
-              <StatItem label="Fort" value={(stats?.fort >= 0 ? '+' : '') + (stats?.fort || 0)} detail={stats?.details?.saves?.fort} color="bg-emerald-500" />
-              <StatItem label="Ref" value={(stats?.ref >= 0 ? '+' : '') + (stats?.ref || 0)} detail={stats?.details?.saves?.ref} color="bg-sky-500" />
-              <StatItem label="Von" value={(stats?.von >= 0 ? '+' : '') + (stats?.von || 0)} detail={stats?.details?.saves?.von} color="bg-purple-500" />
+              <StatItem label="Fort" value={(stats?.fort >= 0 ? '+' : '') + (stats?.fort || 0)} detail={stats?.details?.fort} color="bg-emerald-500" />
+              <StatItem label="Ref" value={(stats?.ref >= 0 ? '+' : '') + (stats?.ref || 0)} detail={stats?.details?.ref} color="bg-sky-500" />
+              <StatItem label="Von" value={(stats?.von >= 0 ? '+' : '') + (stats?.von || 0)} detail={stats?.details?.von} color="bg-purple-500" />
             </div>
 
             <div className="relative z-10 mt-6 flex flex-wrap gap-4">
-               <div className="bg-amber-950/30 border border-amber-500/20 px-6 py-3 rounded-2xl flex items-center gap-3">
+               <div className="bg-amber-950/30 border border-amber-500/20 px-6 py-3 rounded-2xl flex items-center gap-3 relative group/mini cursor-help">
                   <span className="text-xl">🏃</span>
                   <div>
                     <p className="text-[8px] uppercase font-black text-amber-500/60 leading-none mb-1">Deslocamento</p>
-                    <p className="text-sm font-black text-white leading-none">{stats?.deslocamento}m{stats?.armorPenalty > 0 ? <span className="text-[9px] text-rose-400/70 ml-1">(-{stats.armorPenalty}m armadura)</span> : null}</p>
+                    <p className="text-sm font-black text-white leading-none">{stats?.deslocamento}m</p>
                   </div>
+                  {/* Mini Tooltip */}
+                  {stats?.details?.deslocamento && (
+                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-gray-900/98 p-4 rounded-2xl opacity-0 group-hover/mini:opacity-100 transition-all pointer-events-none border border-white/10 z-50">
+                       <p className="text-[9px] font-black uppercase text-amber-500 mb-2 border-b border-white/5 pb-1">Deslocamento</p>
+                       <div className="space-y-1.5">
+                          {stats.details.deslocamento.map((d, i) => (
+                            <div key={i} className="flex justify-between text-[9px] font-bold">
+                              <span className="text-slate-400">{d.label}</span>
+                              <span className="text-white">{d.value}m</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  )}
                </div>
                
                {stats?.spellDC > 10 && (
-                 <div className="bg-purple-950/30 border border-purple-500/20 px-6 py-3 rounded-2xl flex items-center gap-3">
+                 <div className="bg-purple-950/30 border border-purple-500/20 px-6 py-3 rounded-2xl flex items-center gap-3 relative group/mini cursor-help">
                     <span className="text-xl">🔮</span>
                     <div>
                       <p className="text-[8px] uppercase font-black text-purple-500/60 leading-none mb-1">CD de Magia</p>
                       <p className="text-sm font-black text-white leading-none">{stats?.spellDC}</p>
                     </div>
+                    {/* Mini Tooltip */}
+                    {stats?.details?.spellCD && (
+                      <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 bg-gray-900/98 p-4 rounded-2xl opacity-0 group-hover/mini:opacity-100 transition-all pointer-events-none border border-white/10 z-50">
+                        <p className="text-[9px] font-black uppercase text-purple-500 mb-2 border-b border-white/5 pb-1">Dificuldade</p>
+                        <div className="space-y-1.5">
+                            {stats.details.spellCD.map((d, i) => (
+                              <div key={i} className="flex justify-between text-[9px] font-bold">
+                                <span className="text-slate-400">{d.label}</span>
+                                <span className="text-white">{d.value >= 0 ? '+' : ''}{d.value}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
                  </div>
                )}
 
-               <div className="bg-slate-900/40 border border-white/5 px-6 py-3 rounded-2xl flex items-center gap-3">
+               <div className={`px-6 py-3 rounded-2xl flex items-center gap-3 border transition-all ${stats?.isOverburdened ? 'bg-rose-950/30 border-rose-500/40 text-rose-400' : 'bg-slate-900/40 border-white/5'}`}>
                   <span className="text-xl">⚖️</span>
                   <div>
-                    <p className="text-[8px] uppercase font-black text-slate-500/60 leading-none mb-1">Carga Máxima</p>
-                    <p className="text-sm font-black text-white leading-none">{stats?.maxLoad}kg</p>
+                    <p className={`text-[8px] uppercase font-black leading-none mb-1 ${stats?.isOverburdened ? 'text-rose-500/60' : 'text-slate-500/60'}`}>Carga ({stats?.totalWeight?.toFixed(1)}kg)</p>
+                    <p className="text-sm font-black leading-none">{stats?.isOverburdened ? 'SOBRECARGA' : `${stats?.maxLoad}kg máx`}</p>
                   </div>
                </div>
 
@@ -576,7 +647,7 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
               <div className="bg-gray-950/60 rounded-[2rem] md:rounded-[3.5rem] border border-purple-500/10 p-5 md:p-10 shadow-2xl flex flex-col gap-8">
                 <div className="flex items-center gap-4">
                   <span className="w-3 h-3 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,1)]" />
-                  <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Magias Conhecidas</p>
+                  <p className="text-[11px] uppercase font-black text-slate-400 tracking-[0.4em]">Magias & Aprimoramentos</p>
                   <EditBtn step={9} onNavigate={onNavigate} />
                   {stats?.spellDC > 10 && (
                     <span className="ml-auto text-[10px] text-purple-400 font-black uppercase tracking-widest bg-purple-900/20 border border-purple-500/20 px-3 py-1 rounded-full">
@@ -584,16 +655,65 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {allSpells.map((spell, i) => {
                     const s = typeof spell === 'string' ? { nome: spell } : spell;
+                    const spellId = s.nome.toLowerCase().replace(/\s+/g, '_');
+                    const enh = char.spellEnhancements?.[spellId] || { pm: 0, desc: '' };
                     const circleLabel = s.circulo ? `${s.circulo}º` : null;
+                    const basePM = s.custo || 1;
+                    const totalPM = basePM + (Number(enh.pm) || 0);
+
                     return (
-                      <span key={i} className="px-4 py-2.5 bg-purple-900/10 border border-purple-500/20 rounded-2xl text-[11px] font-black text-purple-300 uppercase tracking-wider flex items-center gap-2 hover:bg-purple-500/20 transition-colors">
-                        <span className="text-sm">✦</span>
-                        {s.nome}
-                        {circleLabel && <span className="text-[9px] text-purple-500 font-black">{circleLabel}</span>}
-                      </span>
+                      <div key={i} className="bg-black/60 rounded-3xl border border-purple-500/10 p-5 group/spell hover:border-purple-500/30 transition-all flex flex-col gap-4">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-3">
+                            <span className="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-sm">✦</span>
+                            <div>
+                               <h4 className="text-sm font-black text-purple-300 uppercase leading-none">{s.nome}</h4>
+                               {circleLabel && <span className="text-[9px] text-purple-500 font-black uppercase tracking-tight">{circleLabel} Círculo</span>}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Custo de PM</p>
+                             <p className="text-lg font-black text-purple-400 drop-shadow-md">{totalPM} PM</p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                           <div className="flex gap-2">
+                              <div className="flex-1">
+                                <p className="text-[8px] font-black text-slate-600 uppercase mb-1">PM Extra</p>
+                                <input 
+                                  type="number"
+                                  min="0"
+                                  value={enh.pm}
+                                  onChange={(e) => {
+                                    const val = parseInt(e.target.value) || 0;
+                                    updateChar({ 
+                                      spellEnhancements: { ...char.spellEnhancements, [spellId]: { ...enh, pm: val } } 
+                                    });
+                                  }}
+                                  className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs font-black text-white focus:outline-none focus:border-purple-500/40"
+                                  placeholder="0 PM"
+                                />
+                              </div>
+                              <div className="flex-[3]">
+                                <p className="text-[8px] font-black text-slate-600 uppercase mb-1">Aprimoramento / Nota</p>
+                                <input 
+                                  value={enh.desc}
+                                  onChange={(e) => {
+                                    updateChar({ 
+                                      spellEnhancements: { ...char.spellEnhancements, [spellId]: { ...enh, desc: e.target.value } } 
+                                    });
+                                  }}
+                                  className="w-full bg-black/40 border border-white/5 rounded-xl px-3 py-2 text-xs font-medium text-slate-300 focus:outline-none focus:border-purple-500/40"
+                                  placeholder="Ex: Aumenta dano, alvo extra..."
+                                />
+                              </div>
+                           </div>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>

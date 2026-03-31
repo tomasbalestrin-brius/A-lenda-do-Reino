@@ -23,13 +23,60 @@ export function StepProgression({ stats }) {
 
   // Poderes não-empilháveis já escolhidos em outros níveis ou em poderesGerais
   const STACKABLE_POWERS = new Set(['Aumento de Atributo', 'Conhecimento Mágico']);
+  
+  // Cascading Validation: Checks every level in sequence to ensure prerequisites 
+  // are still met after any changes in earlier levels.
+  const validationResults = useMemo(() => {
+    const results = {};
+    const mockChar = { ...char, levelChoices: {} };
+    
+    // Validate levels 2 to current level in order
+    for (let i = 2; i <= level; i++) {
+      const choice = char.levelChoices?.[i];
+      if (!choice) {
+        results[i] = { ok: true };
+        continue;
+      }
+
+      const powerData = [...allClassPowers, ...allGeneralPowers].find(p => p.nome === choice.nome);
+      if (powerData) {
+        // We use a simplified check here or the full one. 
+        // For performance, we'll use checkPowerEligibility with current mockChar.
+        // Important: checkPowerEligibility needs the stats from the mockChar up to level i-1
+        const mockStats = { attrs: char.atributos }; // T20 JdA: Attributes from leveling only count for future levels.
+        
+        // Build mockStats for current level including previous level attribute increases
+        Object.entries(mockChar.levelChoices).forEach(([lvl, c]) => {
+          if (c?.nome === 'Aumento de Atributo' && c.escolha) {
+            mockStats.attrs = { ...mockStats.attrs, [c.escolha]: (mockStats.attrs[c.escolha] || 0) + 1 };
+          }
+        });
+
+        const eligibility = checkPowerEligibility(powerData, { ...mockChar, level: i }, mockStats);
+        results[i] = eligibility;
+        
+        // If valid, add it to mockChar so level i+1 can use it as a prerequisite
+        if (eligibility.ok) {
+          mockChar.levelChoices[i] = choice;
+        }
+      } else {
+        results[i] = { ok: true };
+      }
+    }
+    return results;
+  }, [char, allClassPowers, allGeneralPowers, level]);
+
   const takenPowerNames = useMemo(() => {
     const names = new Set();
-    Object.values(selecoes).forEach(choice => {
-      if (choice?.nome && !STACKABLE_POWERS.has(choice.nome)) names.add(choice.nome);
+    Object.entries(selecoes).forEach(([lvl, choice]) => {
+      // Only count valid powers for the "taken" list to avoid blocking 
+      // someone from picking a power because an invalid choice of it exists elsewhere.
+      if (choice?.nome && !STACKABLE_POWERS.has(choice.nome) && validationResults[lvl]?.ok) {
+        names.add(choice.nome);
+      }
     });
     return names;
-  }, [selecoes]);
+  }, [selecoes, validationResults]);
 
   const handleSelectPower = (lvl, power) => {
     const isRemove = selecoes[lvl]?.id === power.nome;
@@ -245,7 +292,7 @@ export function StepProgression({ stats }) {
               animate={{ opacity: 1, x: 0 }}
               className="bg-gray-900/40 rounded-[2.5rem] border border-white/5 overflow-hidden shadow-xl backdrop-blur-sm"
             >
-               <div className="px-4 py-4 md:px-8 md:py-5 bg-gray-950/60 flex items-center justify-between gap-2 border-b border-white/5">
+                <div className="px-4 py-4 md:px-8 md:py-5 bg-gray-950/60 flex items-center justify-between gap-2 border-b border-white/5">
                   <div className="flex items-center gap-3 shrink-0">
                     <span className="w-2 h-2 bg-amber-500 rounded-full shadow-[0_0_10px_rgba(245,158,11,1)] shrink-0" />
                     <h3 className="text-base md:text-xl font-black text-white italic">Nível {lvl}</h3>
@@ -253,13 +300,22 @@ export function StepProgression({ stats }) {
                   <div className="flex items-center gap-2 min-w-0">
                     {selectedPowerName ? (
                       <>
-                        <div className="px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-1.5 min-w-0">
-                          <span className="text-[9px] md:text-[10px] text-emerald-400 font-black uppercase tracking-widest truncate">Poder Definido</span>
-                          <span className="text-xs shrink-0">✨</span>
-                        </div>
+                        {validationResults[lvl]?.ok === false ? (
+                          <div className="px-3 py-1.5 bg-rose-950/60 border border-rose-500/60 rounded-full flex items-center gap-1.5 animate-pulse shadow-[0_0_15px_rgba(244,63,94,0.3)]">
+                            <span className="text-[9px] md:text-[10px] text-rose-400 font-black uppercase tracking-widest">
+                              [INVÁLIDO: {validationResults[lvl].reason}]
+                            </span>
+                            <span className="text-xs shrink-0">⚠️</span>
+                          </div>
+                        ) : (
+                          <div className="px-3 py-1.5 bg-emerald-950/40 border border-emerald-500/40 rounded-full flex items-center gap-1.5 min-w-0">
+                            <span className="text-[9px] md:text-[10px] text-emerald-400 font-black uppercase tracking-widest truncate">Poder Definido</span>
+                            <span className="text-xs shrink-0">✨</span>
+                          </div>
+                        )}
                         <button
                           onClick={() => updateChar({ levelChoices: { ...selecoes, [lvl]: null } })}
-                          className="px-3 py-1.5 bg-rose-950/40 border border-rose-500/30 rounded-full text-rose-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-950/60 transition-all"
+                          className="px-3 py-1.5 bg-rose-950/40 border border-rose-500/30 rounded-full text-rose-400 text-[9px] font-black uppercase tracking-widest hover:bg-rose-950/60 transition-all shadow-inner"
                           title="Limpar escolha deste nível"
                         >✕ Limpar</button>
                       </>
