@@ -479,9 +479,18 @@ export function StepEquipment() {
                     className="text-2xl font-black text-amber-500 bg-transparent text-center w-32 outline-none border-b border-amber-500 relative z-10"
                   />
                 ) : (
-                  <button onClick={() => setEditingGold(true)} className="text-3xl font-black text-amber-500 tabular-nums relative z-10 hover:underline decoration-amber-500/40 decoration-dashed">
+                  <button onClick={() => setEditingGold(true)} className={`text-3xl font-black tabular-nums relative z-10 hover:underline decoration-dashed transition-colors ${char.dinheiro < 0 ? 'text-rose-500 decoration-rose-500/40' : 'text-amber-500 decoration-amber-500/40'}`}>
                     T$ {(char.dinheiro || 0).toLocaleString('pt-BR')}
                   </button>
+                )}
+                {char.dinheiro < 0 && (
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.9 }} 
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-rose-600 text-[8px] font-black text-white px-2 py-0.5 rounded-full uppercase tracking-widest whitespace-nowrap shadow-lg z-20"
+                  >
+                    Saldo Negativo!
+                  </motion.div>
                 )}
             </div>
             
@@ -824,7 +833,7 @@ export function StepEquipment() {
             />
             <motion.div 
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative w-full max-w-2xl bg-gray-950 border border-amber-500/30 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+              className="relative w-full max-w-2xl bg-gray-950 border border-amber-500/30 rounded-[2rem] md:rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] md:max-h-[90vh]"
             >
               <div className="p-5 md:p-8 border-b border-white/5 bg-gradient-to-r from-amber-950/20 to-transparent">
                 <h3 className="text-2xl font-black text-white italic tracking-tighter">Customizar: {ITENS[customizingItem.id]?.nome}</h3>
@@ -1003,10 +1012,10 @@ export function StepEquipment() {
                 </div>
               </div>
 
-              <div className="p-4 md:p-8 border-t border-white/5 flex justify-end">
+              <div className="p-4 md:p-6 border-t border-white/5 flex justify-end shrink-0 bg-gray-950/80 backdrop-blur-md">
                 <button 
                   onClick={() => setCustomizingItem(null)}
-                  className="px-10 py-3 bg-white hover:bg-slate-100 text-gray-950 rounded-2xl font-black uppercase tracking-widest text-xs transition-all"
+                  className="w-full md:w-auto px-10 py-3 bg-white hover:bg-slate-100 text-gray-950 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-[10px] md:text-xs transition-all shadow-xl"
                 >
                   Fechar
                 </button>

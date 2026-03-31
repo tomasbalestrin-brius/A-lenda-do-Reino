@@ -134,35 +134,11 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
   const [levelUpOpen, setLevelUpOpen] = useState(false);
   const [rollCombat, setRollCombat] = useState(null);
 
-  const getSkillModifier = React.useCallback((skillName) => {
-    const halfLevel = Math.floor((char.level || 1) / 2);
-    let attrKey = 'INT';
-    if (['Acrobacia', 'Furtividade', 'Iniciativa', 'Ladinagem', 'Piloto', 'Pontaria', 'Reflexos'].includes(skillName)) attrKey = 'DES';
-    if (['Atletismo', 'Luta'].includes(skillName)) attrKey = 'FOR';
-    if (['Fortitude'].includes(skillName)) attrKey = 'CON';
-    if (['Adestramento', 'Cura', 'Intuição', 'Percepção', 'Sobrevivência', 'Vontade'].includes(skillName)) attrKey = 'SAB';
-    if (['Atuação', 'Diplomacia', 'Enganação', 'Intimidação'].includes(skillName)) attrKey = 'CAR';
-    
-    const isTrained = (char.pericias || []).includes(skillName) || allPericias.has(skillName);
-    let total = halfLevel + (stats?.attrs?.[attrKey] || 0) + (isTrained ? 2 : 0);
-    
-    if (stats?.armorPenalty && stats?.armorPenaltyPericias?.includes(skillName)) {
-      total -= stats.armorPenalty;
-    }
-
-    if (skillName === 'Furtividade' && stats?.sizeModFurtividade) {
-      total += stats.sizeModFurtividade;
-    }
-    
-    return total;
-  }, [char.level, char.pericias, allPericias, stats?.attrs, stats?.armorPenalty, stats?.armorPenaltyPericias, stats?.sizeModFurtividade]);
-
   const skillList = React.useMemo(() => {
-    return [...allPericias].sort().map(p => ({
-      name: p,
-      modifier: getSkillModifier(p)
-    }));
-  }, [allPericias, getSkillModifier]);
+    return Object.values(stats?.skills || {})
+      .filter(s => s.isTrained)
+      .sort((a, b) => a.nome.localeCompare(b.nome));
+  }, [stats?.skills]);
 
   const startTest = (name, modifier) => {
     setRollTest({ name, modifier });
@@ -503,9 +479,9 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
                     onClick={() => startTest(s.name, s.modifier)}
                     className="w-full flex items-center justify-between p-4 rounded-2xl bg-black/40 border border-white/5 hover:border-blue-500/40 transition-all group shadow-inner"
                   >
-                    <span className="text-xs font-black text-slate-300 uppercase tracking-wide group-hover:text-blue-300 transition-colors">{s.name}</span>
+                    <span className="text-xs font-black text-slate-300 uppercase tracking-wide group-hover:text-blue-300 transition-colors uppercase">{s.nome}</span>
                     <div className="flex items-center gap-4">
-                      <span className="text-lg font-black text-white drop-shadow-md">{(s.modifier >= 0 ? '+' : '') + s.modifier}</span>
+                      <span className="text-lg font-black text-white drop-shadow-md">{(s.total >= 0 ? '+' : '') + s.total}</span>
                       <span className="text-xl opacity-0 group-hover:opacity-100 transition-opacity -rotate-12 group-hover:rotate-0 inline-block">🎲</span>
                     </div>
                   </motion.button>
@@ -531,45 +507,56 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
                   <motion.div 
                     key={atk.uid}
                     initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    whileHover={{ y: -5, borderColor: 'rgba(245,158,11,0.5)', backgroundColor: 'rgba(245,158,11,0.05)' }}
                     onClick={() => setRollCombat(atk)}
-                    className="bg-black/40 border border-white/5 rounded-[2.5rem] p-6 relative overflow-hidden group hover:border-orange-500/50 hover:bg-orange-500/5 transition-all shadow-inner cursor-pointer"
+                    className="bg-black/60 border border-white/10 rounded-[2.5rem] p-6 relative overflow-hidden group shadow-2xl cursor-pointer transition-all"
                   >
-                    <div className="absolute top-4 right-4 text-orange-500 opacity-0 group-hover:opacity-100 transition-all transform scale-50 group-hover:scale-100">🎲</div>
-                    <div className="absolute top-0 right-0 p-6 opacity-5 text-4xl group-hover:scale-110 transition-transform">⚔️</div>
-                    <div className="mb-4">
-                      <h4 className="text-lg font-black text-white uppercase tracking-tight truncate">{atk.nome}</h4>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {atk.material && (
-                           <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{atk.material}</span>
-                        )}
-                        {atk.melhorias?.map(m => {
-                          const mod = Object.values(MELHORIAS).flat().find(mod => mod.id === m);
-                          return (
-                            <span key={m} className="text-[8px] font-black text-amber-500 uppercase tracking-widest">
-                              {mod?.nome || m}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    {/* Decorative Background */}
+                    <div className="absolute -right-4 -bottom-4 opacity-5 text-8xl rotate-12 group-hover:scale-110 transition-transform">⚔️</div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
-                        <span className="text-[8px] font-black text-slate-500 uppercase">Ataque</span>
-                        <span className="text-xl font-black text-orange-400">{atk.bonusAtk >= 0 ? '+' : ''}{atk.bonusAtk}</span>
+                    <div className="relative z-10 flex flex-col gap-4">
+                      <div className="flex justify-between items-start">
+                        <div className="min-w-0">
+                          <h4 className="text-base font-black text-white uppercase tracking-tight truncate group-hover:text-orange-400 transition-colors">{atk.nome}</h4>
+                          <div className="flex flex-wrap gap-1.5 mt-1">
+                            {atk.material && (
+                               <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 text-[7px] font-black text-indigo-400 uppercase tracking-widest">{atk.material}</span>
+                            )}
+                            {atk.melhorias?.map(m => {
+                              const mod = Object.values(MELHORIAS).flat().find(mod => mod.id === m);
+                              return (
+                                <span key={m} className="px-2 py-0.5 rounded-md bg-amber-500/20 text-[7px] font-black text-amber-500 uppercase tracking-widest">
+                                  {mod?.nome || m}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
+                        <div className="bg-amber-500/20 p-2 rounded-xl text-amber-500 group-hover:scale-110 transition-transform">🎲</div>
                       </div>
-                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center border border-white/5">
-                        <span className="text-[8px] font-black text-slate-500 uppercase">Dano</span>
-                        <span className="text-xl font-black text-white">{atk.dano}</span>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center border border-white/5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">Ataque</span>
+                          <span className="text-xl font-black text-orange-400 drop-shadow-lg italic">
+                            {(typeof atk.bonusAtk === 'number' || !atk.bonusAtk.includes('+')) ? (atk.bonusAtk >= 0 ? '+' : '') : ''}{atk.bonusAtk}
+                          </span>
+                        </div>
+                        <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center border border-white/5">
+                          <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter mb-1">Dano</span>
+                          <span className="text-xl font-black text-white drop-shadow-lg italic">{atk.dano}</span>
+                        </div>
                       </div>
-                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
-                        <span className="text-[8px] font-black text-slate-500 uppercase">Crítico</span>
-                        <span className="text-xs font-black text-rose-400">{atk.critico}</span>
-                      </div>
-                      <div className="bg-white/5 rounded-2xl p-3 flex flex-col items-center">
-                        <span className="text-[8px] font-black text-slate-500 uppercase">Alcance</span>
-                        <span className="text-[10px] font-black text-slate-400">{atk.alcance}</span>
+
+                      <div className="flex gap-2">
+                        <div className="flex-1 bg-gray-950/60 rounded-xl px-3 py-2 flex justify-between items-center border border-white/5">
+                          <span className="text-[8px] font-black text-slate-600 uppercase">Crítico</span>
+                          <span className="text-[10px] font-bold text-rose-400">{atk.critico}x{atk.multiplicador}</span>
+                        </div>
+                        <div className="flex-1 bg-gray-950/60 rounded-xl px-3 py-2 flex justify-between items-center border border-white/5">
+                          <span className="text-[8px] font-black text-slate-600 uppercase">Alcance</span>
+                          <span className="text-[10px] font-bold text-slate-400">{atk.alcance}</span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>

@@ -11,18 +11,19 @@ export default function CombatRollerBG3({ weapon, onClose }) {
   const [dmgFaces, setDmgFaces] = useState([]);
   const [totalDmg, setTotalDmg] = useState(0);
 
-  // Parse damage string: "2d6+4"
-  const dmgConfig = useMemo(() => {
-    const diceStr = weapon.dano || '1d6';
-    const regex = /^(\d+)d(\d+)\s*([\+\-]\s*\d+)?$/;
-    const match = diceStr.replace(/\s/g, '').match(regex);
-    if (!match) return { count: 1, type: 6, bonus: 0 };
-    return {
-      count: parseInt(match[1]),
-      type: parseInt(match[2]),
-      bonus: match[3] ? parseInt(match[3]) : 0
-    };
-  }, [weapon.dano]);
+  // Extract numeric base from strings like "19", "18" or "20"
+  const critThreshold = useMemo(() => {
+    const raw = String(weapon.critico || '20');
+    const match = raw.match(/(\d+)/);
+    return match ? parseInt(match[1]) : 20;
+  }, [weapon.critico]);
+
+  // Extract numeric base from strings like "+5 (+2 se...)"
+  const numericAtkBonus = useMemo(() => {
+    if (typeof weapon.bonusAtk === 'number') return weapon.bonusAtk;
+    const match = String(weapon.bonusAtk || '0').match(/^[+-]?\d+/);
+    return match ? parseInt(match[0]) : 0;
+  }, [weapon.bonusAtk]);
 
   useEffect(() => {
     if (stage === 'entering') {
@@ -45,13 +46,18 @@ export default function CombatRollerBG3({ weapon, onClose }) {
     }
 
     if (stage === 'rollingDmg') {
-      const rolls = Array.from({ length: dmgConfig.count }, () => Math.floor(Math.random() * dmgConfig.type) + 1);
+      const isCrit = atkRoll >= critThreshold;
+      const multiplier = isCrit ? (weapon.multiplicador || 2) : 1;
+      
+      // Roll damage based on multiplier if crit
+      const diceCount = dmgConfig.count * multiplier;
+      const rolls = Array.from({ length: diceCount }, () => Math.floor(Math.random() * dmgConfig.type) + 1);
       const total = rolls.reduce((a, b) => a + b, 0) + dmgConfig.bonus;
       setDmgRolls(rolls);
       setTotalDmg(total);
       
       let spin = setInterval(() => {
-        setDmgFaces(Array.from({ length: dmgConfig.count }, () => Math.floor(Math.random() * dmgConfig.type) + 1));
+        setDmgFaces(Array.from({ length: diceCount }, () => Math.floor(Math.random() * dmgConfig.type) + 1));
       }, 50);
 
       setTimeout(() => {
@@ -70,57 +76,79 @@ export default function CombatRollerBG3({ weapon, onClose }) {
     }
   };
 
-  const isCritAtk = atkRoll === 20;
+  const isCritAtk = atkRoll >= critThreshold;
   const isFailAtk = atkRoll === 1;
 
   return (
-    <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/90 backdrop-blur-xl transition-all">
+    <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl transition-all">
       <motion.div 
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 1.1 }}
-        className="w-full max-w-2xl flex flex-col items-center"
+        className="w-full max-w-2xl flex flex-col items-center p-6"
       >
-        <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.5em] mb-4">Combate</span>
-        <h2 className="text-4xl font-black text-white italic tracking-tighter mb-12">{weapon.nome}</h2>
+        <span className="text-[10px] font-black text-amber-500 uppercase tracking-[0.5em] mb-4">Teste de Combate</span>
+        <h2 className="text-4xl md:text-5xl font-black text-white italic tracking-tighter mb-12 text-center drop-shadow-2xl">{weapon.nome}</h2>
 
-        <div className="relative flex items-center justify-center min-h-[300px] w-full">
+        <div className="relative flex items-center justify-center min-h-[350px] w-full">
           {/* ATTACK SECTION */}
           {(stage === 'rollingAtk' || stage === 'resultAtk') && (
             <motion.div 
               key="attack"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center gap-8"
             >
-              <p className="text-xs font-black text-blue-400 uppercase tracking-widest">Jogada de Ataque</p>
+              <p className="text-[10px] font-black text-blue-400 uppercase tracking-[0.3em]">Jogada de Ataque</p>
               
-              <div className="relative w-40 h-40 flex items-center justify-center">
-                <div className={`absolute inset-0 rounded-full border-2 transition-all duration-700 ${stage === 'rollingAtk' ? 'animate-spin border-t-amber-500 border-b-amber-500 opacity-50' : 'border-white/10'}`} />
-                <svg viewBox="0 0 100 100" className={`absolute inset-0 w-full h-full p-2 transition-colors duration-500 ${isCritAtk ? 'text-amber-400' : isFailAtk ? 'text-red-500' : 'text-slate-400 opacity-20'}`}>
-                  <polygon points="50,5 95,30 95,70 50,95 5,70 5,30" fill="currentColor" fillOpacity="0.1" stroke="currentColor" strokeWidth="2" />
+              <div className="relative w-48 h-48 flex items-center justify-center">
+                <div className={`absolute inset-0 rounded-full border-2 transition-all duration-1000 ${stage === 'rollingAtk' ? 'animate-spin border-t-amber-500 border-b-amber-500 opacity-50' : 'border-white/5'}`} />
+                <svg viewBox="0 0 100 100" className={`absolute inset-0 w-full h-full p-2 transition-all duration-500 ${isCritAtk ? 'text-amber-400 drop-shadow-[0_0_20px_rgba(245,158,11,0.4)]' : isFailAtk ? 'text-rose-600' : 'text-slate-400 opacity-20'}`}>
+                  <polygon points="50,5 95,30 95,70 50,95 5,70 5,30" fill="currentColor" fillOpacity="0.05" stroke="currentColor" strokeWidth="1.5" />
                 </svg>
-                <span className={`text-6xl font-black italic ${isCritAtk ? 'text-amber-400' : isFailAtk ? 'text-red-500' : 'text-white'}`}>
+                <span className={`text-7xl font-black italic tracking-tighter transition-all duration-500 ${isCritAtk ? 'text-amber-400 scale-110' : isFailAtk ? 'text-rose-600 opacity-50' : 'text-white'}`}>
                   {atkFace}
                 </span>
                 
                 {stage === 'resultAtk' && (
-                  <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="absolute left-full ml-6 flex items-center gap-4 bg-gray-900 border border-white/10 p-4 rounded-2xl shadow-2xl">
-                    <span className="text-2xl font-black text-slate-500">+</span>
-                    <span className="text-3xl font-black text-slate-300">{weapon.bonusAtk >= 0 ? '+' : ''}{weapon.bonusAtk}</span>
-                    <div className="h-10 w-px bg-white/10 mx-2" />
-                    <span className="text-5xl font-black text-amber-500">{atkRoll + weapon.bonusAtk}</span>
+                  <motion.div 
+                    initial={{ x: 40, opacity: 0, filter: 'blur(10px)' }} 
+                    animate={{ x: 0, opacity: 1, filter: 'blur(0px)' }} 
+                    className="absolute left-full ml-10 flex items-center gap-5 bg-gray-900/80 backdrop-blur-md border border-white/10 p-5 rounded-[2rem] shadow-2xl z-20 min-w-[180px]"
+                  >
+                    <span className="text-2xl font-black text-slate-600">+</span>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Bônus</span>
+                      <span className="text-3xl font-black text-slate-300">{(numericAtkBonus >= 0 ? '+' : '') + numericAtkBonus}</span>
+                    </div>
+                    <div className="h-12 w-px bg-white/10 mx-2" />
+                    <div className="flex flex-col items-end">
+                      <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">Total</span>
+                      <span className="text-6xl font-black text-amber-500 drop-shadow-lg">{atkRoll + numericAtkBonus}</span>
+                    </div>
                   </motion.div>
                 )}
               </div>
 
               {stage === 'resultAtk' && (
                 <div className="flex flex-col items-center gap-6 mt-8">
-                  <p className="text-amber-500/60 font-black uppercase text-[10px] tracking-widest">
-                    {isCritAtk ? 'AMEAÇA DE CRÍTICO!' : isFailAtk ? 'FALHA CRÍTICA...' : 'Ataque Concluído'}
-                  </p>
-                  <button onClick={handleNext} className="px-10 py-4 bg-amber-500 text-gray-950 font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl shadow-amber-900/20 hover:scale-105 active:scale-95 transition-all">
+                  <motion.p 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`font-black uppercase text-xs tracking-[0.3em] px-6 py-2 rounded-full border ${
+                      isCritAtk ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' : 
+                      isFailAtk ? 'text-rose-500 border-rose-500/30 bg-rose-500/10' : 
+                      'text-slate-500 border-white/5 opacity-60'
+                    }`}
+                  >
+                    {isCritAtk ? '🔥 AMEAÇA DE CRÍTICO!' : isFailAtk ? '💀 FALHA CRÍTICA...' : 'Ataque Concluído'}
+                  </motion.p>
+                  <button 
+                    onClick={handleNext} 
+                    className="px-12 py-5 bg-amber-500 hover:bg-amber-400 text-gray-950 font-black uppercase tracking-[0.2em] text-[10px] rounded-2xl shadow-2xl shadow-amber-900/40 hover:scale-105 active:scale-95 transition-all group flex items-center gap-3"
+                  >
                     Rolar Dano ⚔️
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
                   </button>
                 </div>
               )}
@@ -131,42 +159,54 @@ export default function CombatRollerBG3({ weapon, onClose }) {
           {(stage === 'rollingDmg' || stage === 'resultDmg') && (
             <motion.div 
               key="damage"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center gap-8 w-full"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="flex flex-col items-center gap-10 w-full"
             >
-              <p className="text-xs font-black text-rose-500 uppercase tracking-widest">Rolagem de Dano ({weapon.dano})</p>
+              <div className="text-center">
+                <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] mb-2">Rolagem de Dano</p>
+                <h3 className="text-2xl font-black text-white/40 italic">{weapon.dano} {atkRoll >= critThreshold ? <span className="text-amber-500/60">(x{weapon.multiplicador || 2} Crítico)</span> : ''}</h3>
+              </div>
               
-              <div className="flex flex-wrap justify-center gap-6 max-w-lg">
+              <div className="flex flex-wrap justify-center gap-6 max-w-xl">
                 {dmgFaces.map((f, i) => (
-                  <div key={i} className="relative w-24 h-24 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-rose-500/5 rounded-2xl border-2 border-rose-500/20 rotate-45" />
-                    <span className="text-4xl font-black text-white relative z-10">{f}</span>
-                  </div>
+                  <motion.div 
+                    key={i} 
+                    initial={{ scale: 0, rotate: -45 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="relative w-20 h-20 flex items-center justify-center group"
+                  >
+                    <div className="absolute inset-0 bg-rose-500/10 rounded-2xl border-2 border-rose-500/30 rotate-45 group-hover:border-rose-400 transition-colors" />
+                    <span className="text-4xl font-black text-white drop-shadow-lg">{f}</span>
+                  </motion.div>
                 ))}
               </div>
 
               {stage === 'resultDmg' && (
-                <div className="flex flex-col items-center gap-8 mt-4">
-                  <div className="flex items-center gap-6 bg-gray-900 border border-white/10 px-8 py-6 rounded-[2.5rem] shadow-2xl">
+                <div className="flex flex-col items-center gap-10 mt-4 w-full">
+                  <div className="flex items-center gap-8 bg-gray-900/60 backdrop-blur-xl border border-white/10 px-10 py-8 rounded-[3rem] shadow-[0_30px_60px_rgba(0,0,0,0.5)]">
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black text-slate-500 uppercase">Soma</span>
-                      <span className="text-2xl font-black text-slate-300">{dmgRolls.reduce((a,b)=>a+b, 0)}</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Dados</span>
+                      <span className="text-3xl font-black text-slate-300 italic">{dmgRolls.reduce((a,b)=>a+b, 0)}</span>
                     </div>
-                    <span className="text-2xl font-black text-slate-500">+</span>
+                    <span className="text-3xl font-black text-slate-700">+</span>
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black text-slate-500 uppercase">Bônus</span>
-                      <span className="text-2xl font-black text-slate-300">{dmgConfig.bonus}</span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Bônus</span>
+                      <span className="text-3xl font-black text-slate-300 italic">{dmgConfig.bonus}</span>
                     </div>
-                    <div className="h-12 w-px bg-white/10 mx-2" />
+                    <div className="h-16 w-px bg-white/10 mx-2" />
                     <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-black text-rose-500 uppercase">Total</span>
-                      <span className="text-6xl font-black text-white drop-shadow-[0_0_20px_rgba(244,63,94,0.5)]">{totalDmg}</span>
+                      <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1">Dano Total</span>
+                      <span className="text-8xl font-black text-white drop-shadow-[0_0_30px_rgba(244,63,94,0.4)] italic">{totalDmg}</span>
                     </div>
                   </div>
 
-                  <button onClick={handleNext} className="px-10 py-5 bg-white text-gray-950 font-black uppercase tracking-widest text-xs rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all">
-                    Finalizar Combate
+                  <button 
+                    onClick={handleNext} 
+                    className="px-14 py-6 bg-white hover:bg-slate-100 text-gray-950 font-black uppercase tracking-[0.2em] text-[10px] rounded-[2rem] shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                  >
+                    Encerrar Turno 🛡️
                   </button>
                 </div>
               )}

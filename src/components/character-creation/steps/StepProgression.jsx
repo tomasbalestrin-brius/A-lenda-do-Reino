@@ -187,7 +187,7 @@ export function StepProgression({ stats }) {
   const isFullCaster = ['arcanista', 'clerigo'].includes(char.classe?.toLowerCase());
   const maxCircle = isFullCaster
     ? (level >= 17 ? 5 : level >= 13 ? 4 : level >= 9 ? 3 : level >= 5 ? 2 : 1)
-    : (level >= 7 ? 4 : level >= 5 ? 3 : level >= 3 ? 2 : 1);
+    : (level >= 14 ? 4 : level >= 10 ? 3 : level >= 6 ? 2 : 1);
 
   const arcanaCircles = [SPELLS.magiasArcanas1, SPELLS.magiasArcanas2, SPELLS.magiasArcanas3, SPELLS.magiasArcanas4, SPELLS.magiasArcanas5];
   const divinaCircles = [SPELLS.magiasDivinas1, SPELLS.magiasDivinas2, SPELLS.magiasDivinas3, SPELLS.magiasDivinas4, SPELLS.magiasDivinas5];
@@ -210,7 +210,7 @@ export function StepProgression({ stats }) {
     if (!isConjurer) return [];
     const mc = isFullCaster
       ? (lvl >= 17 ? 5 : lvl >= 13 ? 4 : lvl >= 9 ? 3 : lvl >= 5 ? 2 : 1)
-      : (lvl >= 7 ? 4 : lvl >= 5 ? 3 : lvl >= 3 ? 2 : 1);
+      : (lvl >= 14 ? 4 : lvl >= 10 ? 3 : lvl >= 6 ? 2 : 1);
     return spellCircles.slice(0, mc).flatMap(pool => Object.values(pool || {}));
   };
 
@@ -523,9 +523,9 @@ export function StepProgression({ stats }) {
                   <div>
                     <h3 className="text-2xl font-black text-white italic tracking-tighter">Selecionar Magia</h3>
                     {(() => {
-                      const mc = isFullCaster
+                        const mc = isFullCaster
                         ? (activeSpellSlot.lvl >= 17 ? 5 : activeSpellSlot.lvl >= 13 ? 4 : activeSpellSlot.lvl >= 9 ? 3 : activeSpellSlot.lvl >= 5 ? 2 : 1)
-                        : (activeSpellSlot.lvl >= 7 ? 4 : activeSpellSlot.lvl >= 5 ? 3 : activeSpellSlot.lvl >= 3 ? 2 : 1);
+                        : (activeSpellSlot.lvl >= 14 ? 4 : activeSpellSlot.lvl >= 10 ? 3 : activeSpellSlot.lvl >= 6 ? 2 : 1);
                       return <p className="text-[10px] text-purple-400 font-black uppercase tracking-widest mt-1">Nível {activeSpellSlot.lvl} — até {mc}º círculo</p>;
                     })()}
                   </div>

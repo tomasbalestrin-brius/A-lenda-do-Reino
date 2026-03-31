@@ -53,3 +53,36 @@ export const SIZE_MODS = {
 
 // Penalidade de deslocamento por armadura média/pesada
 export const ARMOR_SPEED_PENALTY = 3;
+
+// Mapeamento Perícia → Atributo Chave
+export const SKILL_ATTR_MAP = {
+  Acrobacia: 'DES',
+  Adestramento: 'CAR',
+  Atletismo: 'FOR',
+  Atuação: 'CAR',
+  Cavalgar: 'DES',
+  Conhecimento: 'INT',
+  Cura: 'SAB',
+  Diplomacia: 'CAR',
+  Enganação: 'CAR',
+  Fortitude: 'CON',
+  Furtividade: 'DES',
+  Guerra: 'INT',
+  Iniciativa: 'DES',
+  Intimidação: 'CAR',
+  Intuição: 'SAB',
+  Investigação: 'INT',
+  Jogatina: 'CAR',
+  Ladinagem: 'DES',
+  Luta: 'FOR',
+  Misticismo: 'INT',
+  Nobreza: 'INT',
+  Ofício: 'INT',
+  Percepção: 'SAB',
+  Pilotagem: 'DES',
+  Pontaria: 'DES',
+  Reflexos: 'DES',
+  Religião: 'SAB',
+  Sobrevivência: 'SAB',
+  Vontade: 'SAB',
+};

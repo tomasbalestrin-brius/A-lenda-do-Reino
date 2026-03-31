@@ -49,12 +49,14 @@ export function meetsRequirement(req, char, stats) {
   if (req.level && characterLevel < req.level) return false;
 
   // Habilidade de Classe
-  if (req.habilidade && !char.classeHabilidades?.includes(req.habilidade)) {
-    // Nota: classeHabilidades precisa ser preenchido no store ao selecionar classe
-    // Por enquanto, checamos se a classe é mística se pedir "Magias"
+  if (req.habilidade) {
+    const trainedPowers = getAllOwnedPowers(char);
     if (req.habilidade === "Magias") {
       const mysticalClasses = ["arcanista", "bardo", "clerigo", "druida"];
-      if (!mysticalClasses.includes(char.classe)) return false;
+      const hasSpellPower = trainedPowers.has("Truque Mágico") || trainedPowers.has("Orar") || trainedPowers.has("Elo com a Natureza");
+      if (!mysticalClasses.includes(char.classe) && !hasSpellPower) return false;
+    } else if (!char.classeHabilidades?.includes(req.habilidade)) {
+      return false;
     }
   }
 
@@ -62,11 +64,13 @@ export function meetsRequirement(req, char, stats) {
   if (req.circulo) {
     let maxCirculo = 1;
     const fullCasters = ["arcanista", "clerigo", "druida"];
-    const halfCasters = ["bardo", "paladino", "cacador"];
+    // No JdA, Bardo, Paladino e Caçador (Natureza) seguem a progressão de 1 canhão a cada 4 níveis após o 2º
+    const halfCasters = ["bardo", "paladino", "cacador"]; 
+    
     if (fullCasters.includes(char.classe?.toLowerCase())) {
       maxCirculo = characterLevel >= 17 ? 5 : characterLevel >= 13 ? 4 : characterLevel >= 9 ? 3 : characterLevel >= 5 ? 2 : 1;
     } else if (halfCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 7 ? 4 : characterLevel >= 5 ? 3 : characterLevel >= 3 ? 2 : 1;
+      maxCirculo = characterLevel >= 14 ? 4 : characterLevel >= 10 ? 3 : characterLevel >= 6 ? 2 : 1;
     }
     if (maxCirculo < req.circulo) return false;
   }
@@ -156,7 +160,9 @@ export function checkPowerEligibility(power, char, stats) {
   // Habilidade
   if (req.habilidade === "Magias") {
     const mysticalClasses = ["arcanista", "bardo", "clerigo", "druida"];
-    if (!mysticalClasses.includes(char.classe)) {
+    const trainedPowers = getAllOwnedPowers(char);
+    const hasSpellPower = trainedPowers.has("Truque Mágico") || trainedPowers.has("Orar") || trainedPowers.has("Elo com a Natureza");
+    if (!mysticalClasses.includes(char.classe) && !hasSpellPower) {
       return { ok: false, reason: "Habilidade de lançar magias" };
     }
   }
@@ -169,7 +175,7 @@ export function checkPowerEligibility(power, char, stats) {
     if (fullCasters.includes(char.classe?.toLowerCase())) {
       maxCirculo = characterLevel >= 17 ? 5 : characterLevel >= 13 ? 4 : characterLevel >= 9 ? 3 : characterLevel >= 5 ? 2 : 1;
     } else if (halfCasters.includes(char.classe?.toLowerCase())) {
-      maxCirculo = characterLevel >= 7 ? 4 : characterLevel >= 5 ? 3 : characterLevel >= 3 ? 2 : 1;
+      maxCirculo = characterLevel >= 14 ? 4 : characterLevel >= 10 ? 3 : characterLevel >= 6 ? 2 : 1;
     }
     if (maxCirculo < req.circulo) {
       return { ok: false, reason: `${req.circulo}º Círculo` };
@@ -188,11 +194,6 @@ export function checkPowerEligibility(power, char, stats) {
 
   // Restrição de Aumento de Atributo (JdA)
   if (power.nome === 'Aumento de Atributo' || power.id === 'Aumento de Atributo') {
-    // Nota: Esta verificação é especial pois depende de QUAL atributo está sendo escolhido.
-    // Como a elegibilidade é checada ANTES da escolha no StepProgression,
-    // a o check total ocorre na UI. Mas aqui podemos checar se o herói AINDA PODE 
-    // escolher este poder para ALGUM atributo no patamar atual.
-    
     const getTier = (l) => {
       if (l <= 4) return 1;
       if (l <= 10) return 2;
@@ -201,13 +202,23 @@ export function checkPowerEligibility(power, char, stats) {
     };
 
     const currentTier = getTier(characterLevel);
-    const levelChoices = char.levelChoices || {};
+    const levelChoices = char.levelChoices || {}; // Ex: { 2: { type: 'power', value: 'Aumento de Atributo', attr: 'FOR' } }
     
-    // Contar aumentos no mesmo patamar
-    // No JdA, você pode pegar Aumento de Atributo várias vezes no mesmo patamar, 
-    // mas cada um para um atributo DIFERENTE.
-    // Se todos os 6 atributos já foram aumentados no patamar (improvável), bloqueia.
-    // Mas a lógica real de "Este atributo X já foi aumentado?" deve estar no StepProgression.
+    // Se o check for genérico (sem atributo alvo), sempre retorna OK 
+    // mas a UI deve filtrar os atributos individuais.
+    // Se tivermos power.selectedAttr (passado durante a escolha):
+    if (power.selectedAttr) {
+      const attr = power.selectedAttr;
+      const countsInTier = Object.values(levelChoices).filter(c => 
+        c.value === 'Aumento de Atributo' && 
+        c.attr === attr && 
+        getTier(c.level) === currentTier
+      ).length;
+
+      if (countsInTier >= 1) {
+        return { ok: false, reason: `Já aumentou ${attr} neste patamar` };
+      }
+    }
   }
 
   return { ok: true };

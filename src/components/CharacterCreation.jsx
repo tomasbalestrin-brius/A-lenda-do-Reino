@@ -76,11 +76,17 @@ export default function CharacterCreation() {
   const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar toggle
   const activeStepRefDesktop = useRef(null);
   const activeStepRefMobile = useRef(null);
+  const contentRef = useRef(null);
 
   // Auto-scroll sidebar to current step
   useEffect(() => {
     activeStepRefDesktop.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     activeStepRefMobile.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [step]);
+
+  // RESET scroll content when step changes
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [step]);
 
   // Handle shared character link (?char=base64)
@@ -297,8 +303,10 @@ export default function CharacterCreation() {
       
       {/* ─── MOBILE HEADER BAR (hidden on md+) ─── */}
       {(() => {
-        const totalVisible = STEP_LABELS.filter((_, i) => !shouldSkipStep(i, char, stats)).length;
-        const pct = Math.round((step / (MAX_STEPS - 1)) * 100);
+        const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+        const currentVisibleIndex = visibleSteps.indexOf(step) + 1;
+        const totalVisible = visibleSteps.length;
+        const pct = Math.round(((currentVisibleIndex - 1) / (totalVisible - 1 || 1)) * 100);
         return (
           <div
             className="md:hidden fixed top-0 inset-x-0 z-[30] bg-[#040B16]/95 backdrop-blur-xl border-b border-slate-800/50 flex items-center gap-3 px-4"
@@ -318,7 +326,7 @@ export default function CharacterCreation() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-black text-white truncate">{STEP_LABELS[step]}</span>
-                <span className="text-[10px] font-black text-slate-500 ml-2 shrink-0">{step + 1} / {totalVisible}</span>
+                <span className="text-[10px] font-black text-slate-500 ml-2 shrink-0">{currentVisibleIndex} / {totalVisible}</span>
               </div>
               <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
                 <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -366,36 +374,39 @@ export default function CharacterCreation() {
                 <span className="font-black uppercase tracking-widest text-[10px]">Taverna</span>
               </button>
               <div className="flex-1 flex flex-col gap-0.5 px-3 pb-4 overflow-y-auto mt-2" style={{ scrollbarWidth: 'none' }}>
-                {STEP_LABELS.map((label, i) => {
-                  if (shouldSkipStep(i, char, stats)) return null;
-                  const isCurrent = i === step;
-                  const isCompleted = i < step;
-                  return (
-                    <button
-                      key={i}
-                      ref={isCurrent ? activeStepRefMobile : null}
-                      onClick={() => { if (i < step) { setStep(i); setSidebarOpen(false); } }}
-                      disabled={i > step}
-                      className={`flex items-center gap-3 py-3 px-3 rounded-2xl transition-all relative overflow-hidden ${
-                        isCurrent ? 'bg-amber-900/20 text-amber-500' :
-                        isCompleted ? 'hover:bg-slate-800/50 text-emerald-500 cursor-pointer' :
-                        'text-slate-600 opacity-40 cursor-not-allowed'
-                      }`}
-                    >
-                      {isCurrent && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-amber-500 rounded-r-full" />}
-                      <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
-                        isCurrent ? 'bg-amber-500 text-black' :
-                        isCompleted ? 'bg-emerald-900/30 border border-emerald-500/30' :
-                        'bg-slate-900 border border-slate-800/50'
-                      }`}>
-                        {isCompleted ? '✓' : i + 1}
-                      </div>
-                      <span className={`text-xs font-bold uppercase tracking-wide ${
-                        isCurrent ? 'text-amber-500' : isCompleted ? 'text-slate-300' : 'text-slate-600'
-                      }`}>{label}</span>
-                    </button>
-                  );
-                })}
+                {(() => {
+                  const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+                  return visibleSteps.map((i, idx) => {
+                    const isCurrent = i === step;
+                    const isCompleted = i < step;
+                    const label = STEP_LABELS[i];
+                    return (
+                      <button
+                        key={i}
+                        ref={isCurrent ? activeStepRefMobile : null}
+                        onClick={() => { if (i < step) { setStep(i); setSidebarOpen(false); } }}
+                        disabled={i > step}
+                        className={`flex items-center gap-3 py-3 px-3 rounded-2xl transition-all relative overflow-hidden ${
+                          isCurrent ? 'bg-amber-900/20 text-amber-500' :
+                          isCompleted ? 'hover:bg-slate-800/50 text-emerald-500 cursor-pointer' :
+                          'text-slate-600 opacity-40 cursor-not-allowed'
+                        }`}
+                      >
+                        {isCurrent && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-amber-500 rounded-r-full" />}
+                        <div className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${
+                          isCurrent ? 'bg-amber-500 text-black' :
+                          isCompleted ? 'bg-emerald-900/30 border border-emerald-500/30' :
+                          'bg-slate-900 border border-slate-800/50'
+                        }`}>
+                          {isCompleted ? '✓' : idx + 1}
+                        </div>
+                        <span className={`text-xs font-bold uppercase tracking-wide ${
+                          isCurrent ? 'text-amber-500' : isCompleted ? 'text-slate-300' : 'text-slate-600'
+                        }`}>{label}</span>
+                      </button>
+                    );
+                  });
+                })()}
               </div>
               <div className="px-5 py-4 border-t border-slate-800/60 shrink-0">
                 <p className="text-[10px] text-slate-500 font-medium truncate mb-3">{user?.email}</p>
@@ -419,12 +430,14 @@ export default function CharacterCreation() {
         <div className="flex-1 flex flex-col gap-1 px-3 lg:px-6 pb-6">
           <div className="hidden lg:flex flex-col gap-1.5 mb-4 px-1">
             {(() => {
-              const totalVisible = STEP_LABELS.filter((_, i) => !shouldSkipStep(i, char, stats)).length;
-              const pct = Math.round((step / (totalVisible - 1)) * 100);
+              const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+              const currentVisibleIndex = visibleSteps.indexOf(step) + 1;
+              const totalVisible = visibleSteps.length;
+              const pct = Math.round(((currentVisibleIndex - 1) / (totalVisible - 1 || 1)) * 100);
               return (<>
                 <div className="flex items-center justify-between">
                   <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Progresso</span>
-                  <span className="text-[9px] font-black text-amber-500">{step + 1} / {totalVisible}</span>
+                  <span className="text-[9px] font-black text-amber-500">{currentVisibleIndex} / {totalVisible}</span>
                 </div>
                 <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
                   <div className="h-full bg-amber-500 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
@@ -432,37 +445,40 @@ export default function CharacterCreation() {
               </>);
             })()}
           </div>
-          {STEP_LABELS.map((label, i) => {
-            if (shouldSkipStep(i, char, stats)) return null;
-            const isCurrent = i === step;
-            const isCompleted = i < step;
-            return (
-              <button
-                key={i}
-                ref={isCurrent ? activeStepRefDesktop : null}
-                onClick={() => i < step && setStep(i)}
-                disabled={i > step}
-                className={`flex items-center gap-4 py-3 lg:py-3.5 px-3 rounded-2xl transition-all relative overflow-hidden group ${
-                  isCurrent ? 'bg-amber-900/20 text-amber-500' :
-                  isCompleted ? 'hover:bg-slate-800/50 text-emerald-500 cursor-pointer' :
-                  'text-slate-600 opacity-40 cursor-not-allowed'
-                }`}
-              >
-                {isCurrent && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-amber-500 rounded-r-full shadow-[0_0_10px_rgba(245,158,11,1)]" />}
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black transition-all ${
-                  isCurrent ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/50' :
-                  isCompleted ? 'bg-emerald-900/30 border border-emerald-500/30' :
-                  'bg-slate-900 border border-slate-800/50'
-                }`}>
-                  {isCompleted ? '✓' : i + 1}
-                </div>
-                <span className={`hidden lg:block text-xs font-bold uppercase tracking-widest transition-colors ${
-                  isCurrent ? 'text-amber-500' : isCompleted ? 'text-slate-400 group-hover:text-emerald-400' : 'text-slate-600'
-                }`}>{label}</span>
-                {isCurrent && <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none" />}
-              </button>
-            );
-          })}
+          {(() => {
+            const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+            return visibleSteps.map((i, idx) => {
+              const isCurrent = i === step;
+              const isCompleted = i < step;
+              const label = STEP_LABELS[i];
+              return (
+                <button
+                  key={i}
+                  ref={isCurrent ? activeStepRefDesktop : null}
+                  onClick={() => i < step && setStep(i)}
+                  disabled={i > step}
+                  className={`flex items-center gap-4 py-3 lg:py-3.5 px-3 rounded-2xl transition-all relative overflow-hidden group ${
+                    isCurrent ? 'bg-amber-900/20 text-amber-500' :
+                    isCompleted ? 'hover:bg-slate-800/50 text-emerald-500 cursor-pointer' :
+                    'text-slate-600 opacity-40 cursor-not-allowed'
+                  }`}
+                >
+                  {isCurrent && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-1/2 bg-amber-500 rounded-r-full shadow-[0_0_10px_rgba(245,158,11,1)]" />}
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black transition-all ${
+                    isCurrent ? 'bg-amber-500 text-black shadow-lg shadow-amber-900/50' :
+                    isCompleted ? 'bg-emerald-900/30 border border-emerald-500/30' :
+                    'bg-slate-900 border border-slate-800/50'
+                  }`}>
+                    {isCompleted ? '✓' : idx + 1}
+                  </div>
+                  <span className={`hidden lg:block text-xs font-bold uppercase tracking-widest transition-colors ${
+                    isCurrent ? 'text-amber-500' : isCompleted ? 'text-slate-400 group-hover:text-emerald-400' : 'text-slate-600'
+                  }`}>{label}</span>
+                  {isCurrent && <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none" />}
+                </button>
+              );
+            });
+          })()}
         </div>
 
         <div className="mt-auto p-4 border-t border-slate-800/60 bg-black/20">
@@ -481,145 +497,155 @@ export default function CharacterCreation() {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex relative h-full">
+      <div className="flex-1 flex flex-col h-full overflow-hidden bg-slate-950/20 relative">
         {/* Step Content */}
-        <div className="flex-1 h-full overflow-y-auto px-4 pb-32 md:p-12 relative" style={{ scrollbarWidth: 'thin' }}>
-          {/* Mobile: push content below fixed header */}
-          <div className="md:hidden" style={{ height: 'calc(env(safe-area-inset-top) + 60px)' }} />
-          <ErrorBoundary onReset={() => setStep(0)}>
-            <React.Suspense fallback={
-              <div className="flex items-center justify-center h-48">
-                <div className="w-8 h-8 border-2 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-              </div>
-            }>
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.div
-                 key={step}
-                 initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 20 }}
-                 animate={{ opacity: 1, x: 0 }}
-                 exit={{ opacity: 0, x: prefersReducedMotion ? 0 : -20 }}
-                 transition={{ duration: prefersReducedMotion ? 0.1 : 0.3 }}
-              >
-                <div className="max-w-4xl mx-auto">
-                  {(() => {
-                    switch (step) {
-                      case 0: return <StepRace onNext={handleNext} />;
-                      case 1: return <StepHeritage />;
-                      case 2: return <StepClass onNext={handleNext} />;
-                      case 3: return <StepIdentity />;
-                      case 4: return <StepClassSpecialization />;
-                      case 5: return <StepOrigin onNext={handleNext} />;
-                      case 6: return <StepOrigemBeneficios stats={stats} />;
-                      case 7: return <StepDeus />;
-                      case 8: return <StepLevel />;
-                      case 9: return <StepSpells stats={stats} />;
-                      case 10: return <StepAttributes stats={stats} />;
-                      case 11: return <StepClassePericias />;
-                      case 12: return <StepIntPericias stats={stats} />;
-                      case 13: return <StepEquipment />;
-                      case 14: return <StepPowers stats={stats} />;
-                      case 15: return <StepProgression stats={stats} />;
-                      case 16: return <StepAllies />;
-                      case 17: return (
-                        <StepReview
-                          stats={stats}
-                          onSave={handleSave}
-                          onPlay={() => setView('play')}
-                          onNavigate={setStep}
-                        />
-                      );
-                      default: return null;
-                    }
-                  })()}
+        <div 
+          ref={contentRef}
+          className="flex-1 overflow-y-auto px-4 md:px-12 relative scroll-smooth focus:outline-none" 
+          style={{ scrollbarWidth: 'thin' }}
+        >
+          {/* Mobile: space for fixed header */}
+          <div className="md:hidden pt-[calc(env(safe-area-inset-top)+68px)]" />
+          {/* Desktop: space for lack of header */}
+          <div className="hidden md:block pt-12" />
+
+          <div className="max-w-4xl mx-auto pb-48">
+            <ErrorBoundary onReset={() => setStep(0)}>
+              <React.Suspense fallback={
+                <div className="flex items-center justify-center h-48">
+                  <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
                 </div>
-              </motion.div>
-            </AnimatePresence>
-            </React.Suspense>
-          </ErrorBoundary>
+              }>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={step}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10, position: 'absolute', width: '100%' }}
+                    transition={{ duration: 0.15, ease: 'easeInOut' }}
+                  >
+                    {(() => {
+                      switch (step) {
+                        case 0: return <StepRace onNext={handleNext} />;
+                        case 1: return <StepHeritage />;
+                        case 2: return <StepClass onNext={handleNext} />;
+                        case 3: return <StepIdentity />;
+                        case 4: return <StepClassSpecialization />;
+                        case 5: return <StepOrigin onNext={handleNext} />;
+                        case 6: return <StepOrigemBeneficios stats={stats} />;
+                        case 7: return <StepDeus />;
+                        case 8: return <StepLevel />;
+                        case 9: return <StepSpells stats={stats} />;
+                        case 10: return <StepAttributes stats={stats} />;
+                        case 11: return <StepClassePericias />;
+                        case 12: return <StepIntPericias stats={stats} />;
+                        case 13: return <StepEquipment />;
+                        case 14: return <StepPowers stats={stats} />;
+                        case 15: return <StepProgression stats={stats} />;
+                        case 16: return <StepAllies />;
+                        case 17: return (
+                          <StepReview
+                            stats={stats}
+                            onSave={handleSave}
+                            onPlay={() => setView('play')}
+                            onNavigate={setStep}
+                          />
+                        );
+                        default: return null;
+                      }
+                    })()}
+                  </motion.div>
+                </AnimatePresence>
+              </React.Suspense>
+            </ErrorBoundary>
+          </div>
         </div>
 
         {/* Bottom Navigation Bar */}
-        <div className="absolute inset-x-4 md:inset-x-12 z-40" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}>
-           <div className="max-w-4xl mx-auto bg-gray-950/80 backdrop-blur-xl border border-white/10 p-4 rounded-[2.5rem] shadow-2xl flex items-center justify-between">
+        <div 
+          className="shrink-0 z-40 px-4 md:px-12 py-6 bg-slate-950/40 backdrop-blur-3xl border-t border-white/5"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 24px)' }}
+        >
+           <div className="max-w-4xl mx-auto flex items-center justify-between relative">
               <button
                 onClick={handlePrev}
-                className="px-5 md:px-8 py-4 rounded-2xl md:rounded-[1.5rem] bg-gray-900 border border-white/5 hover:border-white/10 text-slate-400 font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 group"
+                className="px-6 md:px-8 py-4 rounded-2xl bg-gray-900 border border-white/5 hover:border-white/10 text-slate-400 font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all active:scale-95 flex items-center justify-center gap-2 md:gap-3 group"
               >
-                 <span className="text-lg group-hover:-translate-x-1 transition-transform">←</span>
+                 <span className="text-xl group-hover:-translate-x-1 transition-transform">←</span>
                  <span className="hidden xs:inline">Voltar</span>
               </button>
               
               <div className="flex-1 flex flex-col items-center">
-                 {!canAdvance && step !== 14 && (
+                 {!canAdvance && (
                    <motion.div 
                      initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                     className="absolute -top-12 px-6 py-2 bg-rose-950/80 border border-rose-500/30 text-rose-400 font-black uppercase text-[10px] tracking-widest rounded-full backdrop-blur-md shadow-lg shadow-rose-900/20"
+                     className="absolute -top-16 px-6 py-2 bg-rose-950/90 border border-rose-500/30 text-rose-400 font-black uppercase text-[10px] tracking-widest rounded-full backdrop-blur-md shadow-2xl shadow-rose-900/40 z-50 text-center max-w-[200px]"
                    >
-                     {blockReason || 'Complete as escolhas pendentes.'}
+                     {blockReason || 'Finalize as escolhas pendentes.'}
                    </motion.div>
                  )}
                  {step === MAX_STEPS - 1 && (
-                   <span className="text-[10px] uppercase font-black tracking-[0.4em] text-amber-500/50">Jornada Pronta</span>
+                   <span className="text-[10px] uppercase font-black tracking-[0.4em] text-amber-500/70">Criação Completa</span>
                  )}
               </div>
               
               <button
                 onClick={handleNext}
                 disabled={!canAdvance}
-                className={`px-5 md:px-10 py-4 rounded-2xl md:rounded-[1.5rem] font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 md:gap-3 group ${
+                className={`px-6 md:px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 md:gap-3 group ${
                   canAdvance 
                     ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500 active:scale-95' 
-                    : 'bg-gray-900/50 border border-white/5 text-gray-600 cursor-not-allowed opacity-50 grayscale'
-                } ${step === MAX_STEPS - 1 ? 'invisible' : ''}`}
+                    : 'bg-gray-900/50 border border-white/5 text-gray-600 cursor-not-allowed opacity-50'
+                } ${step === MAX_STEPS - 1 ? 'invisible pointer-events-none' : ''}`}
               >
                 <span className="hidden xs:inline">Avançar</span>
-                <span className="text-lg group-hover:translate-x-1 transition-transform">→</span>
+                <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
               </button>
            </div>
         </div>
 
-        {/* Right Info Panel (Desktop) */}
-        <div className="hidden lg:flex w-80 xl:w-96 flex-col bg-[#040B16]/80 border-l border-slate-800/60 p-6 shadow-2xl z-30 overflow-y-auto backdrop-blur-md" style={{ scrollbarWidth: 'none' }}>
-           <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center gap-3">
-             <span className="w-1 h-3 bg-slate-600 rounded-full" />
-             Visão Geral
-           </h3>
-           <CharacterPreview char={char} stats={stats} currentStep={step} />
-        </div>
-
-        {/* Mobile Info Overlay */}
-        <AnimatePresence>
-          {previewOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: '100%' }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="lg:hidden fixed inset-y-0 right-0 w-[90%] sm:w-80 bg-gray-950/95 backdrop-blur-2xl border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] z-[110] p-6 overflow-y-auto"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Visão Geral</h3>
-                <button 
-                  onClick={() => setPreviewOpen(false)}
-                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xl"
-                >✕</button>
-              </div>
-              <CharacterPreview char={char} stats={stats} currentStep={step} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Mobile Toggle Button */}
+        {/* Mobile Info Overlay Toggle (Floating) */}
         {(!char.modalRace && !char.modalClass && !char.modalOrigin && !char.modalDeity) && (
           <button
             onClick={() => setPreviewOpen(true)}
-            className="hidden md:flex lg:hidden fixed bottom-28 right-6 z-[90] w-14 h-14 rounded-2xl bg-amber-600 text-gray-950 shadow-[0_10px_30px_rgba(217,119,6,0.5)] border-2 border-amber-400 items-center justify-center text-xl active:scale-90 transition-all active:bg-amber-500"
+            className="lg:hidden fixed bottom-[120px] right-6 z-[90] w-14 h-14 rounded-2xl bg-amber-600 text-gray-950 shadow-[0_10px_40px_rgba(217,119,6,0.6)] border-2 border-amber-400 flex items-center justify-center text-xl active:scale-90 transition-all"
           >
             📋
           </button>
         )}
       </div>
+
+      {/* Right Info Panel (Desktop) */}
+      <div className="hidden lg:flex w-80 xl:w-96 flex-col bg-[#040B16]/80 border-l border-slate-800/60 p-6 shadow-2xl z-30 overflow-y-auto backdrop-blur-md" style={{ scrollbarWidth: 'none' }}>
+         <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-6 flex items-center gap-3">
+           <span className="w-1 h-3 bg-slate-600 rounded-full" />
+           Visão Geral
+         </h3>
+         <CharacterPreview char={char} stats={stats} currentStep={step} />
+      </div>
+
+      {/* Mobile Info Overlay */}
+      <AnimatePresence>
+        {previewOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+            className="lg:hidden fixed inset-y-0 right-0 w-[90%] sm:w-80 bg-gray-950/95 backdrop-blur-2xl border-l border-white/10 shadow-[-20px_0_50px_rgba(0,0,0,0.5)] z-[110] p-6 overflow-y-auto"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-amber-500">Visão Geral</h3>
+              <button 
+                onClick={() => setPreviewOpen(false)}
+                className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xl"
+              >✕</button>
+            </div>
+            <CharacterPreview char={char} stats={stats} currentStep={step} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       
       {/* Background Ambience */}
       <div className="fixed inset-0 pointer-events-none z-0">

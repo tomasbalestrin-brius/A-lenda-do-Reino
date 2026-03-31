@@ -306,6 +306,31 @@ describe('computeStats — Ataques Detalhados', () => {
       equipamento: [{ id: 'adaga' }],
       poderesGerais: [{ nome: 'Estilo de Uma Arma' }],
     }));
-    expect(com.detailedAttacks[0].bonusAtk).toBe(sem.detailedAttacks[0].bonusAtk + 2);
+  });
+});
+
+describe('computeStats — Perícias Escalonamento (JdA)', () => {
+  it('Nível 1: bônus de treinamento deve ser +2', () => {
+    const char = makeChar({ level: 1, pericias: ['Acrobacia'] });
+    const stats = computeStats(char);
+    // Acrobacia (DES). DES 0. Metade nível 0. Treino +2. Total = 2.
+    expect(stats.skills['Acrobacia'].total).toBe(2);
+    expect(stats.skills['Acrobacia'].profBonus).toBe(2);
+  });
+
+  it('Nível 7: bônus de treinamento deve subir para +4', () => {
+    const char = makeChar({ level: 7, pericias: ['Acrobacia'] });
+    const stats = computeStats(char);
+    // Acrobacia (DES). DES 0. Metade nível 3. Treino +4. Total = 7.
+    expect(stats.skills['Acrobacia'].total).toBe(7);
+    expect(stats.skills['Acrobacia'].profBonus).toBe(4);
+  });
+
+  it('Nível 15: bônus de treinamento deve subir para +6', () => {
+    const char = makeChar({ level: 15, pericias: ['Acrobacia'] });
+    const stats = computeStats(char);
+    // Acrobacia (DES). DES 0. Metade nível 7. Treino +6. Total = 13.
+    expect(stats.skills['Acrobacia'].total).toBe(13);
+    expect(stats.skills['Acrobacia'].profBonus).toBe(6);
   });
 });

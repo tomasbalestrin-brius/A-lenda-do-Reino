@@ -156,6 +156,8 @@ export function canGoNext(step, char, stats) {
     }
 
     case 13: { // Equipamento
+      const needsGold = !char.choices?.claimedStartingKit;
+      if (needsGold) return { ok: false, reason: 'Rolar Dinheiro Inicial' };
       const ok = (char.dinheiro || 0) >= 0;
       return { ok, reason: ok ? null : 'Seu dinheiro não pode ser negativo.' };
     }

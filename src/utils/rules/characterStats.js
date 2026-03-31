@@ -3,7 +3,7 @@ import RACES from '../../data/races';
 import { ORIGENS } from '../../data/origins';
 import { ITENS } from '../../data/items';
 import { MATERIAIS } from '../../data/modificacoes';
-import { PERICIAS } from '../../data/skills';
+import PERICIAS_LIST from '../../data/skills';
 import { MAGIC_ITEMS_ALL } from '../../data/magicItems';
 import { divindades as DEUSES } from '../../data/gods';
 import {
@@ -11,11 +11,18 @@ import {
   PM_ATTR_MAP, CLASS_WEALTH, DAMAGE_STEPS,
   RACE_LANGUAGES, SIZE_MODS, ARMOR_SPEED_PENALTY,
   TRAINING_BONUS, TRAINING_BONUS_THRESHOLDS,
+  SKILL_ATTR_MAP
 } from './constants';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function attrPointCost(v) { return ATTR_TOTAL_COST[String(v)] ?? 0; }
+
+function getTrainingBonus(level) {
+  if (level >= TRAINING_BONUS_THRESHOLDS.high) return TRAINING_BONUS.high;
+  if (level >= TRAINING_BONUS_THRESHOLDS.mid) return TRAINING_BONUS.mid;
+  return TRAINING_BONUS.low;
+}
 
 /** Accumulates passive stat bonuses from all equipped magic items. */
 function getMagicItemBonuses(char) {
@@ -411,7 +418,7 @@ export function computeStats(char) {
   const ini = attrs.DES + halfLevel + (aliado?.tipo === 'Vigilante' ? 2 : 0) + magicBonuses.ini + racialIniBonus;
 
   // Penalidade de armadura em perícias
-  const armorPenaltyPericias = PERICIAS.filter(p => p.penalidade).map(p => p.nome);
+  const armorPenaltyPericias = PERICIAS_LIST.filter(p => p.penalidade).map(p => p.nome);
 
   // Idiomas
   const languages = ['Comum'];
@@ -419,8 +426,14 @@ export function computeStats(char) {
     if (!languages.includes(l)) languages.push(l);
   });
 
+  // Modificadores de tamanho
+  const sizeMod = SIZE_MODS[char.raca?.toLowerCase()] || { furtividade: 0, manobra: 0 };
+
   // Deslocamento
   const deslocamento = computeDeslocamento(char, allPowers, armorData) + magicBonuses.deslocamento;
+
+  // Perícias
+  const skills = calculateSkills(char, { attrs, halfLevel, level, armorPenalty: defResult.armorPenalty, armorPenaltyPericias, sizeMod, magicSkillBonuses: magicBonuses.pericias });
 
   // CD de Magia
   const spellAttrMap = {
@@ -429,9 +442,6 @@ export function computeStats(char) {
   };
   const spellAttrKey = spellAttrMap[char.classe?.toLowerCase()];
   const spellDC = 10 + halfLevel + (spellAttrKey ? (attrs[spellAttrKey] || 0) : 0) + magicBonuses.spellCD;
-
-  // Modificadores de tamanho
-  const sizeMod = SIZE_MODS[char.raca?.toLowerCase()] || { furtividade: 0, manobra: 0 };
 
   // Dinheiro inicial (T20 Advanced Character Creation)
   let startingWealth = '0 T$';
@@ -498,6 +508,7 @@ export function computeStats(char) {
     sizeModManobra: sizeMod.manobra,
     pontosDisponiveis: POINT_BUY_POOL - pontosGastos,
     languages,
+    skills,
     totalLangsCount: languages.length,
     startingWealth,
     startingWealthGold,
@@ -532,6 +543,46 @@ export function getAllTrainedSkills(char) {
   const intExtras = char.pericias || [];
 
   return new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras]);
+}
+
+export function calculateSkills(char, { attrs, halfLevel, level, armorPenalty, armorPenaltyPericias, sizeMod, magicSkillBonuses }) {
+  const trained = getAllTrainedSkills(char);
+  const profBonus = getTrainingBonus(level);
+  
+  const skillMap = {};
+  
+  PERICIAS_LIST.forEach(p => {
+    const isTrained = trained.has(p.nome);
+    const attrKey = SKILL_ATTR_MAP[p.nome] || 'INT';
+    const attrVal = attrs[attrKey] || 0;
+    
+    let total = halfLevel + attrVal;
+    if (isTrained) total += profBonus;
+    
+    const applyPenalty = armorPenaltyPericias.includes(p.nome);
+    if (applyPenalty) total -= armorPenalty;
+    
+    // Racial/Size bonuses
+    if (p.nome === 'Furtividade' && sizeMod.furtividade) total += sizeMod.furtividade;
+    
+    // Magic item bonuses
+    const magicBonus = magicSkillBonuses?.[p.nome] || 0;
+    total += magicBonus;
+
+    skillMap[p.nome] = {
+      nome: p.nome,
+      total,
+      isTrained,
+      attrKey,
+      attrVal,
+      halfLevel,
+      profBonus: isTrained ? profBonus : 0,
+      armorPenalty: applyPenalty ? armorPenalty : 0,
+      magicBonus
+    };
+  });
+
+  return skillMap;
 }
 
 export function getAllProficiencies(char) {
@@ -570,9 +621,7 @@ export function calculateDetailedAttacks(char, stats) {
   const trainedSkills = getAllTrainedSkills(char);
   const halfLevel    = Math.floor((char.level || 1) / 2);
   const level        = char.level || 1;
-  const profBonus    = level >= TRAINING_BONUS_THRESHOLDS.high ? TRAINING_BONUS.high
-    : level >= TRAINING_BONUS_THRESHOLDS.mid ? TRAINING_BONUS.mid
-    : TRAINING_BONUS.low;
+  const profBonus    = getTrainingBonus(level);
 
   const weapons = (char.equipamento || []).filter(e => {
     const id = typeof e === 'string' ? e : e.id;
