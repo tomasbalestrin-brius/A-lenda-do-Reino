@@ -14,6 +14,36 @@ import {
   SKILL_ATTR_MAP
 } from './constants';
 
+export const CONDICOES_DATA = {
+  abalado: { nome: 'Abalado', penalidade: { pericia: -2 } },
+  agarrado: { nome: 'Agarrado', penalidade: { atk: -2 }, tags: ['desprevenido'] },
+  alquebrado: { nome: 'Alquebrado', penalidade: { spellPM: 1 } },
+  atordoado: { nome: 'Atordoado', penalidade: { def: -5 }, tags: ['incapaz'] },
+  caido: { nome: 'Caído', penalidade: { atk: -2 }, nota: '+5 Def vs C-a-C, -5 Def vs Projéteis' },
+  cego: { nome: 'Cego', penalidade: { atk: -4, def: -5, percepcao: -10 } },
+  debilitado: { nome: 'Debilitado', penalidade: { pericia_fisica: -5 } },
+  desprevenido: { nome: 'Desprevenido', penalidade: { def: -5, ref: -5 } },
+  enfermo: { nome: 'Enfermo', penalidade: { pericia: -2 } },
+  enredado: { nome: 'Enredado', penalidade: { atk: -2, def: -2, DES: -2, deslocamento_mult: 0.5 } },
+  exaurido: { nome: 'Exaurido', penalidade: { pericia: -5, DES: -2, deslocamento_mult: 0.5 } },
+  fatigado: { nome: 'Fatigado', penalidade: { pericia: -2, deslocamento: -3 } },
+  fraco: { nome: 'Fraco', penalidade: { pericia: -2 } },
+  frustrado: { nome: 'Frustrado', penalidade: { pericia_mental: -2 } },
+  lento: { nome: 'Lento', penalidade: { deslocamento_mult: 0.5 } },
+  ofuscado: { nome: 'Ofuscado', penalidade: { atk: -2, percepcao: -2 } },
+  paralisado: { nome: 'Paralisado', penalidade: { def: -5 }, tags: ['incapaz', 'falha_reflexos_auto', 'desprevenido'] },
+  vulneravel: { nome: 'Vulnerável', penalidade: { def: -2 } },
+};
+
+export const BUFFS_DATA = {
+  bencao: { nome: 'Bênção', bonus: { atk: 1, dano: 1 } },
+  escudo_da_fe: { nome: 'Escudo da Fé', bonus: { def: 2 } },
+  arma_magica: { nome: 'Arma Mágica', bonus: { atk: 1, dano: 1 } },
+  oracao: { nome: 'Oração', bonus: { atk: 2, dano: 2, fort: 2, ref: 2, von: 2 } },
+  heroismo: { nome: 'Heroísmo', bonus: { atk: 4, dano: 4, pv_temp: 40 }, tags: ['imune_medo'] },
+  furia: { nome: 'Fúria', bonus: { atk: 2, dano: 2 }, condicional: true }, // Handled in class logic usually
+};
+
 // ─── Bonus Registry (JdA Compliance) ──────────────────────────────────────────
 
 /**
@@ -591,6 +621,39 @@ export function computeStats(char) {
     traits.push('Deformidade: Perda de 2 pontos de Carisma (embutido)');
   }
 
+  // 1. Process Conditions
+  (char.condicoesAtivas || []).forEach(cid => {
+    const data = CONDICOES_DATA[cid];
+    if (!data) return;
+    if (data.penalidade) {
+      if (data.penalidade.def) registry.add('def', data.penalidade.def, data.nome, 'Condição');
+      if (data.penalidade.atk) registry.add('atk', data.penalidade.atk, data.nome, 'Condição');
+      if (data.penalidade.pericia) registry.add('pericia_geral', data.penalidade.pericia, data.nome, 'Condição');
+      if (data.penalidade.fort) registry.add('fort', data.penalidade.fort, data.nome, 'Condição');
+      if (data.penalidade.ref) registry.add('ref', data.penalidade.ref, data.nome, 'Condição');
+      if (data.penalidade.von) registry.add('von', data.penalidade.von, data.nome, 'Condição');
+      if (data.penalidade.DES) registry.add('DES', data.penalidade.DES, data.nome, 'Condição');
+    }
+    if (data.tags?.includes('desprevenido')) {
+      registry.add('def', -5, 'Desprevenido (Condição)', 'Condição');
+      registry.add('ref', -5, 'Desprevenido (Condição)', 'Condição');
+    }
+  });
+
+  // 2. Process Buffs
+  (char.beneficiosAtivos || []).forEach(bid => {
+    const data = BUFFS_DATA[bid];
+    if (!data) return;
+    if (data.bonus) {
+      if (data.bonus.atk) registry.add('atk', data.bonus.atk, data.nome, 'Magia');
+      if (data.bonus.dano) registry.add('dano', data.bonus.dano, data.nome, 'Magia');
+      if (data.bonus.def) registry.add('def', data.bonus.def, data.nome, 'Magia');
+      if (data.bonus.fort) registry.add('fort', data.bonus.fort, data.nome, 'Magia');
+      if (data.bonus.ref) registry.add('ref', data.bonus.ref, data.nome, 'Magia');
+      if (data.bonus.von) registry.add('von', data.bonus.von, data.nome, 'Magia');
+    }
+  });
+
   const equipped = (char.equipamento || []).map(e => {
     const id = typeof e === 'string' ? e : e.id;
     return ITENS[id];
@@ -658,6 +721,7 @@ export function computeStats(char) {
 
   // Perícias
   const skills = calculateSkills(char, { 
+    registry,
     attrs, 
     halfLevel, 
     level, 
@@ -774,6 +838,11 @@ export function computeStats(char) {
       deslocamento: registry.getDetails('deslocamento'),
       spellCD: registry.getDetails('spellCD'),
     },
+    activeConditions: char.condicoesAtivas || [],
+    activeBuffs: char.beneficiosAtivos || [],
+    totalWeight,
+    maxLoad,
+    isOverburdened
   };
 }
 
@@ -796,10 +865,15 @@ export function getAllTrainedSkills(char) {
   return new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras]);
 }
 
-export function calculateSkills(char, { attrs, halfLevel, level, armorPenalty, armorPenaltyPericias = [], sizeMod = { furtividade: 0, manobra: 0 }, profPenalty = false, strPenalty = false, overburdenPenalty = 0, magicSkillBonuses = {} }) {
+export function calculateSkills(char, { registry, attrs, halfLevel, level, armorPenalty, armorPenaltyPericias = [], sizeMod = { furtividade: 0, manobra: 0 }, profPenalty = false, strPenalty = false, overburdenPenalty = 0, magicSkillBonuses = {} }) {
   const trained = getAllTrainedSkills(char);
   const profBonus = getTrainingBonus(level);
   
+  // General penalties from conditions/overburden
+  const generalPenalty = (registry?.calculate('pericia_geral') || 0) - (overburdenPenalty || 0);
+  const physicalPenalty = (registry?.calculate('pericia_fisica') || 0);
+  const mentalPenalty = (registry?.calculate('pericia_mental') || 0);
+
   const skillMap = {};
   
   PERICIAS_LIST.forEach(p => {
@@ -807,13 +881,18 @@ export function calculateSkills(char, { attrs, halfLevel, level, armorPenalty, a
     const attrKey = SKILL_ATTR_MAP[p.nome] || 'INT';
     const attrVal = attrs[attrKey] || 0;
     
-    let total = halfLevel + attrVal;
+    let total = halfLevel + attrVal + generalPenalty;
     if (isTrained) total += profBonus;
+
+    // Category Penalties
+    const isPhysical = ['Atletismo', 'Acrobacia', 'Furtividade', 'Ladroagem', 'Luta', 'Pontaria', 'Cavalgar'].includes(p.nome);
+    const isMental = !isPhysical;
+    if (isPhysical) total += physicalPenalty;
+    if (isMental) total += mentalPenalty;
     
     const applyArmorPenalty = (armorPenaltyPericias || []).includes(p.nome);
     if (applyArmorPenalty) total -= (armorPenalty || 0);
 
-    // Strict Penalties (JdA)
     // Lack of proficiency: -5 to STR/DEX based skills
     if (profPenalty && (attrKey === 'FOR' || attrKey === 'DES')) {
       total -= 5;
@@ -821,10 +900,6 @@ export function calculateSkills(char, { attrs, halfLevel, level, armorPenalty, a
     // Strength not met (Heavy Armor): -2 to ALL skills
     if (strPenalty) {
       total -= 2;
-    }
-    
-    if (overburdenPenalty) {
-      total -= overburdenPenalty;
     }
     
     // Racial/Size bonuses

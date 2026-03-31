@@ -5,6 +5,7 @@ import RACES from '../../../data/races';
 import { ORIGENS } from '../../../data/origins';
 import { divindades as DEUSES } from '../../../data/gods';
 import { ITENS } from '../../../data/items';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../../utils/rules/characterStats';
 import { MELHORIAS, MATERIAIS } from '../../../data/modificacoes';
 import DiceRollerBG3 from '../../DiceRollerBG3';
 import { useCharacterStore } from '../../../store/useCharacterStore';
@@ -386,6 +387,9 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             ))}
           </div>
         )}
+
+        {/* Combat Dashboard */}
+        <CombatDashboard char={char} stats={stats} updateChar={updateChar} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Card: Essência */}
@@ -975,4 +979,158 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
       )}
     </div>
   );
-}
+};
+
+const CombatDashboard = ({ char, stats, updateChar }) => {
+  const [activeTab, setActiveTab] = useState('status'); // 'status', 'buffs', 'log'
+
+  const toggleCondition = (id) => {
+    const current = char.condicoesAtivas || [];
+    const next = current.includes(id) ? current.filter(cid => cid !== id) : [...current, id];
+    updateChar({ condicoesAtivas: next });
+  };
+
+  const toggleBuff = (id) => {
+    const current = char.beneficiosAtivos || [];
+    const next = current.includes(id) ? current.filter(bid => bid !== id) : [...current, id];
+    updateChar({ beneficiosAtivos: next });
+  };
+
+  const addLog = (msg) => {
+    const current = char.logRecursos || [];
+    updateChar({ logRecursos: [`[${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}] ${msg}`, ...current].slice(0, 50) });
+  };
+
+  const adjustStat = (stat, delta, label) => {
+    const currentVal = char[`${stat}Atual`] !== null ? char[`${stat}Atual`] : stats[stat];
+    const newVal = Math.max(0, currentVal + delta);
+    updateChar({ [`${stat}Atual`]: newVal });
+    addLog(`${delta > 0 ? 'Recuperou' : 'Gastou'} ${Math.abs(delta)} ${label.toUpperCase()} (${newVal}/${stats[stat]}${stat === 'pv' ? '+' + (char.pvTemp || 0) : ''})`);
+  };
+
+  const pvDisplay = (char.pvAtual !== null ? char.pvAtual : stats.pv) + (char.pvTemp || 0);
+
+  return (
+    <div className="bg-gray-900/60 border border-white/10 rounded-[2.5rem] p-6 shadow-2xl backdrop-blur-3xl mt-10">
+       <div className="flex flex-col md:flex-row items-center gap-6 mb-8 pb-8 border-b border-white/5">
+          {/* Resource Bars */}
+          <div className="flex gap-4 w-full md:w-auto">
+             <div className="flex-1 md:w-48">
+                <div className="flex justify-between text-[10px] font-black uppercase text-rose-400 mb-2 px-2">
+                   <span>Pontos de Vida</span>
+                   <span>{pvDisplay} / {stats.pv}</span>
+                </div>
+                <div className="h-4 bg-gray-950 rounded-full border border-white/5 overflow-hidden flex shadow-inner">
+                   <motion.div animate={{ width: `${(pvDisplay/stats.pv)*100}%` }} className="h-full bg-gradient-to-r from-rose-800 to-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.4)]" />
+                </div>
+                <div className="flex gap-1 mt-2">
+                   {[-1, -5, -10].map(v => (
+                     <button key={v} onClick={() => adjustStat('pv', v, 'pv')} className="flex-1 py-1 rounded-lg bg-rose-900/20 border border-rose-500/20 text-rose-500 text-[10px] font-black hover:bg-rose-500 hover:text-white transition-all">{v}</button>
+                   ))}
+                   {[1, 5].map(v => (
+                     <button key={v} onClick={() => adjustStat('pv', v, 'pv')} className="flex-1 py-1 rounded-lg bg-emerald-900/20 border border-emerald-500/20 text-emerald-500 text-[10px] font-black hover:bg-emerald-500 hover:text-white transition-all">+{v}</button>
+                   ))}
+                </div>
+             </div>
+
+             <div className="flex-1 md:w-48">
+                <div className="flex justify-between text-[10px] font-black uppercase text-sky-400 mb-2 px-2">
+                   <span>Mana</span>
+                   <span>{char.pmAtual !== null ? char.pmAtual : stats.pm} / {stats.pm}</span>
+                </div>
+                <div className="h-4 bg-gray-950 rounded-full border border-white/5 overflow-hidden flex shadow-inner">
+                   <motion.div animate={{ width: `${((char.pmAtual !== null ? char.pmAtual : stats.pm)/stats.pm)*100}%` }} className="h-full bg-gradient-to-r from-sky-800 to-sky-500 shadow-[0_0_15px_rgba(14,165,233,0.4)]" />
+                </div>
+                <div className="flex gap-1 mt-2">
+                   {[-1, -2, -5].map(v => (
+                     <button key={v} onClick={() => adjustStat('pm', v, 'pm')} className="flex-1 py-1 rounded-lg bg-sky-900/20 border border-sky-500/20 text-sky-500 text-[10px] font-black hover:bg-sky-500 hover:text-white transition-all">{v}</button>
+                   ))}
+                   {[1, 5].map(v => (
+                     <button key={v} onClick={() => adjustStat('pm', v, 'pm')} className="flex-1 py-1 rounded-lg bg-emerald-900/20 border border-emerald-500/20 text-emerald-500 text-[10px] font-black hover:bg-emerald-500 hover:text-white transition-all">+{v}</button>
+                   ))}
+                </div>
+             </div>
+          </div>
+          
+          <div className="hidden md:block w-px h-20 bg-white/5" />
+
+          {/* Quick Actions/Info */}
+          <div className="flex flex-wrap gap-2 flex-1 justify-center md:justify-start">
+             {Object.keys(CONDICOES_DATA).slice(0, 6).map(cid => (
+               <button key={cid} onClick={() => toggleCondition(cid)} className={`px-4 py-2 rounded-2xl border text-[10px] font-black uppercase tracking-widest transition-all ${char.condicoesAtivas?.includes(cid) ? 'bg-amber-600 border-amber-400 text-gray-950 italic' : 'bg-gray-950 border-white/10 text-slate-500 hover:border-amber-500/30'}`}>
+                 {CONDICOES_DATA[cid].nome}
+               </button>
+             ))}
+          </div>
+       </div>
+
+       {/* Tabs Navigation */}
+       <div className="flex border-b border-white/5 mb-6">
+          {['status', 'buffs', 'log'].map(tab => (
+            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-8 py-3 text-[11px] font-black uppercase tracking-widest transition-all relative ${activeTab === tab ? 'text-amber-500' : 'text-slate-500 hover:text-slate-300'}`}>
+               {tab === 'status' ? 'Condições' : tab === 'buffs' ? 'Buffs & Poderes' : 'Log de Combate'}
+               {activeTab === tab && <motion.div layoutId="combatTab" className="absolute bottom-0 inset-x-4 h-0.5 bg-amber-500 shadow-[0_-4px_10px_rgba(245,158,11,0.5)]" />}
+            </button>
+          ))}
+       </div>
+
+       {/* Tab Content */}
+       <div className="min-h-[200px]">
+          {activeTab === 'status' && (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                {Object.entries(CONDICOES_DATA).map(([id, data]) => (
+                   <button key={id} onClick={() => toggleCondition(id)} className={`p-3 rounded-2xl border text-left transition-all relative group ${char.condicoesAtivas?.includes(id) ? 'bg-amber-900/20 border-amber-500 text-amber-500' : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-white/20'}`}>
+                      <p className="text-[10px] font-black uppercase mb-1">{data.nome}</p>
+                      {data.penalidade && <p className="text-[8px] font-bold opacity-60 leading-tight">Penalidade Ativa</p>}
+                      {char.condicoesAtivas?.includes(id) && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,1)]" />}
+                   </button>
+                ))}
+             </div>
+          )}
+
+          {activeTab === 'buffs' && (
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {Object.entries(BUFFS_DATA).map(([id, data]) => (
+                   <button key={id} onClick={() => toggleBuff(id)} className={`p-4 rounded-2xl border text-left transition-all ${char.beneficiosAtivos?.includes(id) ? 'bg-sky-900/20 border-sky-500 text-sky-500' : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-white/20'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] font-black uppercase">{data.nome}</span>
+                        {char.beneficiosAtivos?.includes(id) && <span className="text-sky-500 text-lg">✦</span>}
+                      </div>
+                      <p className="text-[8px] font-bold opacity-60">{data.bonus ? 'Bônus Ativo' : 'Efeito Ativo'}</p>
+                   </button>
+                ))}
+                {/* Special Class Toggles */}
+                {['furia', 'especial', 'duelo', 'baluarte'].map(id => {
+                   const labels = { furia: 'Fúria', especial: 'Atk Especial', duelo: 'Duelo', baluarte: 'Baluarte' };
+                   const isActive = char.beneficiosAtivos?.includes(id);
+                   return (
+                     <button key={id} onClick={() => toggleBuff(id)} className={`p-4 rounded-2xl border text-left transition-all ${isActive ? 'bg-orange-900/20 border-orange-500 text-orange-500' : 'bg-gray-950/40 border-white/5 text-slate-500 hover:border-white/20'}`}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-black uppercase tracking-widest">{labels[id]}</span>
+                          {isActive && <div className="w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_8px_orange]" />}
+                        </div>
+                        <p className="text-[8px] font-bold opacity-60">Habilidade de Classe</p>
+                     </button>
+                   );
+                })}
+             </div>
+          )}
+
+          {activeTab === 'log' && (
+             <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">
+                {char.logRecursos?.length > 0 ? char.logRecursos.map((log, i) => (
+                  <div key={i} className="text-[10px] font-bold bg-white/5 p-3 rounded-xl border border-white/5 flex gap-3 text-slate-400">
+                    <span className="text-slate-600 shrink-0 font-black">{log.split(']')[0]}]</span>
+                    <span>{log.split(']')[1]}</span>
+                  </div>
+                )) : (
+                  <div className="h-full flex items-center justify-center text-slate-600 text-xs italic py-10 uppercase tracking-widest font-black opacity-30">
+                     Nenhuma atividade registrada nesta sessão...
+                  </div>
+                )}
+             </div>
+          )}
+       </div>
+    </div>
+  );
+};

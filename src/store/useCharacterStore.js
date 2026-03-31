@@ -44,7 +44,15 @@ const getInitialCharState = () => ({
   
   levelChoices: {}, // Stores choices per level: { 2: { type: 'power', id: '...' }, 3: ... }
   spellEnhancements: {}, // Stores extra PM costs for spells: { 'bola_de_fogo': { pm: 2, desc: 'Aumenta dano' } }
-  choices: {}
+  choices: {},
+
+  // Combat Dashboard State
+  pvAtual: null,
+  pmAtual: null,
+  pvTemp: 0,
+  condicoesAtivas: [], // Array of condition IDs (e.g. 'cego', 'caido')
+  beneficiosAtivos: [], // Array of spell/power IDs (e.g. 'furia', 'benção')
+  logRecursos: [] // Array of activity strings: ['Usou 2 PM em Ataque Especial', ...]
 });
 
 export const useCharacterStore = create((set, get) => ({
