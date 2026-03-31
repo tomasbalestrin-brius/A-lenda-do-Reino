@@ -112,6 +112,10 @@ export const ITENS_MAGICOS_ESPECIFICOS = {
   }
 };
 
+export const ACESSORIOS = Object.values(ITENS_MAGICOS_ESPECIFICOS).filter(i => i.tipo === 'acessorio');
+export const ARMAS_MAGICAS = Object.values(ITENS_MAGICOS_ESPECIFICOS).filter(i => i.tipo === 'arma');
+export const ARMADURAS_MAGICAS = Object.values(ITENS_MAGICOS_ESPECIFICOS).filter(i => i.tipo === 'armadura');
+
 export const MAGIC_ITEMS_ALL = [
   ...Object.values(ITENS_MAGICOS_ESPECIFICOS)
 ];

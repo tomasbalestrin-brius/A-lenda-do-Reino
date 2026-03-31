@@ -115,19 +115,16 @@ export function StepClass({ onNext }) {
                 <img 
                   src={CLASS_IMAGES[id]} 
                   alt="" 
-                  className={`w-full h-full object-cover transition-all duration-700 opacity-20 group-hover:opacity-40 group-hover:scale-110 ${isSelected ? 'opacity-50' : ''}`}
+                  className={`w-full h-full object-cover transition-all duration-700 opacity-40 group-hover:opacity-70 group-hover:scale-110 ${isSelected ? 'opacity-80' : ''}`}
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent" />
               </div>
 
-              <div className={`relative z-10 text-4xl md:text-5xl mb-4 transition-transform duration-500 ${isSelected ? 'scale-110 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'group-hover:scale-110 group-hover:-translate-y-2'}`}>
-                {CLASS_ICONS[id] || '⚔️'}
-              </div>
-              <span className={`relative z-10 font-black text-sm md:text-base uppercase tracking-widest text-center ${isSelected ? 'text-amber-400' : 'text-slate-200 group-hover:text-white'}`}>
+              <span className={`relative z-10 font-black text-base md:text-lg uppercase tracking-widest text-center drop-shadow-[0_2px_4px_rgba(0,0,0,1)] ${isSelected ? 'text-amber-400' : 'text-slate-100 group-hover:text-white'}`}>
                 {cls.nome}
               </span>
-              <span className="relative z-10 text-[9px] uppercase tracking-widest text-slate-500 mt-2 font-bold">{role}</span>
+              <span className="relative z-10 text-[10px] md:text-[11px] uppercase tracking-widest text-amber-500/80 mt-1 font-black drop-shadow-md">{role}</span>
               
               {isSelected && (
                 <div className="absolute top-4 right-4 w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,1)] z-20" />

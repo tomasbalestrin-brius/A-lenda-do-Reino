@@ -97,15 +97,12 @@ export function StepRace({ onNext }) {
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  className={`w-full h-full object-cover transition-all duration-700 opacity-20 group-hover:opacity-40 group-hover:scale-110 ${isSelected ? 'opacity-50' : ''}`}
+                  className={`w-full h-full object-cover transition-all duration-700 opacity-40 group-hover:opacity-70 group-hover:scale-110 ${isSelected ? 'opacity-80' : ''}`}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-gray-950/20 to-transparent" />
               </div>
 
-              <div className={`relative z-10 text-4xl md:text-5xl mb-3 transition-transform duration-500 ${isSelected ? 'scale-110 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'group-hover:scale-110 group-hover:-translate-y-1'}`}>
-                 {RACE_ICONS[id] || '👤'}
-              </div>
-              <span className={`relative z-10 font-black text-[10px] md:text-xs uppercase tracking-[0.2em] text-center ${isSelected ? 'text-amber-400' : 'text-slate-300 group-hover:text-white'}`}>
+              <span className={`relative z-10 font-black text-xs md:text-sm uppercase tracking-[0.2em] text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] ${isSelected ? 'text-amber-400' : 'text-slate-100 group-hover:text-white'}`}>
                  {race.nome}
               </span>
 
