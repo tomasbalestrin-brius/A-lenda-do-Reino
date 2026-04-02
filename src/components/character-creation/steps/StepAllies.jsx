@@ -4,6 +4,7 @@ import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { PARCEIROS } from '../../../data/parceiros';
 import { ORIGENS } from '../../../data/origins';
+import { PERICIAS as PERICIAS_LIST } from '../../../data/skills';
 
 export function StepAllies() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
@@ -45,7 +46,19 @@ export function StepAllies() {
   const handleSelectLevel = (nivel) => {
     if (!hasAllyPower) return;
     const current = char.aliado || { tipo: PARCEIROS.tipos[0].nome };
-    updateChar({ aliado: { ...current, nivel } });
+    updateChar({ aliado: { ...current, nivel, pericias: [] } }); // Reset skills when changing level
+  };
+
+  const toggleAjudanteSkill = (skillId) => {
+    const currentAliado = char.aliado || {};
+    const currentPericias = currentAliado.pericias || [];
+    const maxSkills = currentAliado.nivel === 'iniciante' ? 2 : 3;
+
+    if (currentPericias.includes(skillId)) {
+      updateChar({ aliado: { ...currentAliado, pericias: currentPericias.filter(s => s !== skillId) } });
+    } else if (currentPericias.length < maxSkills) {
+      updateChar({ aliado: { ...currentAliado, pericias: [...currentPericias, skillId] } });
+    }
   };
 
   const selectedType = PARCEIROS.tipos.find(t => t.nome === char.aliado?.tipo) || null;
@@ -125,6 +138,55 @@ export function StepAllies() {
                 {selectedType.nota && (
                   <div className="mt-4 p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl text-[10px] text-blue-300 italic">
                     ⚠️ {selectedType.nota}
+                  </div>
+                )}
+
+                {selectedType.nome === 'Ajudante' && (
+                  <div className={`mt-6 p-6 rounded-3xl border-2 transition-all space-y-4 ${
+                    (char.aliado?.pericias || []).length < (currentNivel === 'iniciante' ? 2 : 3)
+                      ? 'bg-rose-950/20 border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.1)]'
+                      : 'bg-emerald-950/20 border-emerald-500/40'
+                  }`}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h5 className="text-xs font-black uppercase text-white tracking-widest mb-1">
+                          Perícias do Ajudante
+                        </h5>
+                        <p className="text-[9px] text-slate-500 font-medium">
+                          {(char.aliado?.pericias || []).length < (currentNivel === 'iniciante' ? 2 : 3)
+                            ? `Selecione mais ${ (currentNivel === 'iniciante' ? 2 : 3) - (char.aliado?.pericias || []).length } perícia(s)`
+                            : "Seleção completa!"}
+                        </p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black ${
+                        (char.aliado?.pericias || []).length < (currentNivel === 'iniciante' ? 2 : 3)
+                          ? 'bg-rose-500 text-gray-950'
+                          : 'bg-emerald-500 text-gray-950'
+                      }`}>
+                        {(char.aliado?.pericias || []).length} / {currentNivel === 'iniciante' ? 2 : 3}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 h-40 overflow-y-auto pr-2 custom-scrollbar">
+                      {PERICIAS_LIST
+                        .filter(p => p.id !== 'luta' && p.id !== 'pontaria')
+                        .map(p => {
+                          const isSelected = (char.aliado?.pericias || []).includes(p.nome);
+                          return (
+                            <button
+                              key={p.id}
+                              onClick={() => toggleAjudanteSkill(p.nome)}
+                              className={`px-3 py-2 rounded-xl border-2 text-[10px] font-bold text-left transition-all ${
+                                isSelected
+                                  ? 'bg-amber-500 border-amber-400 text-gray-950 shadow-lg shadow-amber-900/30'
+                                  : 'bg-black/60 border-white/10 text-slate-500 hover:border-amber-500/30'
+                              }`}
+                            >
+                              {p.nome}
+                            </button>
+                          );
+                        })}
+                    </div>
                   </div>
                 )}
               </>

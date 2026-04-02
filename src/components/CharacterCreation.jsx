@@ -516,13 +516,14 @@ export default function CharacterCreation() {
                   <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
                 </div>
               }>
-                <AnimatePresence mode="wait">
+                <AnimatePresence mode="popLayout" initial={false}>
                   <motion.div
                     key={step}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10, position: 'absolute', width: '100%' }}
-                    transition={{ duration: 0.15, ease: 'easeInOut' }}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="w-full"
                   >
                     {(() => {
                       switch (step) {

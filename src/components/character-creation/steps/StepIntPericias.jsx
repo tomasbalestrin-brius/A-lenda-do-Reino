@@ -19,16 +19,19 @@ export function StepIntPericias({ stats }) {
   const originPericias = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem]?.pericias?.includes(b));
   
   const alreadyTrained = [...new Set([...mandatoryFromClass, ...originPericias, ...(char.periciasClasseEscolha || [])])];
-  const currentExtras = char.pericias.filter(p => !alreadyTrained.includes(p));
-  const availableExtras = intBonus - currentExtras.length;
+  
+  // Extra skills are those in char.pericias that are NOT already trained by other sources
+  const currentExtras = (char.pericias || []).filter(p => !alreadyTrained.includes(p));
+  const availableExtras = Math.max(0, intBonus - currentExtras.length);
 
   function toggle(skill) {
     if (alreadyTrained.includes(skill)) return;
-    const has = char.pericias.includes(skill);
-    if (has) {
+    
+    const isSelected = char.pericias.includes(skill);
+    if (isSelected) {
       updateChar({ pericias: char.pericias.filter(p => p !== skill) });
     } else if (availableExtras > 0) {
-      updateChar({ pericias: [...char.pericias, skill] });
+      updateChar({ pericias: [...(char.pericias || []), skill] });
     }
   }
 

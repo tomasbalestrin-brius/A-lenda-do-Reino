@@ -13,6 +13,7 @@ import {
   TRAINING_BONUS, TRAINING_BONUS_THRESHOLDS,
   SKILL_ATTR_MAP
 } from './constants';
+import { GENERAL_POWERS } from '../../data/powers';
 
 export const CONDICOES_DATA = {
   abalado: { nome: 'Abalado', penalidade: { pericia: -2 } },
@@ -108,11 +109,20 @@ class BonusRegistry {
 
 /** Processes automated impacts from powers and items. */
 function applyAutomatedImpacts(char, allPowers, registry, context) {
-  const { attrs, level, classData } = context;
+  const { attrs, level, cls, aliado } = context;
 
   // Process Powers with metadata
-  allPowers.forEach(power => {
-    if (!power.impacto) return;
+  allPowers.forEach(powerName => {
+    // Busca o objeto de poder correspondente ao nome
+    const power = [
+      ...GENERAL_POWERS.combate, 
+      ...GENERAL_POWERS.destino, 
+      ...GENERAL_POWERS.magia, 
+      ...GENERAL_POWERS.tormenta,
+      ...GENERAL_POWERS.concedidos
+    ].find(x => x.nome === powerName);
+
+    if (!power || !power.impacto) return;
     const imp = power.impacto;
 
     switch (imp.tipo) {
@@ -159,6 +169,78 @@ function applyAutomatedImpacts(char, allPowers, registry, context) {
         break;
     }
   });
+
+  // --- Aliado Processing ---
+  if (aliado) {
+    const { tipo, nivel } = aliado;
+    const isMestre = nivel === 'mestre';
+    const isVeterano = nivel === 'veterano' || isMestre;
+    const isIniciante = true;
+
+    switch (tipo) {
+      case 'Adepto':
+        registry.add('spellPM_1', -1, 'Aliado Adepto', 'Aliado');
+        if (isVeterano) registry.add('spellPM_2', -1, 'Aliado Adepto', 'Aliado');
+        break;
+      case 'Ajudante':
+        const ajudanteBonus = isMestre ? 4 : 2;
+        (aliado.pericias || []).forEach(p => {
+          registry.add(p.toLowerCase(), ajudanteBonus, 'Aliado Ajudante', 'Aliado');
+        });
+        break;
+      case 'Assassino':
+        const sneakDice = isMestre ? 2 : 1;
+        registry.add('ataque_furtivo_dados', sneakDice, 'Aliado Assassino', 'Aliado');
+        if (isVeterano) registry.addSituational('atk', 2, 'Aliado Assassino', 'Ao flanquear');
+        break;
+      case 'Atirador':
+        const atiradorDano = isMestre ? '2d8' : (isVeterano ? '1d10' : '1d6');
+        registry.addSituational('dano_distancia', atiradorDano, 'Aliado Atirador', 'Uma vez por rodada');
+        break;
+      case 'Combatente':
+        const atkBonus = isMestre ? 3 : (isVeterano ? 2 : 1);
+        registry.add('atk', atkBonus, 'Aliado Combatente', 'Aliado');
+        break;
+      case 'Destruidor':
+        const destruidorDano = isMestre ? '6d6 (Área)' : (isVeterano ? '4d6' : '2d6');
+        registry.addSituational('dano_magico_extra', destruidorDano, 'Aliado Destruidor', 'Ação Livre (1-4 PM)');
+        break;
+      case 'Fortão':
+        const fortaoDano = isMestre ? '3d6' : (isVeterano ? '1d12' : '1d8');
+        registry.addSituational('dano_corpo_a_corpo', fortaoDano, 'Aliado Fortão', 'Uma vez por rodada');
+        break;
+      case 'Guardião':
+        const defBonus = isMestre ? 4 : (isVeterano ? 3 : 2);
+        registry.add('def', defBonus, 'Aliado Guardião', 'Aliado');
+        if (isMestre) {
+          registry.add('fort', 2, 'Aliado Guardião (Mestre)', 'Aliado');
+          registry.add('ref', 2, 'Aliado Guardião (Mestre)', 'Aliado');
+          registry.add('von', 2, 'Aliado Guardião (Mestre)', 'Aliado');
+        }
+        break;
+      case 'Magivocador':
+        const extraDice = isMestre ? 2 : 1;
+        registry.add('spellDamageDice', extraDice, 'Aliado Magivocador', 'Aliado');
+        if (isVeterano) registry.add('spellCD', 1, 'Aliado Magivocador', 'Aliado');
+        break;
+      case 'Médico':
+        const médicoCura = isMestre ? '6d8+6' : (isVeterano ? '3d8+3' : '1d8+1');
+        registry.addSituational('cura_aliado', médicoCura, 'Aliado Médico', 'Ação Livre (1-5 PM)');
+        break;
+      case 'Perseguidor':
+        registry.add('percepcao', 2, 'Aliado Perseguidor', 'Aliado');
+        registry.add('sobrevivencia', 2, 'Aliado Perseguidor', 'Aliado');
+        if (isVeterano) registry.addSituational('percepcao', 100, 'Sentidos Aguçados', 'Sempre ativo');
+        if (isMestre) registry.addSituational('percepcao', 1000, 'Percepção às Cegas', 'Sempre ativo');
+        break;
+      case 'Vigilante':
+        registry.add('percepcao', 2, 'Aliado Vigilante', 'Aliado');
+        registry.add('ini', 2, 'Aliado Vigilante', 'Aliado');
+        if (isVeterano) registry.addSituational('reflexos', 10, 'Esquiva Sobrenatural', 'Sempre ativo');
+        if (isMestre) registry.addSituational('def', 5, 'Olhos nas Costas', 'Nunca flanqueado');
+        break;
+    }
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -391,12 +473,6 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado, registr
   const effectiveMod = (isHeavyArmor && defAttrVal > 0) ? 0 : defAttrVal;
   if (effectiveMod !== 0) registry.add('def', effectiveMod, isHeavyArmor ? 'Atributo (Penalizado)' : 'Atributo', 'Atributo');
 
-  // Aliado Guardião
-  if (aliado?.tipo === 'Guardião') {
-    const aliadoDefBonus = aliado.nivel === 'mestre' ? 4 : (aliado.nivel === 'veterano' ? 3 : 2);
-    registry.add('def', aliadoDefBonus, `Aliado (${aliado.nivel})`, 'Aliado');
-  }
-
   // Bônus racial de Defesa
   const raceData = RACES[char.raca?.toLowerCase()] || null;
   if (raceData?.bonus?.def) registry.add('def', raceData.bonus.def, 'Racial', 'Habilidade');
@@ -506,26 +582,6 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado, registr
 function computeSaves(allPowers, attrs, halfLevel, aliadoResBonus, isHeavyArmor, hasEsquiva, hasVitalidade, hasVontadeFerro, profPenalty, strPenalty, registry) {
   // Fortitude
   registry.add('fort', halfLevel, 'Meio Nível', 'Base');
-  registry.add('fort', attrs.CON, 'Constituição', 'Atributo');
-  if (aliadoResBonus > 0) registry.add('fort', aliadoResBonus, 'Aliado', 'Aliado');
-  if (hasVitalidade) registry.add('fort', 2, 'Vitalidade', 'Habilidade');
-  if (allPowers.has('Inexpugnável') && isHeavyArmor) registry.add('fort', 2, 'Inexpugnável', 'Habilidade');
-  if (profPenalty) registry.add('fort', -5, 'Sem Proficiência', 'Penalidade');
-  if (strPenalty) registry.add('fort', -2, 'Requisito de FOR Insuficiente', 'Penalidade');
-
-  // Reflexos
-  registry.add('ref', halfLevel, 'Meio Nível', 'Base');
-  registry.add('ref', attrs.DES, 'Destreza', 'Atributo');
-  if (aliadoResBonus > 0) registry.add('ref', aliadoResBonus, 'Aliado', 'Aliado');
-  if (hasEsquiva) registry.add('ref', 2, 'Esquiva', 'Habilidade');
-  if (allPowers.has('Inexpugnável') && isHeavyArmor) registry.add('ref', 2, 'Inexpugnável', 'Habilidade');
-  if (profPenalty) registry.add('ref', -5, 'Sem Proficiência', 'Penalidade');
-  if (strPenalty) registry.add('ref', -2, 'Requisito de FOR Insuficiente', 'Penalidade');
-
-  // Vontade
-  registry.add('von', halfLevel, 'Meio Nível', 'Base');
-  registry.add('von', attrs.SAB || 0, 'Sabedoria', 'Atributo');
-  if (aliadoResBonus > 0) registry.add('von', aliadoResBonus, 'Aliado', 'Aliado');
   if (hasVontadeFerro) registry.add('von', 2, 'Vontade de Ferro', 'Habilidade');
   if (allPowers.has('Inexpugnável') && isHeavyArmor) registry.add('von', 2, 'Inexpugnável', 'Habilidade');
   if (profPenalty) registry.add('von', -5, 'Sem Proficiência', 'Penalidade');
@@ -578,16 +634,9 @@ function computeAttack(char, attrs, halfLevel, aliado, profPenalty, strPenalty, 
 
   registry.add('atk', halfLevel, 'Metade do Nível', 'Base');
   const attrKey = isRanged ? 'DES' : 'FOR';
-  registry.add('atk', attrs[attrKey] || 0, `Atributo (${attrKey})`, 'Atributo');
-
   if (isRanged && hasPontaria) registry.add('atk', profBonus, 'Pontaria (Treinada)', 'Habilidade');
   else if (!isRanged && hasLuta) registry.add('atk', profBonus, 'Luta (Treinada)', 'Habilidade');
 
-  if (aliado?.tipo === 'Combatente') {
-    const aliadoAtkBonus = aliado.nivel === 'mestre' ? 3 : (aliado.nivel === 'veterano' ? 2 : 1);
-    registry.add('atk', aliadoAtkBonus, `Aliado (${aliado.nivel})`, 'Aliado');
-  }
-  
   if (profPenalty) registry.add('atk', -5, 'Sem Proficiência', 'Penalidade');
   if (strPenalty) registry.add('atk', -2, 'Requisito de FOR Insuficiente', 'Penalidade');
 
@@ -789,8 +838,6 @@ export function computeStats(char) {
 
   registry.add('ini', attrs.DES, 'Destreza', 'Atributo');
   registry.add('ini', halfLevel, 'Meio Nível', 'Base');
-  if (aliado?.tipo === 'Vigilante') registry.add('ini', 2, 'Aliado', 'Aliado');
-  if (racialIniBonus) registry.add('ini', racialIniBonus, 'Racial', 'Habilidade');
   const ini = registry.calculate('ini');
 
   const deslocamento = computeDeslocamento(char, allPowers, defResult.armorData, defResult.strPenalty, isOverburdened, registry);

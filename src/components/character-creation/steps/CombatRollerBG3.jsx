@@ -11,14 +11,24 @@ export default function CombatRollerBG3({ weapon, onClose }) {
   const [dmgFaces, setDmgFaces] = useState([]);
   const [totalDmg, setTotalDmg] = useState(0);
 
-  // Extract numeric base from strings like "19", "18" or "20"
+  // Parse damage string like "1d8+2"
+  const dmgConfig = useMemo(() => {
+    const raw = String(weapon.dano || '1d4');
+    const match = raw.match(/(\d+)d(\d+)([+-]\d+)?/i);
+    if (!match) return { count: 1, type: 4, bonus: 0 };
+    return {
+      count: parseInt(match[1]),
+      type: parseInt(match[2]),
+      bonus: match[3] ? parseInt(match[3]) : 0
+    };
+  }, [weapon.dano]);
+
   const critThreshold = useMemo(() => {
     const raw = String(weapon.critico || '20');
     const match = raw.match(/(\d+)/);
     return match ? parseInt(match[1]) : 20;
   }, [weapon.critico]);
 
-  // Extract numeric base from strings like "+5 (+2 se...)"
   const numericAtkBonus = useMemo(() => {
     if (typeof weapon.bonusAtk === 'number') return weapon.bonusAtk;
     const match = String(weapon.bonusAtk || '0').match(/^[+-]?\d+/);
@@ -47,12 +57,17 @@ export default function CombatRollerBG3({ weapon, onClose }) {
 
     if (stage === 'rollingDmg') {
       const isCrit = atkRoll >= critThreshold;
-      const multiplier = isCrit ? (weapon.multiplicador || 2) : 1;
+      const multiplierStr = String(weapon.multiplicador || '2');
+      const multiplier = isCrit ? parseInt(multiplierStr.match(/\d+/)?.[0] || '2') : 1;
       
       // Roll damage based on multiplier if crit
       const diceCount = dmgConfig.count * multiplier;
       const rolls = Array.from({ length: diceCount }, () => Math.floor(Math.random() * dmgConfig.type) + 1);
-      const total = rolls.reduce((a, b) => a + b, 0) + dmgConfig.bonus;
+      
+      // T20 rules: only DICE are multiplied on crit. Flat bonuses are NOT multiplied unless specified.
+      // But for simplicity in this roller, we'll follow standard JdA: dice multiply, flat bonus stays same unless it comes from base.
+      const total = rolls.reduce((a, b) => a + b, 0) + (dmgConfig.bonus * (isCrit ? 1 : 1)); // Flat bonus doesn't multiply in T20 JdA crit
+      
       setDmgRolls(rolls);
       setTotalDmg(total);
       
@@ -66,7 +81,7 @@ export default function CombatRollerBG3({ weapon, onClose }) {
         setStage('resultDmg');
       }, 1000);
     }
-  }, [stage]);
+  }, [stage, atkRoll, critThreshold, weapon.multiplicador, dmgConfig]);
 
   const handleNext = () => {
     if (stage === 'resultAtk') setStage('rollingDmg');
