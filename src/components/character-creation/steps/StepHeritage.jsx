@@ -7,12 +7,25 @@ import { GENERAL_POWERS } from '../../../data/powers';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 
-const RACE_ICONS = {
-  humano: '🧑', anao: '⛏️', elfo: '🌟', dahllan: '🌺',
-  goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
-  hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
-  kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
-  moreau: '🦊',
+const RACE_IMAGES = {
+  humano: '/assets/images/races/humano.webp',
+  anao: '/assets/images/races/anao.webp',
+  dahllan: '/assets/images/races/dahllan.webp',
+  elfo: '/assets/images/races/elfo.webp',
+  goblin: '/assets/images/races/goblin.webp',
+  lefou: '/assets/images/races/lefou.webp',
+  qareen: '/assets/images/races/qareen.webp',
+  minotauro: '/assets/images/races/minotauro.webp',
+  hynne: '/assets/images/races/hynne.webp',
+  golem: '/assets/images/races/golem.png',
+  osteon: '/assets/images/races/osteon.webp',
+  trog: '/assets/images/races/trog.png',
+  kliren: '/assets/images/races/kliren.webp',
+  medusa: '/assets/images/races/medusa.webp',
+  sereia: '/assets/images/races/sereia.webp',
+  silfide: '/assets/images/races/silfide.webp',
+  suraggel: '/assets/images/races/suraggel_aggelus.webp',
+  moreau: '/assets/images/races/moreau.png',
 };
 
 const ALL_PERICIAS = [
@@ -248,10 +261,25 @@ export function StepHeritage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="bg-amber-900/10 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
-        <div className="absolute top-0 right-0 p-6 opacity-5 text-7xl rotate-12">{RACE_ICONS[raca] || '✨'}</div>
-        <h2 className="text-3xl font-black text-white tracking-tight mb-2"><span className="text-amber-500 mr-2">II.</span> Herança: {race.nome}</h2>
-        <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.</p>
+      <div className="bg-amber-900/10 p-8 md:p-12 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden md:backdrop-blur-md">
+        {/* Race Image Background */}
+        <div className="absolute inset-0 z-0 opacity-10">
+          {RACE_IMAGES[raca] && (
+            <img src={RACE_IMAGES[raca]} alt="" className="w-full h-full object-cover scale-110 blur-[1px]" />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-950/40 via-transparent to-transparent" />
+        </div>
+        
+        <div className="absolute top-0 right-0 p-8 opacity-5 text-7xl md:text-8xl rotate-12 z-0">{RACE_ICONS[raca] || '✨'}</div>
+        
+        <div className="relative z-10">
+          <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">
+            <span className="text-amber-500 mr-2">II.</span> Herança: {race.nome}
+          </h2>
+          <p className="text-slate-400 text-sm max-w-lg font-medium leading-relaxed">
+            Traços ancestrais e competências inatas transmitidas através de gerações de seu povo.
+          </p>
+        </div>
       </div>
 
       {(isHumano || isSereia) && renderAttrSelection(3)}

@@ -511,20 +511,20 @@ export default function CharacterCreation() {
 
           <div className="max-w-4xl mx-auto pb-32 md:pb-40">
             <ErrorBoundary onReset={() => setStep(0)}>
-              <React.Suspense fallback={
-                <div className="flex items-center justify-center h-48">
-                  <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-                </div>
-              }>
-                <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.div
-                    key={step}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -10 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="w-full"
-                  >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  className="w-full"
+                >
+                  <React.Suspense fallback={
+                    <div className="flex items-center justify-center h-48">
+                      <div className="w-12 h-12 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
+                    </div>
+                  }>
                     {(() => {
                       switch (step) {
                         case 0: return <StepRace onNext={handleNext} />;
@@ -555,9 +555,9 @@ export default function CharacterCreation() {
                         default: return null;
                       }
                     })()}
-                  </motion.div>
-                </AnimatePresence>
-              </React.Suspense>
+                  </React.Suspense>
+                </motion.div>
+              </AnimatePresence>
             </ErrorBoundary>
           </div>
         </div>

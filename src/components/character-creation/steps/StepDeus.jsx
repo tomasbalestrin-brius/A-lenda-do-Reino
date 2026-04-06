@@ -195,26 +195,51 @@ export function StepDeus() {
             onClick={() => updateChar({ deus: '' })}
             className={`text-left p-8 rounded-[2.5rem] border-2 transition-all duration-500 relative overflow-hidden flex flex-col justify-between h-full group ${
               !char.deus 
-                ? 'bg-slate-800 border-slate-500 shadow-xl shadow-gray-950/50' 
-                : 'bg-gray-900/60 backdrop-blur-md border-white/5 hover:border-white/10'
+                ? 'bg-slate-900/60 border-slate-500 shadow-[0_0_50px_rgba(100,116,139,0.2)]' 
+                : 'bg-gray-900/60 backdrop-blur-md border-white/5 hover:border-slate-500/30'
             }`}
           >
-            <div className="relative z-10 flex items-center gap-5">
-               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${!char.deus ? 'bg-slate-700 border-slate-500/40' : 'bg-gray-950 border-white/5'}`}>
-                  <Ban size={28} className={!char.deus ? 'text-slate-300' : 'text-slate-600'} />
-               </div>
-               <div>
-                  <p className={`font-black text-xl uppercase tracking-tighter leading-none mb-1 ${!char.deus ? 'text-white' : 'text-slate-400'}`}>Sem Divindade</p>
-                  <p className="text-[10px] text-slate-500 font-black tracking-[0.2em] uppercase">Ateu ou Agnóstico</p>
-               </div>
+            {/* Ambient Background for Atheist */}
+            {!char.deus && (
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 via-transparent to-transparent pointer-events-none" />
+            )}
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-5">
+                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${
+                  !char.deus 
+                    ? 'bg-slate-500/20 border-slate-500/40 shadow-[0_0_20px_rgba(100,116,139,0.3)]' 
+                    : 'bg-gray-950 border-white/5 group-hover:border-slate-500/30'
+                }`}>
+                  <Ban size={28} className={!char.deus ? 'text-slate-300' : 'text-slate-600 group-hover:text-slate-400 transition-colors'} />
+                </div>
+                <div className="flex-1">
+                  <p className={`font-black text-xl uppercase tracking-tighter leading-none mb-1 transition-colors ${!char.deus ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`}>
+                    Sem Divindade
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-black tracking-[0.2em] uppercase opacity-80">
+                    Sua força vem de si mesmo
+                  </p>
+                </div>
+              </div>
+
+              <p className={`mt-8 text-xs font-medium leading-relaxed transition-colors ${!char.deus ? 'text-slate-300' : 'text-slate-500 group-hover:text-slate-400'}`}>
+                Você não presta contas a nenhum deus. Não recebe poderes concedidos nem precisa seguir dogmas, mantendo total liberdade sobre sua lenda.
+              </p>
             </div>
-            <p className="mt-8 text-xs text-slate-500 font-medium leading-relaxed relative z-10">
-              Você não presta contas a nenhum deus. Não recebe poderes concedidos nem precisa seguir dogmas.
-            </p>
+
+            <div className="relative z-10 mt-6 pt-5 border-t border-white/5 flex justify-end">
+               <span className={`text-[10px] font-black uppercase tracking-widest transition-all ${
+                 !char.deus ? 'text-slate-300' : 'text-slate-600 group-hover:text-slate-400'
+               }`}>
+                 {!char.deus ? 'Selecionado' : 'Selecionar'}
+               </span>
+            </div>
+
             {!char.deus && (
               <motion.div 
                 layoutId="active-glow"
-                className="absolute top-4 right-4 w-2 h-2 bg-slate-400 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)]" 
+                className="absolute top-4 right-4 w-2 h-2 bg-slate-400 rounded-full shadow-[0_0_15px_rgba(255,255,255,0.5)] z-20" 
               />
             )}
           </motion.button>

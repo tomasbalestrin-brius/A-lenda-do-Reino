@@ -43,11 +43,13 @@ const RACE_IMAGES = {
   osteon: '/assets/images/races/osteon.webp',
   hynne: '/assets/images/races/hynne.webp',
   kliren: '/assets/images/races/kliren.webp',
-  trog: '/assets/images/races/trog.webp',
+  trog: '/assets/images/races/trog.png',
   medusa: '/assets/images/races/medusa.webp',
   sereia: '/assets/images/races/sereia.webp',
   suraggel: '/assets/images/races/suraggel_aggelus.webp',
   silfide: '/assets/images/races/silfide.webp',
+  golem: '/assets/images/races/golem.png',
+  moreau: '/assets/images/races/moreau.png',
 };
 
 export function StepRace({ onNext }) {

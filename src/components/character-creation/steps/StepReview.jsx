@@ -35,14 +35,15 @@ const RACE_IMAGES = {
   qareen: '/assets/images/races/qareen.webp',
   minotauro: '/assets/images/races/minotauro.webp',
   hynne: '/assets/images/races/hynne.webp',
-  golem: '/assets/images/races/golem.webp',
+  golem: '/assets/images/races/golem.png',
   osteon: '/assets/images/races/osteon.webp',
-  trog: '/assets/images/races/trog.webp',
+  trog: '/assets/images/races/trog.png',
   kliren: '/assets/images/races/kliren.webp',
   medusa: '/assets/images/races/medusa.webp',
   sereia: '/assets/images/races/sereia.webp',
   silfide: '/assets/images/races/silfide.webp',
   suraggel: '/assets/images/races/suraggel_aggelus.webp',
+  moreau: '/assets/images/races/moreau.png',
 };
 
 const CLASS_ICONS = {
@@ -163,6 +164,8 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
       .sort((a, b) => a.nome.localeCompare(b.nome));
   }, [stats?.skills]);
 
+  const hasEquipmentPenalty = stats?.profPenalty || stats?.strPenalty || stats?.isOverburdened;
+
   const startTest = (name, modifier) => {
     setRollTest({ name, modifier });
   };
@@ -247,12 +250,13 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
             <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-2xl shrink-0 animate-pulse">⚠️</div>
             <div className="flex-1">
               <h3 className="text-sm font-black text-rose-400 uppercase tracking-tighter mb-1">Aviso de Equipamento</h3>
-              <p className="text-slate-400 text-[11px] font-medium">
+              <p className="text-slate-400 text-[11px] font-medium leading-relaxed">
                 {stats.profPenalty && "Você está usando itens sem a proficiência necessária (-5 em testes). "}
-                {stats.strPenalty && "Você não possui Força mínima (15) para sua armadura pesada (Desl. -3m e Perícias -2)."}
+                {stats.strPenalty && "Você não possui Força mínima para sua armadura pesada (Desl. -3m e Perícias -2). "}
+                {stats.isOverburdened && "Você está com sobrecarga de peso (Desl. -3m e Perícias -2)."}
               </p>
             </div>
-            <button onClick={() => onNavigate(9)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl border border-rose-500/30 text-[10px] font-black uppercase tracking-widest transition-all">Corrigir</button>
+            <button onClick={() => onNavigate(13)} className="px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-xl border border-rose-500/30 text-[10px] font-black uppercase tracking-widest transition-all">Corrigir</button>
           </div>
         )}
 
