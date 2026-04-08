@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
 import { useCharacterPersistence } from '../hooks/useCharacterPersistence';
 import { useCreationNavigation, STEP_LABELS, MAX_STEPS } from '../hooks/useCreationNavigation';
+import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
 import { ErrorBoundary } from './ErrorBoundary';
 
 // ─── Lazy: carregados sob demanda ────────────────────────────────────────────

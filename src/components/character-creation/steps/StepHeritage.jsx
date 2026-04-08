@@ -7,6 +7,14 @@ import { GENERAL_POWERS } from '../../../data/powers';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 
+const RACE_ICONS = {
+  humano: '🧑', anao: '⛏️', elfo: '🌟', dahllan: '🌺',
+  goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
+  hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
+  kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
+  moreau: '🦊',
+};
+
 const RACE_IMAGES = {
   humano: '/assets/images/races/humano.webp',
   anao: '/assets/images/races/anao.webp',
