@@ -4,8 +4,8 @@ import { useCharacterStore } from '../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
-import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
 import { useCharacterPersistence } from '../hooks/useCharacterPersistence';
+import { useCreationNavigation, STEP_LABELS, MAX_STEPS } from '../hooks/useCreationNavigation';
 import { ErrorBoundary } from './ErrorBoundary';
 
 // ─── Lazy: carregados sob demanda ────────────────────────────────────────────
@@ -43,40 +43,27 @@ import { CharacterLibrary } from './character-creation/CharacterLibrary';
 import { CharacterPreview } from './character-creation/CharacterPreview';
 import { PlaySheet } from './PlaySheet';
 
-const STEP_LABELS = [
-  "Raça",             // 0
-  "Herança",          // 1
-  "Classe",           // 2
-  "Identidade",       // 3
-  "Esp. de Classe",   // 4
-  "Origem",           // 5
-  "Benefícios",       // 6
-  "Divindade",        // 7
-  "Nível",            // 8
-  "Magias",           // 9
-  "Atributos",        // 10
-  "Perícias (Classe)",// 11
-  "Perícias (Int)",   // 12
-  "Equipamento",      // 13
-  "Poderes",          // 14
-  "Progressão",       // 15
-  "Aliados",          // 16
-  "Revisão"           // 17
-];
-const MAX_STEPS = STEP_LABELS.length;
+// STEP_LABELS and MAX_STEPS moved to useCreationNavigation hook
 
 export default function CharacterCreation() {
   const { char, resetChar } = useCharacterStore(useShallow(state => ({ char: state.char, resetChar: state.resetChar })));
   const { user, signOut } = useAuthStore();
   const prefersReducedMotion = useReducedMotion();
-  const [view, setView] = useState('library');
-  const [step, setStep] = useState(0);
   const [previewOpen, setPreviewOpen] = useState(false);
-  const [confirmBack, setConfirmBack] = useState(null); // { targetStep, message }
-  const [sidebarOpen, setSidebarOpen] = useState(false); // mobile sidebar toggle
+  
+  const {
+    view, setView,
+    step, setStep,
+    confirmBack, setConfirmBack,
+    sidebarOpen, setSidebarOpen,
+    contentRef,
+    handleNext,
+    handlePrev,
+    goToPrev
+  } = useCreationNavigation('library');
+
   const activeStepRefDesktop = useRef(null);
   const activeStepRefMobile = useRef(null);
-  const contentRef = useRef(null);
 
   // Auto-scroll sidebar to current step
   useEffect(() => {
@@ -158,56 +145,6 @@ export default function CharacterCreation() {
   function handlePlayFromLibrary(savedChar) {
     handleLoadFromLibrary(savedChar);
     setView('play');
-  }
-
-  function handleNext() {
-    const latestChar = useCharacterStore.getState().char;
-    const latestStats = computeStats(latestChar);
-    
-    if (step < MAX_STEPS - 1 && canGoNext(step, latestChar, latestStats).ok) {
-      let nextStep = step + 1;
-      while (nextStep < MAX_STEPS - 1 && shouldSkipStep(nextStep, latestChar, latestStats)) {
-        nextStep++;
-      }
-      setStep(nextStep);
-    }
-  }
-
-  function goToPrev(targetStep) {
-    if (targetStep < 0) { setView('library'); return; }
-    setStep(targetStep);
-  }
-
-  function handlePrev() {
-    let prevStep = step - 1;
-    while (prevStep > 0 && shouldSkipStep(prevStep, char, stats)) prevStep--;
-
-    // Detectar se voltar vai apagar dados relevantes
-    const RESET_WARNINGS = {
-      // Ao voltar para a Origem (step 5), os benefícios escolhidos serão perdidos se mudar
-      6: char.origemBeneficios?.length > 0
-        ? 'Voltar para Origem pode redefinir seus Benefícios escolhidos caso mude de origem.'
-        : null,
-      // Ao voltar para a Classe, especializações e magias serão perdidas
-      4: (char.choices?.escolasMagia?.length > 0 || char.choices?.caminhoArcanista)
-        ? 'Voltar para Classe pode redefinir sua Especialização de Classe.'
-        : null,
-      // Ao voltar para Raça, a herança racial será perdida
-      1: (char.choices?.pericias?.length > 0 || char.choices?.herancaPower || char.racaEscolha?.length > 0)
-        ? 'Voltar para Raça pode redefinir suas escolhas de Herança Racial.'
-        : null,
-      // Ao voltar de Atributos após ter distribuído
-      10: (char.atributos && Object.values(char.atributos).some(v => v !== 0))
-        ? 'Seus atributos distribuídos serão preservados, mas mudanças de raça/nível podem alterá-los.'
-        : null,
-    };
-
-    const warning = RESET_WARNINGS[step];
-    if (warning) {
-      setConfirmBack({ targetStep: prevStep < 0 ? -1 : prevStep, message: warning });
-    } else {
-      goToPrev(prevStep < 0 ? -1 : prevStep);
-    }
   }
 
   if (view === 'play') {

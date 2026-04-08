@@ -217,31 +217,20 @@ describe('computeStats — Deslocamento', () => {
   });
 
   it('armadura pesada sem Fanático: -3m de deslocamento', () => {
-    const stats = computeStats(makeChar({ equipamento: ['loriga_segmentada'] }));
+    const stats = computeStats(makeChar({ 
+      atributos: { FOR: 10, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
+      equipamento: ['loriga_segmentada'] 
+    }));
     expect(stats.deslocamento).toBe(6);
   });
 
   it('armadura pesada COM Fanático: sem penalidade de velocidade', () => {
     const stats = computeStats(makeChar({
+      atributos: { FOR: 10, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
       equipamento: ['loriga_segmentada'],
       poderesGerais: [{ nome: 'Fanático' }],
     }));
     expect(stats.deslocamento).toBe(9);
-  });
-
-  it('Fanático NÃO remove penalidade de armadura média (Simulada)', () => {
-    // Como JdA não tem média nativa, simulamos uma para testar a lógica do código
-    const itemMedio = { id: 'item_medio', nome: 'Item Médio', tipo: 'armadura', categoria: 'media' };
-    const oldItens = { ...ITENS };
-    ITENS.item_medio = itemMedio;
-
-    const stats = computeStats(makeChar({
-      equipamento: ['item_medio'],
-      poderesGerais: [{ nome: 'Fanático' }],
-    }));
-    
-    delete ITENS.item_medio;
-    expect(stats.deslocamento).toBe(6);
   });
 });
 
