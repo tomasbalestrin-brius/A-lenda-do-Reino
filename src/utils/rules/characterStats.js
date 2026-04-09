@@ -477,7 +477,8 @@ function computeDeslocamento(char, allPowers, armorData, strPenalty, isOverburde
 
   // No JdA: Armadura Pesada penaliza em -3m.
   // Fanático remove essa penalidade ESPECÍFICA de armadura pesada.
-  if (itemCategoria === 'pesada' && !hasPower(allPowers, 'Fanático')) {
+  const hasFanatico = hasPower(allPowers, 'Fanático');
+  if (itemCategoria === 'pesada' && !hasFanatico) {
     registry.add('deslocamento', -3, 'Penalidade de Armadura Pesada', 'Penalidade');
   }
   
@@ -486,7 +487,10 @@ function computeDeslocamento(char, allPowers, armorData, strPenalty, isOverburde
     registry.add('deslocamento', -3, 'Penalidade de Armadura Média', 'Penalidade');
   }
 
-  if (strPenalty) registry.add('deslocamento', -3, 'Falta de Força', 'Penalidade');
+  // Fanático também perdoa a penalidade de força no deslocamento se for armadura pesada.
+  if (strPenalty && !(itemCategoria === 'pesada' && hasFanatico)) {
+    registry.add('deslocamento', -3, 'Falta de Força', 'Penalidade');
+  }
   if (isOverburdened) registry.add('deslocamento', -3, 'Sobrecarga', 'Penalidade');
   
   const final = registry.calculate('deslocamento');

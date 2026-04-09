@@ -591,7 +591,7 @@ export default function CharacterCreation() {
          {/* Orbs de fundo — blur desativado em mobile (GPU-heavy) */}
          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-amber-600/5 md:blur-[150px] rounded-full" />
          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-600/5 md:blur-[150px] rounded-full" />
-         <div className="absolute inset-0 bg-[url('/assets/noise.png')] opacity-[0.03] mix-blend-overlay" />
+         <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" />
       </div>
 
     </div>

@@ -1,3 +1,6 @@
+import { ITENS } from '../data/items';
+import { CONDICOES_DATA, BUFFS_DATA } from './rules/characterStats';
+
 export function exportToPDF(char, stats) {
   const signStr = (n) => (n >= 0 ? `+${n}` : String(n));
   const attrKeys = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
@@ -30,6 +33,17 @@ export function exportToPDF(char, stats) {
     ...Object.values(char.levelChoices || {}).filter(c => c?.nome).map(p => p.nome),
     ...(char.crencasBeneficios || []).map(p => typeof p === 'string' ? p : p.nome),
   ].filter(Boolean);
+
+  // Equipamentos e Financeiro
+  const equippedItems = (char.equipamento || []).map(e => {
+    const id = typeof e === 'string' ? e : e.id;
+    return ITENS[id] || { nome: id.replace(/_/g, ' '), categoria: '?', tipo: 'Item' };
+  });
+  const tibares = char.dinheiro !== undefined ? char.dinheiro : (stats?.startingWealthGold || 0);
+
+  // Status e Condições Ativas
+  const activeConditions = (char.condicoesAtivas || []).map(cid => CONDICOES_DATA[cid]).filter(Boolean);
+  const activeBuffs = (char.beneficiosAtivos || []).map(bid => BUFFS_DATA[bid]).filter(Boolean);
 
   const html = `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -153,11 +167,11 @@ export function exportToPDF(char, stats) {
   .skill-row.trained { font-weight: 700; color: #8b0000; }
   .skill-bonus { min-width: 25px; text-align: right; font-family: 'Cinzel', serif; }
 
-  /* ── Weapons Table ── */
-  .weapon-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
-  .weapon-table th { font-family: 'Cinzel', serif; background: #5d4037; color: white; padding: 2px 4px; font-size: 7pt; text-align: left; }
-  .weapon-table td { padding: 3px 4px; border-bottom: 1px solid #5d403722; }
-  .weapon-type { font-size: 6.5pt; color: #666; font-style: italic; }
+  /* ── Lists / Tables ── */
+  .styled-table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  .styled-table th { font-family: 'Cinzel', serif; background: #5d4037; color: white; padding: 2px 4px; font-size: 7pt; text-align: left; }
+  .styled-table td { padding: 3px 4px; border-bottom: 1px solid #5d403722; }
+  .type-lbl { font-size: 6.5pt; color: #666; font-style: italic; }
 
   /* ── Trackers ── */
   .tracker-group { display: flex; gap: 2px; flex-wrap: wrap; margin-top: 4px; }
@@ -168,6 +182,8 @@ export function exportToPDF(char, stats) {
   /* ── Special Traits ── */
   .traits-list { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 5px; }
   .trait-pill { padding: 2px 6px; background: #fffde7; border: 1px solid #f9a825; border-radius: 10px; font-size: 7.5pt; font-weight: 700; color: #c62828; }
+  .trait-pill-status { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .trait-pill-buff { background: #dcfce7; border-color: #22c55e; color: #166534; }
 
   @media print {
     .no-print { display: none !important; }
@@ -263,10 +279,20 @@ export function exportToPDF(char, stats) {
          <span class="trait-pill" style="background:#e3f2fd; border-color:#2196f3; color:#0d47a1;">Carga: ${stats?.totalWeight?.toFixed(1) || 0}/${stats?.maxLoad || 10}kg</span>
       </div>
 
+      ${(activeConditions.length > 0 || activeBuffs.length > 0) ? `
+      <div class="section">
+        <div class="section-title" style="background: #3e2723;">Status & Condições</div>
+        <div class="section-body traits-list">
+          ${activeConditions.map(c => `<span class="trait-pill trait-pill-status">☠ ${c.nome}</span>`).join('')}
+          ${activeBuffs.map(b => `<span class="trait-pill trait-pill-buff">✦ ${b.nome}</span>`).join('')}
+        </div>
+      </div>
+      ` : ''}
+
       <div class="section">
         <div class="section-title">Arsenal de Combate</div>
         <div class="section-body">
-          <table class="weapon-table">
+          <table class="styled-table">
             <thead>
               <tr><th>Arma</th><th>Ataque</th><th>Dano</th><th>Tipo</th><th>Crítico</th></tr>
             </thead>
@@ -276,8 +302,29 @@ export function exportToPDF(char, stats) {
                   <td><strong>${w.nome}</strong></td>
                   <td style="color:#8b0000; font-weight:700;">${signStr(w.bonusAtk)}</td>
                   <td>${w.dano}</td>
-                  <td class="weapon-type">${w.tipoDano || '—'}</td>
+                  <td class="type-lbl">${w.tipoDano || '—'}</td>
                   <td>${w.critico}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Mochila & Riquezas</div>
+        <div class="section-body">
+          <div style="font-size:8pt; font-weight:700; color:#8b0000; margin-bottom:4px;">Tibares (T$): ${tibares}</div>
+          <table class="styled-table">
+            <thead>
+              <tr><th>Equipamento</th><th>Tipo</th><th>Modificador</th></tr>
+            </thead>
+            <tbody>
+              ${equippedItems.map(item => `
+                <tr>
+                  <td><strong>${item.nome}</strong></td>
+                  <td class="type-lbl">${item.tipo || 'Geral'}</td>
+                  <td class="type-lbl">${item.def ? '+'+item.def+' Def' : (item.bonus || '—')}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -301,7 +348,7 @@ export function exportToPDF(char, stats) {
           <div style="font-size:7pt; color:#8b0000; margin-bottom:5px; font-weight:700; border-bottom:1px solid #8b0000;">CD de Resistência: ${stats?.spellDC}</div>
           ${allSpells.map(spell => {
             const s = typeof spell === 'string' ? { nome: spell } : spell;
-            const spellId = s.nome.toLowerCase().replace(/\\s+/g, '_');
+            const spellId = s.nome.toLowerCase().replace(/\s+/g, '_');
             const enh = char.spellEnhancements?.[spellId];
             return `
               <div style="border-bottom:1px solid #5d403722; padding:3px 0;">
