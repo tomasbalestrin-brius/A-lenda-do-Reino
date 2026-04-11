@@ -1,9 +1,13 @@
 /**
  * BonusRegistry manages stat bonuses according to T20 JdA stacking rules:
- * - Different source categories (Skill, Item, Spell, Ally) STACK.
- * - Same source types usually DO NOT STACK (highest applies).
- * - Exceptions like Armor + Shield are handled by specific stat logic.
+ * - Habilidades (Poderes, Raças, Origens) de fontes diferentes ACUMULAM.
+ * - Atributos e Base ACUMULAM.
+ * - Magias e Itens não acumulam fontes repetidas (aplica-se o maior bônus e a maior penalidade).
+ * - Penalidades e Condições sempre acumulam.
  */
+
+const NON_STACKING_TYPES = ['Magia', 'Item_Magico', 'Item_Armadura', 'Item_Escudo', 'Item', 'Aliado'];
+
 export class BonusRegistry {
   constructor() {
     this.registry = {}; // { [stat]: { [sourceType]: [ { name, value } ] } }
@@ -33,13 +37,25 @@ export class BonusRegistry {
   calculate(stat, base = 0) {
     if (!this.registry[stat]) return base;
     let total = base;
+    
     Object.entries(this.registry[stat]).forEach(([type, list]) => {
-      // In JdA, bonuses of the same type don't stack. We over-simplify here to "highest applies".
-      // Specialized logic (like Armor+Shield) should be added to separate stats OR handled here.
-      const highest = Math.max(...list.map(b => b.value), 0);
-      const lowest = Math.min(...list.map(b => b.value), 0);
-      total += (highest > 0 ? highest : (lowest < 0 ? lowest : 0));
+      if (NON_STACKING_TYPES.includes(type)) {
+        // Não-cumulativos (Itens Mágicos, Magias): Pega o maior bônus e a maior penalidade
+        const positiveBonuses = list.filter(b => b.value > 0);
+        const negativePenalties = list.filter(b => b.value < 0);
+        
+        if (positiveBonuses.length > 0) {
+          total += Math.max(...positiveBonuses.map(b => b.value));
+        }
+        if (negativePenalties.length > 0) {
+          total += Math.min(...negativePenalties.map(b => b.value));
+        }
+      } else {
+        // Cumulativos (Habilidades, Atributos, Base, Condições, Penalidades genéricas): Soma tudo
+        total += list.reduce((sum, b) => sum + b.value, 0);
+      }
     });
+
     return total;
   }
 
@@ -59,15 +75,32 @@ export class BonusRegistry {
   getDetails(stat) {
     if (!this.registry[stat]) return [];
     const details = [];
+    
     Object.entries(this.registry[stat]).forEach(([type, list]) => {
       if (list.length === 0) return;
-      const highest = list.reduce((prev, current) => (prev.value > current.value) ? prev : current);
-      const lowest = list.reduce((prev, current) => (prev.value < current.value) ? prev : current);
-      const bestValue = highest.value > 0 ? highest.value : (lowest.value < 0 ? lowest.value : 0);
-      const bestSource = highest.value > 0 ? highest : (lowest.value < 0 ? lowest : list[0]);
-      
-      details.push({ label: `${bestSource.name} (${type})`, value: bestValue });
+
+      if (NON_STACKING_TYPES.includes(type)) {
+        // Exibe apenas os maiores/menores que de fato aplicaram
+        const positiveBonuses = list.filter(b => b.value > 0);
+        const negativePenalties = list.filter(b => b.value < 0);
+        
+        if (positiveBonuses.length > 0) {
+          const best = positiveBonuses.reduce((prev, current) => (prev.value > current.value) ? prev : current);
+          details.push({ label: `${best.name} (${type})`, value: best.value });
+        }
+        
+        if (negativePenalties.length > 0) {
+          const worst = negativePenalties.reduce((prev, current) => (prev.value < current.value) ? prev : current);
+          details.push({ label: `${worst.name} (${type})`, value: worst.value });
+        }
+      } else {
+        // Exibe todos, pois todos somaram
+        list.forEach(b => {
+          details.push({ label: `${b.name} (${type})`, value: b.value });
+        });
+      }
     });
+    
     return details;
   }
 }
