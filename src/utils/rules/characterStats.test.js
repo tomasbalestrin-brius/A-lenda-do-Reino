@@ -212,13 +212,17 @@ describe('computeStats — Deslocamento', () => {
   });
 
   it('armadura média: -3m de deslocamento', () => {
-    const stats = computeStats(makeChar({ equipamento: ['cota_malha'] }));
+    const stats = computeStats(makeChar({ 
+      atributos: { FOR: 15, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
+      equipamento: ['cota_malha'] 
+    }));
+    // Note: Cota de malha is Pesada, so it applies -3m explicitly for being pesada.
     expect(stats.deslocamento).toBe(6);
   });
 
   it('armadura pesada sem Fanático: -3m de deslocamento', () => {
     const stats = computeStats(makeChar({ 
-      atributos: { FOR: 10, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
+      atributos: { FOR: 15, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 }, // FOR 15 = avoids strPenalty & overburden
       equipamento: ['loriga_segmentada'] 
     }));
     expect(stats.deslocamento).toBe(6);

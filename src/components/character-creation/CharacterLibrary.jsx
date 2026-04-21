@@ -76,7 +76,7 @@ function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
   );
 }
 
-export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompendium, onImport, onPlay, loading }) {
+export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompendium, onImport, onPlay, onVtt, loading }) {
   const [search, setSearch] = useState('');
 
   const handleImportFile = (e) => {
@@ -167,6 +167,9 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
               <button onClick={onCompendium} className="px-8 py-3 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold uppercase tracking-widest text-sm transition-all hover:bg-purple-500/20 active:scale-95">
                 📖 Compêndio
               </button>
+              <button onClick={() => onVtt?.()} className="px-8 py-3 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 font-bold uppercase tracking-widest text-sm transition-all hover:bg-pink-500/20 active:scale-95 flex items-center gap-2">
+                🎲 Modo Multiplayer (VTT)
+              </button>
             </div>
           </div>
         ) : (
@@ -207,6 +210,10 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
              <button onClick={onCompendium} className="group relative flex items-center gap-4 px-10 py-5 rounded-full bg-purple-500/10 border-2 border-purple-500/30 text-purple-400 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 overflow-hidden hover:bg-purple-500/20">
                 <span className="text-xl">📖</span>
                 <span>Compêndio</span>
+             </button>
+             <button onClick={() => onVtt?.()} className="group relative flex items-center gap-4 px-10 py-5 rounded-full bg-pink-500/10 border-2 border-pink-500/30 text-pink-400 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 hover:bg-pink-500/20">
+                <span className="text-xl">🎲</span>
+                <span>Modo VTT</span>
              </button>
           </div>
         )}

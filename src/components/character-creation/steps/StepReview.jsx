@@ -5,7 +5,7 @@ import RACES from '../../../data/races';
 import { ORIGENS } from '../../../data/origins';
 import { divindades as DEUSES } from '../../../data/gods';
 import { ITENS } from '../../../data/items';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../../utils/rules/characterStats';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../../data/conditionsAndBuffs';
 import { MELHORIAS, MATERIAIS } from '../../../data/modificacoes';
 import DiceRollerBG3 from '../../DiceRollerBG3';
 import { useCharacterStore } from '../../../store/useCharacterStore';

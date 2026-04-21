@@ -88,4 +88,32 @@ export const useAuthStore = create((set) => ({
       set({ error: error.message, loading: false });
     }
   },
+
+  updateProfile: async (updates) => {
+    try {
+      set({ loading: true, error: null });
+      const { data, error } = await supabase.auth.updateUser(updates);
+      if (error) throw error;
+      set({ user: data.user, loading: false });
+      return { data, error: null };
+    } catch (error) {
+      set({ error: error.message, loading: false });
+      return { data: null, error };
+    }
+  },
+
+  deleteAccount: async () => {
+    try {
+      set({ loading: true, error: null });
+      // Requires an RPC function named 'delete_user' created in Supabase database
+      const { error } = await supabase.rpc('delete_user');
+      if (error) throw error;
+      await supabase.auth.signOut();
+      set({ user: null, session: null, loading: false });
+      return { error: null };
+    } catch (error) {
+      set({ error: error.message, loading: false });
+      return { error };
+    }
+  },
 }));

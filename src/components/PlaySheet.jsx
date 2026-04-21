@@ -4,6 +4,8 @@ import { computeStats, getAllTrainedSkills } from '../utils/rules/characterStats
 import { ITENS } from '../data/items';
 import CLASSES from '../data/classes';
 import RACES from '../data/races';
+import { useVttStore } from '../store/useVttStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 const CONDITIONS = [
   { id: 'abalado',    label: 'Abalado',    icon: '😰', color: 'yellow', efeito: '−2 em testes de perícia.' },
@@ -65,9 +67,10 @@ const SAVE_DESCRIPTIONS = {
   von:  'Resiste a magias mentais, ilusões e efeitos de encantamento.',
 };
 
-export function PlaySheet({ char, onBack }) {
+export function PlaySheet({ char, onBack, onVtt }) {
   const stats = useMemo(() => computeStats(char), [char]);
   const trainedSkills = useMemo(() => getAllTrainedSkills(char), [char]);
+  const { isConnected, sendEvent, syncHp } = useVttStore();
 
   const maxPV = stats.pv || 1;
   const maxPM = stats.pm || 0;
@@ -96,8 +99,13 @@ export function PlaySheet({ char, onBack }) {
   }, [currentPV, currentPM, conditions, notes, char.id, char.nome]);
 
   const adjustPV = useCallback((delta) => {
-    setCurrentPV(v => Math.max(-10, Math.min(maxPV, v + delta)));
-  }, [maxPV]);
+    setCurrentPV(v => {
+      const next = Math.max(-10, Math.min(maxPV, v + delta));
+      // Fix 4: Sincronizar HP com VTT quando conectado
+      if (isConnected) syncHp(next, maxPV);
+      return next;
+    });
+  }, [maxPV, isConnected, syncHp]);
 
   const adjustPM = useCallback((delta) => {
     setCurrentPM(v => Math.max(0, Math.min(maxPM, v + delta)));
@@ -114,7 +122,15 @@ export function PlaySheet({ char, onBack }) {
     const total = r + bonus;
     const entry = { sides, r, bonus, total, label, crit: r === sides, fail: r === 1, ts: Date.now() };
     setRollHistory(prev => [entry, ...prev].slice(0, 10));
-  }, []);
+
+    // Fix 1: sendEvent sem userId (store pega internamente)
+    if (useVttStore.getState().isConnected) {
+      useVttStore.getState().sendEvent(
+        'dice_roll',
+        JSON.stringify({ charName: char.nome, ...entry })
+      );
+    }
+  }, [char.nome]);
 
   const doWeaponAttack = useCallback((weapon) => {
     const atkRoll = roll(20);
@@ -126,7 +142,13 @@ export function PlaySheet({ char, onBack }) {
     const atkEntry = { sides: 20, r: atkRoll, bonus: stats.atk || 0, total: atkTotal, label: `${weapon.nome} — Ataque`, crit: atkRoll === 20, fail: atkRoll === 1, ts };
     const dmgEntry = { sides: null, r: dmgRoll, bonus: dmgAttr, total: dmgTotal, label: `${weapon.nome} — Dano`, crit: false, fail: false, ts: ts + 1, isDamage: true };
     setRollHistory(prev => [dmgEntry, atkEntry, ...prev].slice(0, 10));
-  }, [stats]);
+    
+    // Fix 1: sendEvent sem userId (store pega internamente)
+    if (useVttStore.getState().isConnected) {
+      useVttStore.getState().sendEvent('dice_roll', JSON.stringify({ charName: char.nome, ...atkEntry }));
+      useVttStore.getState().sendEvent('dice_roll', JSON.stringify({ charName: char.nome, ...dmgEntry }));
+    }
+  }, [char.nome, stats]);
 
   const addCombatant = useCallback((name, ini) => {
     if (!name?.trim()) return;
@@ -186,32 +208,184 @@ export function PlaySheet({ char, onBack }) {
   const race = RACES[char.raca?.toLowerCase()] || {};
   const cls = CLASSES[char.classe?.toLowerCase()] || {};
 
+  // Se estiver conectado ao VTT, usamos o estado global da loja
+  const { combatState, isConnected: isVttConnected, updateCombatState } = useVttStore();
+  
+  const displayCombatants = isVttConnected ? combatState.combatants : combatants;
+  const displayTurn = isVttConnected ? combatState.currentTurn : currentTurn;
+  const displayRound = isVttConnected ? combatState.round : round;
+
+  const handleUpdateCombat = useCallback((newState) => {
+    if (isVttConnected) {
+      updateCombatState(newState);
+    } else {
+      setCombatants(newState.combatants);
+      setCurrentTurn(newState.currentTurn);
+      setRound(newState.round);
+    }
+  }, [isVttConnected, updateCombatState]);
+
+
+
+  // Tab: Initiative Tracker
+  if (activeTab === 'initiative') {
+    return (
+      <div className="flex flex-col gap-3">
+        {/* Round Counter */}
+        <div className="flex items-center justify-between bg-gray-900/60 border border-amber-500/20 rounded-[2rem] px-5 py-4">
+          <div className="flex flex-col">
+            <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest">Rodada</span>
+            <span className="text-3xl font-black text-amber-400 leading-none">{displayRound}</span>
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => handleUpdateCombat({ ...combatState, round: Math.max(1, displayRound - 1) })} 
+              className="w-9 h-9 rounded-xl bg-gray-800 border border-white/5 text-white font-black hover:bg-gray-700 active:scale-90 transition-all"
+            >−</button>
+            <button 
+              onClick={() => {
+                let nextT = (displayTurn + 1) % displayCombatants.length;
+                let nextR = displayRound;
+                if (nextT === 0) nextR++;
+                handleUpdateCombat({ ...combatState, currentTurn: nextT, round: nextR });
+              }} 
+              className="px-4 h-9 rounded-xl bg-amber-600 text-gray-950 font-black text-xs uppercase tracking-wide hover:bg-amber-500 active:scale-95 transition-all"
+            >
+              ▶ Próximo Turno
+            </button>
+            <button 
+              onClick={() => handleUpdateCombat({ combatants: [], currentTurn: 0, round: 1 })} 
+              className="w-9 h-9 rounded-xl bg-gray-800 border border-white/5 text-slate-400 text-xs font-black hover:bg-gray-700 active:scale-90 transition-all" 
+              title="Reset"
+            >↺</button>
+          </div>
+        </div>
+
+        {/* Add PC to initiative */}
+        <button
+          onClick={() => {
+            const iniRoll = roll(20) + (stats.ini || 0);
+            doRoll(20, stats.ini || 0, 'Iniciativa');
+            const newCombatant = { name: char.nome || 'Herói', ini: iniRoll };
+            const nextList = [...displayCombatants, newCombatant].sort((a,b) => b.ini - a.ini);
+            handleUpdateCombat({ ...combatState, combatants: nextList });
+          }}
+          className="py-3 px-4 rounded-2xl bg-blue-900/20 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:bg-blue-900/40 active:scale-95 transition-all"
+        >
+          ⚡ Rolar Iniciativa do Personagem
+        </button>
+
+        {/* Add Combatant */}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Nome do combatente..."
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            className="flex-1 bg-gray-900/60 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-bold focus:border-amber-500/30"
+          />
+          <input
+            type="number"
+            placeholder="INI"
+            value={newIni}
+            onChange={e => setNewIni(e.target.value)}
+            className="w-16 bg-gray-900/60 border border-white/10 rounded-xl px-2 py-2.5 text-white text-xs font-bold text-center"
+          />
+          <button
+            onClick={() => {
+              if (!newName.trim()) return;
+              const nextList = [...displayCombatants, { name: newName.trim(), ini: parseInt(newIni) || 0 }].sort((a,b) => b.ini - a.ini);
+              handleUpdateCombat({ ...combatState, combatants: nextList });
+              setNewName(''); setNewIni('');
+            }}
+            className="px-4 py-2.5 rounded-xl bg-emerald-900/30 border border-emerald-500/30 text-emerald-300 text-xs font-black"
+          >
+            + Add
+          </button>
+        </div>
+
+        {/* Combatants List */}
+        {displayCombatants.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {displayCombatants.map((c, i) => (
+              <motion.div
+                key={i}
+                layout
+                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${
+                  i === displayTurn
+                    ? 'bg-amber-500/10 border-amber-500/40 shadow-lg shadow-amber-900/10'
+                    : 'bg-gray-900/40 border-white/5'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border ${
+                  i === displayTurn ? 'bg-amber-600 border-amber-400 text-gray-950' : 'bg-gray-950 border-white/10 text-amber-400'
+                }`}>
+                  {c.ini}
+                </div>
+                <span className={`flex-1 font-black text-sm ${i === displayTurn ? 'text-amber-300' : 'text-slate-300'}`}>
+                  {c.name}
+                </span>
+                {i === displayTurn && (
+                  <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest animate-pulse">Vez ▶</span>
+                )}
+                <button
+                  onClick={() => {
+                    const nextList = displayCombatants.filter((_, idx) => idx !== i);
+                    handleUpdateCombat({ ...combatState, combatants: nextList, currentTurn: Math.min(displayTurn, Math.max(0, nextList.length - 1)) });
+                  }}
+                  className="w-7 h-7 rounded-lg text-slate-700 hover:text-red-400 transition-colors text-sm"
+                >✕</button>
+              </motion.div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-10 text-slate-600 italic text-sm">
+            Adicione combatentes para iniciar o rastreamento.
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-300 font-sans">
       {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#020617]/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center gap-4">
-        <button
-          onClick={onBack}
-          className="p-2 rounded-xl bg-gray-900 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95"
-        >
-          ←
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className="font-black text-white text-lg leading-none truncate">{char.nome || 'Herói'}</p>
-          <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-0.5">
-            {race?.nome || char.raca} · {cls?.nome || char.classe} · Nível {char.level || 1}
-          </p>
+      <div className="sticky top-0 z-50 bg-[#020617]/95 backdrop-blur-xl border-b border-white/5 px-4 py-3 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3 w-1/2">
+           <button
+             onClick={onBack}
+             className="p-2 rounded-xl bg-gray-900 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95"
+           >
+             ←
+           </button>
+           <div className="flex-1 min-w-0">
+             <p className="font-black text-white text-lg leading-none truncate">{char.nome || 'Herói'}</p>
+             <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-0.5">
+               {race?.nome || char.raca} · {cls?.nome || char.classe} · Nível {char.level || 1}
+             </p>
+           </div>
         </div>
-        {lastRoll && (
-          <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className={`flex flex-col items-center px-4 py-2 rounded-2xl border-2 ${lastRoll.crit ? 'bg-amber-900/40 border-amber-400 text-amber-300' : lastRoll.fail ? 'bg-red-900/40 border-red-500 text-red-300' : 'bg-gray-900 border-white/10 text-white'}`}
-          >
-            <span className="text-2xl font-black leading-none">{lastRoll.total}</span>
-            <span className="text-[9px] uppercase tracking-widest opacity-60">{lastRoll.label || `d${lastRoll.sides}`} {lastRoll.crit ? '✦ CRÍT' : lastRoll.fail ? '✦ FALHA' : ''}</span>
-          </motion.div>
-        )}
+        
+        <div className="flex items-center gap-3">
+           {isConnected && onVtt && (
+             <button
+               onClick={onVtt}
+               className="px-4 py-2 bg-pink-900/20 border border-pink-500/30 text-pink-400 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-pink-900/40 transition-all flex items-center gap-2 shadow-lg"
+             >
+                🎲 <span className="hidden sm:inline">Mesa</span>
+             </button>
+           )}
+           {lastRoll && (
+             <motion.div
+               initial={{ scale: 0.7, opacity: 0 }}
+               animate={{ scale: 1, opacity: 1 }}
+               className={`hidden xs:flex flex-col items-center px-4 py-2 rounded-2xl border-2 ${lastRoll.crit ? 'bg-amber-900/40 border-amber-400 text-amber-300' : lastRoll.fail ? 'bg-red-900/40 border-red-500 text-red-300' : 'bg-gray-900 border-white/10 text-white'}`}
+             >
+               <span className="text-xl font-black leading-none">{lastRoll.total}</span>
+               <span className="text-[8px] uppercase tracking-widest opacity-60">{lastRoll.label || `d${lastRoll.sides}`} {lastRoll.crit ? '✦ CRÍT' : lastRoll.fail ? '✦ FALHA' : ''}</span>
+             </motion.div>
+           )}
+        </div>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-4 flex flex-col gap-4">
@@ -546,100 +720,6 @@ export function PlaySheet({ char, onBack }) {
           </div>
         )}
 
-        {/* Tab: Initiative Tracker */}
-        {activeTab === 'initiative' && (
-          <div className="flex flex-col gap-3">
-            {/* Round Counter */}
-            <div className="flex items-center justify-between bg-gray-900/60 border border-amber-500/20 rounded-[2rem] px-5 py-4">
-              <div className="flex flex-col">
-                <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest">Rodada</span>
-                <span className="text-3xl font-black text-amber-400 leading-none">{round}</span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setRound(r => Math.max(1, r - 1))} className="w-9 h-9 rounded-xl bg-gray-800 border border-white/5 text-white font-black hover:bg-gray-700 active:scale-90 transition-all">−</button>
-                <button onClick={nextTurn} className="px-4 h-9 rounded-xl bg-amber-600 text-gray-950 font-black text-xs uppercase tracking-wide hover:bg-amber-500 active:scale-95 transition-all">
-                  ▶ Próximo Turno
-                </button>
-                <button onClick={() => { setRound(1); setCurrentTurn(0); }} className="w-9 h-9 rounded-xl bg-gray-800 border border-white/5 text-slate-400 text-xs font-black hover:bg-gray-700 active:scale-90 transition-all" title="Reset">↺</button>
-              </div>
-            </div>
-
-            {/* Add PC to initiative */}
-            <button
-              onClick={() => {
-                const iniRoll = roll(20) + (stats.ini || 0);
-                doRoll(20, stats.ini || 0, 'Iniciativa');
-                addCombatant(char.nome || 'Herói', iniRoll);
-              }}
-              className="py-3 px-4 rounded-2xl bg-blue-900/20 border border-blue-500/20 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:bg-blue-900/40 active:scale-95 transition-all"
-            >
-              ⚡ Rolar Iniciativa do Personagem
-            </button>
-
-            {/* Add Combatant */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="Nome do combatente..."
-                value={newName}
-                onChange={e => setNewName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addCombatant(newName, newIni)}
-                className="flex-1 bg-gray-900/60 border border-white/10 rounded-xl px-3 py-2.5 text-white text-xs font-bold placeholder-slate-700 focus:outline-none focus:border-amber-500/30"
-              />
-              <input
-                type="number"
-                placeholder="INI"
-                value={newIni}
-                onChange={e => setNewIni(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addCombatant(newName, newIni)}
-                className="w-16 bg-gray-900/60 border border-white/10 rounded-xl px-2 py-2.5 text-white text-xs font-bold placeholder-slate-700 focus:outline-none focus:border-amber-500/30 text-center [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
-              />
-              <button
-                onClick={() => addCombatant(newName, newIni)}
-                className="px-4 py-2.5 rounded-xl bg-emerald-900/30 border border-emerald-500/30 text-emerald-300 text-xs font-black hover:bg-emerald-900/50 active:scale-95 transition-all"
-              >
-                + Add
-              </button>
-            </div>
-
-            {/* Combatants List */}
-            {combatants.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {combatants.map((c, i) => (
-                  <motion.div
-                    key={i}
-                    layout
-                    className={`flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all ${
-                      i === currentTurn
-                        ? 'bg-amber-500/10 border-amber-500/40 shadow-lg shadow-amber-900/10'
-                        : 'bg-gray-900/40 border-white/5'
-                    }`}
-                  >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border ${
-                      i === currentTurn ? 'bg-amber-600 border-amber-400 text-gray-950' : 'bg-gray-950 border-white/10 text-amber-400'
-                    }`}>
-                      {c.ini}
-                    </div>
-                    <span className={`flex-1 font-black text-sm ${i === currentTurn ? 'text-amber-300' : 'text-slate-300'}`}>
-                      {c.name}
-                    </span>
-                    {i === currentTurn && (
-                      <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest animate-pulse">Vez ▶</span>
-                    )}
-                    <button
-                      onClick={() => removeCombatant(i)}
-                      className="w-7 h-7 rounded-lg text-slate-700 hover:text-red-400 transition-colors text-sm flex items-center justify-center"
-                    >✕</button>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-10 text-slate-600 italic text-sm">
-                Adicione combatentes para iniciar o rastreamento.
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Tab: Skills */}
         {activeTab === 'skills' && (

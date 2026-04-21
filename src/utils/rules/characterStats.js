@@ -2,9 +2,9 @@ import CLASSES from '../../data/classes';
 import RACES from '../../data/races';
 import { ORIGENS } from '../../data/origins';
 import { ITENS } from '../../data/items';
-import { MATERIAIS } from '../../data/modificacoes';
+import { MATERIAIS, MELHORIAS } from '../../data/modificacoes';
 import PERICIAS_LIST from '../../data/skills';
-import { MAGIC_ITEMS_ALL } from '../../data/magicItems';
+import { MAGIC_ITEMS_ALL, ENCANTOS_ARMA, ENCANTOS_ARMADURA } from '../../data/magicItems';
 import { divindades as DEUSES } from '../../data/gods';
 import {
   ATTR_KEYS, POINT_BUY_POOL, ATTR_TOTAL_COST,
@@ -15,37 +15,9 @@ import {
 } from './constants';
 import { GENERAL_POWERS } from '../../data/powers';
 import { BonusRegistry } from './BonusRegistry';
-import { applyImpacts } from './ImpactHandlers';
+import { applyImpacts, applyEquipmentImpacts, applyAliadoImpacts, applyConditionsAndBuffs } from './ImpactHandlers';
 
-export const CONDICOES_DATA = {
-  abalado: { nome: 'Abalado', penalidade: { pericia: -2 } },
-  agarrado: { nome: 'Agarrado', penalidade: { atk: -2 }, tags: ['desprevenido'] },
-  alquebrado: { nome: 'Alquebrado', penalidade: { spellPM: 1 } },
-  atordoado: { nome: 'Atordoado', penalidade: { def: -5 }, tags: ['incapaz'] },
-  caido: { nome: 'Caído', penalidade: { atk: -2 }, nota: '+5 Def vs C-a-C, -5 Def vs Projéteis' },
-  cego: { nome: 'Cego', penalidade: { atk: -4, def: -5, percepcao: -10 } },
-  debilitado: { nome: 'Debilitado', penalidade: { pericia_fisica: -5 } },
-  desprevenido: { nome: 'Desprevenido', penalidade: { def: -5, ref: -5 } },
-  enfermo: { nome: 'Enfermo', penalidade: { pericia: -2 } },
-  enredado: { nome: 'Enredado', penalidade: { atk: -2, def: -2, DES: -2, deslocamento_mult: 0.5 } },
-  exaurido: { nome: 'Exaurido', penalidade: { pericia: -5, DES: -2, deslocamento_mult: 0.5 } },
-  fatigado: { nome: 'Fatigado', penalidade: { pericia: -2, deslocamento: -3 } },
-  fraco: { nome: 'Fraco', penalidade: { pericia: -2 } },
-  frustrado: { nome: 'Frustrado', penalidade: { pericia_mental: -2 } },
-  lento: { nome: 'Lento', penalidade: { deslocamento_mult: 0.5 } },
-  ofuscado: { nome: 'Ofuscado', penalidade: { atk: -2, percepcao: -2 } },
-  paralisado: { nome: 'Paralisado', penalidade: { def: -5 }, tags: ['incapaz', 'falha_reflexos_auto', 'desprevenido'] },
-  vulneravel: { nome: 'Vulnerável', penalidade: { def: -2 } },
-};
-
-export const BUFFS_DATA = {
-  bencao: { nome: 'Bênção', bonus: { atk: 1, dano: 1 } },
-  escudo_da_fe: { nome: 'Escudo da Fé', bonus: { def: 2 } },
-  arma_magica: { nome: 'Arma Mágica', bonus: { atk: 1, dano: 1 } },
-  oracao: { nome: 'Oração', bonus: { atk: 2, dano: 2, fort: 2, ref: 2, von: 2 } },
-  heroismo: { nome: 'Heroísmo', bonus: { atk: 4, dano: 4, pv_temp: 40 }, tags: ['imune_medo'] },
-  furia: { nome: 'Fúria', bonus: { atk: 2, dano: 2 }, condicional: true }, // Handled in class logic usually
-};
+// CONDICOES_DATA e BUFFS_DATA movidos para src/data/conditionsAndBuffs.js
 
 // BonusRegistry and related logic moved to ./BonusRegistry.js
 
@@ -54,40 +26,14 @@ function applyAutomatedImpacts(char, allPowers, registry, context) {
   // Use the modular impact handlers
   applyImpacts(Array.from(allPowers), registry, context);
 
-  // --- Aliado Processing (Stay here or move to ImpactHandlers if needed) ---
+  // --- Aliado Processing ---
   const { aliado } = context;
   if (aliado) {
-    const { tipo, nivel } = aliado;
-    const isMestre = nivel === 'mestre';
-    const isVeterano = nivel === 'veterano' || isMestre;
-
-    switch (tipo) {
-      case 'Adepto':
-        registry.add('spellPM_1', -1, 'Aliado Adepto', 'Aliado');
-        if (isVeterano) registry.add('spellPM_2', -1, 'Aliado Adepto', 'Aliado');
-        break;
-      case 'Ajudante':
-        const ajudanteBonus = isMestre ? 4 : 2;
-        (aliado.pericias || []).forEach(p => {
-          registry.add(p.toLowerCase(), ajudanteBonus, 'Aliado Ajudante', 'Aliado');
-        });
-        break;
-      case 'Combatente':
-        const atkBonus = isMestre ? 3 : (isVeterano ? 2 : 1);
-        registry.add('atk', atkBonus, 'Aliado Combatente', 'Aliado');
-        break;
-      case 'Guardião':
-        const defBonus = isMestre ? 4 : (isVeterano ? 3 : 2);
-        registry.add('def', defBonus, 'Aliado Guardião', 'Aliado');
-        if (isMestre) {
-          registry.add('fort', 2, 'Aliado Guardião (Mestre)', 'Aliado');
-          registry.add('ref', 2, 'Aliado Guardião (Mestre)', 'Aliado');
-          registry.add('von', 2, 'Aliado Guardião (Mestre)', 'Aliado');
-        }
-        break;
-      // ... others kept or moved
-    }
+    applyAliadoImpacts(aliado, registry);
   }
+
+  // --- Conditions and Buffs ---
+  applyConditionsAndBuffs(char, registry);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -110,52 +56,7 @@ function hasPower(powerSet, name) {
   return [...powerSet].some(p => normalize(p) === searchName);
 }
 
-/** Accumulates passive stat bonuses from all equipped magic items. */
-function getMagicItemBonuses(char) {
-  const bonuses = {
-    def: 0, pv: 0, pm: 0,
-    fort: 0, ref: 0, von: 0,
-    FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0,
-    ini: 0, deslocamento: 0, spellCD: 0, spellPM: 0,
-    pericias: {},
-  };
 
-  (char.equipamento || []).forEach(e => {
-    const id = typeof e === 'string' ? e : e.id;
-    const item = MAGIC_ITEMS_ALL.find(m => m.id === id);
-    if (!item) return;
-
-    if (item.bonus) {
-      const b = item.bonus;
-      // Scalar fields
-      const scalarKeys = ['def', 'pv', 'pm', 'fort', 'ref', 'von', 'FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR', 'ini', 'deslocamento', 'spellCD', 'spellPM'];
-      scalarKeys.forEach(k => {
-        if (b[k]) bonuses[k] += b[k];
-      });
-
-      // saves shorthand — adds to all three saves
-      if (b.saves) {
-        bonuses.fort += b.saves;
-        bonuses.ref  += b.saves;
-        bonuses.von  += b.saves;
-      }
-
-      // Skill bonuses
-      if (b.pericias) {
-        Object.entries(b.pericias).forEach(([p, v]) => {
-          bonuses.pericias[p] = (bonuses.pericias[p] || 0) + v;
-        });
-      }
-    }
-
-    // Process specific impacts (automated spellPM from Cajado etc)
-    if (item.impacto?.tipo === 'reduzir_custo_magia') {
-      bonuses.spellPM += item.impacto.valor || 0;
-    }
-  });
-
-  return bonuses;
-}
 
 function getRaceAttrBonus(raceData, escolha, variante) {
   const a = raceData?.atributos || {};
@@ -238,9 +139,7 @@ function computePV(cls, raceData, origem, allPowers, attrs, level, registry) {
     registry.add('pv', 2, 'Origem', 'Habilidade');
   }
 
-  if (allPowers.has('Vitalidade')) {
-    registry.add('pv', level, 'Vitalidade', 'Habilidade');
-  }
+
 
   return { pv: Math.max(1, registry.calculate('pv')) };
 }
@@ -268,10 +167,7 @@ function computePM(char, cls, raceData, allPowers, attrs, level, registry) {
     registry.add('pm', level, 'Sangue Mágico', 'Habilidade');
   }
 
-  // Vontade de Ferro: +1 PM para cada dois níveis
-  if (allPowers.has('Vontade de Ferro')) {
-    registry.add('pm', Math.floor(level / 2), 'Vontade de Ferro', 'Habilidade');
-  }
+
 
   return { pm: Math.max(0, registry.calculate('pm')) };
 }
@@ -365,8 +261,7 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado, registr
     if (forMod > 0) registry.add('def', forMod, 'Braços Calejados (FOR)', 'Habilidade');
   }
 
-  // Poderes
-  if (allPowers.has('Esquiva')) registry.add('def', 2, 'Esquiva', 'Habilidade');
+
   // Pele de Ferro (Bárbaro)
   if (allPowers.has('Pele de Ferro') && clsName === 'barbaro' && !isHeavyArmor) {
     registry.add('def', 2, 'Pele de Ferro', 'Habilidade');
@@ -437,7 +332,7 @@ function computeDefense(char, allPowers, equipped, attrs, level, aliado, registr
 
 // ─── Saves ────────────────────────────────────────────────────────────────────
 
-function computeSaves(allPowers, attrs, halfLevel, aliadoResBonus, isHeavyArmor, hasEsquiva, hasVitalidade, hasVontadeFerro, profPenalty, strPenalty, registry) {
+function computeSaves(allPowers, attrs, halfLevel, aliadoResBonus, isHeavyArmor, profPenalty, strPenalty, registry) {
   const saves = ['fort', 'ref', 'von'];
   saves.forEach(s => {
     registry.add(s, halfLevel, 'Meio Nível', 'Base');
@@ -447,9 +342,7 @@ function computeSaves(allPowers, attrs, halfLevel, aliadoResBonus, isHeavyArmor,
     if (allPowers.has('Inexpugnável') && isHeavyArmor) registry.add(s, 2, 'Inexpugnável', 'Habilidade');
   });
 
-  if (hasVontadeFerro) registry.add('von', 2, 'Vontade de Ferro', 'Habilidade');
-  if (hasVitalidade) registry.add('fort', 2, 'Vitalidade', 'Habilidade');
-  if (hasEsquiva) registry.add('ref', 2, 'Esquiva', 'Habilidade');
+
 
   // Baluarte (Cavaleiro) - Bônus em resistências
   const isCavaleiro = [...allPowers].some(p => p.toLowerCase().includes('cavaleiro') || p === 'Baluarte');
@@ -492,8 +385,15 @@ function computeDeslocamento(char, allPowers, armorData, strPenalty, isOverburde
     registry.add('deslocamento', -3, 'Falta de Força', 'Penalidade');
   }
   if (isOverburdened) registry.add('deslocamento', -3, 'Sobrecarga', 'Penalidade');
+  let final = registry.calculate('deslocamento');
   
-  const final = registry.calculate('deslocamento');
+  const mult = registry.calculate('deslocamento_mult');
+  if (mult !== 0) {
+    // No T20, reduções pela metade (ex: lento, enredado) reduzem à metade e stackam penalizando.
+    // Para simplificar: se o mult for > 0, dividimos a velocidade final uma vez
+    final = Math.floor(final / 2);
+  }
+
   return Math.max(1.5, final);
 }
 
@@ -548,42 +448,44 @@ export function computeStats(char) {
     traits.push('Deformidade: Perda de 2 pontos de Carisma (embutido)');
   }
 
-  // 1. Process Conditions
-  (char.condicoesAtivas || []).forEach(cid => {
-    const data = CONDICOES_DATA[cid];
-    if (!data) return;
-    if (data.penalidade) {
-      if (data.penalidade.def) registry.add('def', data.penalidade.def, data.nome, 'Condição');
-      if (data.penalidade.atk) registry.add('atk', data.penalidade.atk, data.nome, 'Condição');
-      if (data.penalidade.pericia) registry.add('pericia_geral', data.penalidade.pericia, data.nome, 'Condição');
-      if (data.penalidade.fort) registry.add('fort', data.penalidade.fort, data.nome, 'Condição');
-      if (data.penalidade.ref) registry.add('ref', data.penalidade.ref, data.nome, 'Condição');
-      if (data.penalidade.von) registry.add('von', data.penalidade.von, data.nome, 'Condição');
-      if (data.penalidade.DES) registry.add('DES', data.penalidade.DES, data.nome, 'Condição');
-    }
-    if (data.tags?.includes('desprevenido')) {
-      registry.add('def', -5, 'Desprevenido (Condição)', 'Condição');
-      registry.add('ref', -5, 'Desprevenido (Condição)', 'Condição');
-    }
-  });
 
-  // 2. Process Buffs
-  (char.beneficiosAtivos || []).forEach(bid => {
-    const data = BUFFS_DATA[bid];
-    if (!data) return;
-    if (data.bonus) {
-      if (data.bonus.atk) registry.add('atk', data.bonus.atk, data.nome, 'Magia');
-      if (data.bonus.dano) registry.add('dano', data.bonus.dano, data.nome, 'Magia');
-      if (data.bonus.def) registry.add('def', data.bonus.def, data.nome, 'Magia');
-      if (data.bonus.fort) registry.add('fort', data.bonus.fort, data.nome, 'Magia');
-      if (data.bonus.ref) registry.add('ref', data.bonus.ref, data.nome, 'Magia');
-      if (data.bonus.von) registry.add('von', data.bonus.von, data.nome, 'Magia');
-    }
-  });
 
   const equipped = (char.equipamento || []).map(e => {
-    const id = typeof e === 'string' ? e : e.id;
-    return ITENS[id];
+    const isString = typeof e === 'string';
+    const id = isString ? e : e.id;
+    
+    // Check specific magic items
+    const magicSpecific = MAGIC_ITEMS_ALL.find(m => m.id === id);
+    if (magicSpecific) return magicSpecific;
+
+    // Check base items
+    const baseItem = ITENS[id];
+    if (!baseItem) return null;
+    if (isString) return baseItem;
+
+    // Hydrate modifications, materials and enchantments
+    const hydrated = { ...baseItem, nome: e.nomePersonalizado || baseItem.nome, material: e.material, melhorias: e.melhorias, encantos: e.encantos };
+
+    if (e.material && MATERIAIS[e.material]) hydrated.materialData = MATERIAIS[e.material];
+    
+    if (e.melhorias && Array.isArray(e.melhorias)) {
+       hydrated.melhoriasData = [];
+       e.melhorias.forEach(mId => {
+          Object.values(MELHORIAS).forEach(cat => {
+            const found = cat.find(x => x.id === mId);
+            if (found) hydrated.melhoriasData.push(found);
+          });
+       });
+    }
+
+    if (e.encantos && Array.isArray(e.encantos)) {
+      hydrated.encantosData = [];
+      e.encantos.forEach(encId => {
+         const enc = ENCANTOS_ARMA[encId] || ENCANTOS_ARMADURA[encId];
+         if (enc) hydrated.encantosData.push(enc);
+      });
+    }
+    return hydrated;
   }).filter(Boolean);
 
   const aliado = char.aliado;
@@ -591,18 +493,14 @@ export function computeStats(char) {
   // Aliado Guardião Mestre: +2 em todos os saves
   const aliadoResBonus = (aliado?.tipo === 'Guardião' && aliado?.nivel === 'mestre') ? 2 : 0;
 
-  // Magic Item Passive Bonuses
-  const magicBonuses = getMagicItemBonuses(char);
-  const scalarKeys = ['def', 'pv', 'pm', 'fort', 'ref', 'von', 'ini', 'deslocamento', 'spellCD'];
-  scalarKeys.forEach(k => {
-    if (magicBonuses[k]) registry.add(k, magicBonuses[k], 'Item Mágico', 'Item_Magico');
-  });
-
   // Prepare context for automated impacts
   const context = { attrs, level, cls, raceData, equipped, aliado };
 
   // Apply Automated Impacts from Powers
   applyAutomatedImpacts(char, allPowers, registry, context);
+
+  // Apply Equipment Impacts (Magic Items, Modifications, Materials)
+  applyEquipmentImpacts(equipped, registry, context);
 
   const pvResult   = computePV(cls, raceData, origem, allPowers, attrs, level, registry);
   const pmResult   = computePM(char, cls, raceData, allPowers, attrs, level, registry);
@@ -610,7 +508,6 @@ export function computeStats(char) {
   const atkResult  = computeAttack(char, attrs, halfLevel, aliado, defResult.profPenalty, defResult.strPenalty, registry);
   const savesResult = computeSaves(
     allPowers, attrs, halfLevel, aliadoResBonus, defResult.isHeavyArmor,
-    allPowers.has('Esquiva'), allPowers.has('Vitalidade'), allPowers.has('Vontade de Ferro'),
     defResult.profPenalty, defResult.strPenalty,
     registry
   );
@@ -658,8 +555,7 @@ export function computeStats(char) {
     sizeMod,
     profPenalty: defResult.profPenalty,
     strPenalty: defResult.strPenalty,
-    overburdenPenalty: isOverburdened ? 2 : 0,
-    magicSkillBonuses: magicBonuses.pericias 
+    overburdenPenalty: isOverburdened ? 2 : 0
   });
 
   // CD de Magia
@@ -735,8 +631,7 @@ export function computeStats(char) {
     totalWeight,
     maxLoad,
     isOverburdened,
-    spellPMReduction: magicBonuses.spellPM,
-    magicSkillBonuses: magicBonuses.pericias,
+    spellPMReduction: -(registry.calculate('spellPM') || 0),
     armorPenalty: defResult.armorPenalty,
     armorPenaltyPericias,
     sizeModFurtividade: sizeMod.furtividade,
@@ -791,7 +686,7 @@ export function getAllTrainedSkills(char) {
   return new Set([...originPericias, ...fixedObrig, ...chosenObrig, ...classChoices, ...intExtras]);
 }
 
-export function calculateSkills(char, { registry, attrs, halfLevel, level, armorPenalty, armorPenaltyPericias = [], sizeMod = { furtividade: 0, manobra: 0 }, profPenalty = false, strPenalty = false, overburdenPenalty = 0, magicSkillBonuses = {} }) {
+export function calculateSkills(char, { registry, attrs, halfLevel, level, armorPenalty, armorPenaltyPericias = [], sizeMod = { furtividade: 0, manobra: 0 }, profPenalty = false, strPenalty = false, overburdenPenalty = 0 }) {
   const trained = getAllTrainedSkills(char);
   const profBonus = getTrainingBonus(level);
   
@@ -831,9 +726,9 @@ export function calculateSkills(char, { registry, attrs, halfLevel, level, armor
     // Racial/Size bonuses
     if (p.nome === 'Furtividade' && sizeMod.furtividade) total += sizeMod.furtividade;
     
-    // Magic item bonuses
-    const magicBonus = magicSkillBonuses?.[p.nome] || 0;
-    total += magicBonus;
+    // Bônus específicos da perícia do registro (Itens, Magias, Poderes)
+    const specificBonus = registry?.calculate(p.nome.toLowerCase()) || 0;
+    total += specificBonus;
 
     skillMap[p.nome] = {
       nome: p.nome,
@@ -844,7 +739,7 @@ export function calculateSkills(char, { registry, attrs, halfLevel, level, armor
       halfLevel,
       profBonus: isTrained ? profBonus : 0,
       armorPenalty: applyArmorPenalty ? armorPenalty : 0,
-      magicBonus
+      specificBonus
     };
   });
 

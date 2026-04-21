@@ -43,6 +43,8 @@ const StepReview              = React.lazy(() => import('./character-creation/st
 import { CharacterLibrary } from './character-creation/CharacterLibrary';
 import { CharacterPreview } from './character-creation/CharacterPreview';
 import { PlaySheet } from './PlaySheet';
+import { Lobby } from './vtt/Lobby';
+import { UserProfileModal } from './auth/UserProfileModal';
 
 // STEP_LABELS and MAX_STEPS moved to useCreationNavigation hook
 
@@ -51,6 +53,7 @@ export default function CharacterCreation() {
   const { user, signOut } = useAuthStore();
   const prefersReducedMotion = useReducedMotion();
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   
   const {
     view, setView,
@@ -149,7 +152,7 @@ export default function CharacterCreation() {
   }
 
   if (view === 'play') {
-    return <PlaySheet char={char} onBack={() => setView('library')} />;
+    return <PlaySheet char={char} onBack={() => setView('library')} onVtt={() => setView('vtt')} />;
   }
 
   if (view === 'compendium') {
@@ -162,6 +165,10 @@ export default function CharacterCreation() {
         <PDFCompendium onBack={() => setView('library')} />
       </React.Suspense>
     );
+  }
+
+  if (view === 'vtt') {
+    return <Lobby onBack={() => setView('library')} onOpenSheet={() => setView('play')} characters={savedChars} />;
   }
 
   if (view === 'library') {
@@ -196,6 +203,7 @@ export default function CharacterCreation() {
           onCompendium={() => setView('compendium')}
           onImport={handleImportFromJSON}
           onPlay={handlePlayFromLibrary}
+          onVtt={() => setView('vtt')}
           loading={loading}
         />
       </>
@@ -347,7 +355,12 @@ export default function CharacterCreation() {
                 })()}
               </div>
               <div className="px-5 py-4 border-t border-slate-800/60 shrink-0">
-                <p className="text-[10px] text-slate-500 font-medium truncate mb-3">{user?.email}</p>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] text-slate-500 font-medium truncate">{user?.email}</p>
+                  <button onClick={() => setProfileOpen(true)} className="text-slate-400 hover:text-white transition-all p-1" title="Configurações da Conta">
+                    ⚙️
+                  </button>
+                </div>
                 <button onClick={() => signOut()} className="w-full py-3 rounded-xl bg-red-950/20 border border-red-900/20 text-red-500 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95">Sair</button>
               </div>
             </motion.div>
@@ -427,6 +440,9 @@ export default function CharacterCreation() {
                 <p className="text-[10px] text-slate-500 uppercase font-black truncate">Herói</p>
                 <p className="text-[11px] text-slate-200 font-medium truncate">{user?.email}</p>
               </div>
+              <button onClick={() => setProfileOpen(true)} className="text-slate-400 hover:text-white transition-all shrink-0 p-1" title="Configurações da Conta">
+                ⚙️
+              </button>
             </div>
             <button onClick={() => signOut()} className="w-full py-2.5 rounded-xl bg-red-950/20 hover:bg-red-950/40 border border-red-900/20 text-red-500 text-[10px] font-black uppercase tracking-widest transition-all">
               Sair
@@ -594,6 +610,7 @@ export default function CharacterCreation() {
          <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" />
       </div>
 
+      <UserProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   );
 }

@@ -25,6 +25,7 @@ export function StepEquipment() {
   const [editingGold, setEditingGold] = useState(false);
   const [grantTab, setGrantTab] = useState('arma');
   const [modalTab, setModalTab] = useState('mods'); // 'mods' or 'mat'
+  const [mobileTab, setMobileTab] = useState('loja'); // 'loja' or 'mochila'
 
   // Auto-claim static items once
   useEffect(() => {
@@ -589,7 +590,13 @@ export function StepEquipment() {
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+      {/* MOBILE TABS (Visível apenas em mobile) */}
+      <div className="lg:hidden flex bg-gray-950/80 rounded-2xl border border-white/10 p-1 mb-2 shadow-xl sticky top-4 z-40 backdrop-blur-md">
+         <button onClick={() => setMobileTab('loja')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mobileTab === 'loja' ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-gray-950 shadow-lg' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}>Comprar</button>
+         <button onClick={() => setMobileTab('mochila')} className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all flex justify-center items-center gap-2 ${mobileTab === 'mochila' ? 'bg-gradient-to-r from-amber-600 to-amber-500 text-gray-950 shadow-lg' : 'text-slate-500 hover:text-white hover:bg-white/5'}`}>Mochila <span className={`px-2 py-0.5 rounded-full text-[10px] ${mobileTab === 'mochila' ? 'bg-gray-950/40 text-gray-950 font-black' : 'bg-white/10 text-slate-400'}`}>{(char.equipamento || []).length}</span></button>
+      </div>
+
+      <div className={`flex gap-2 overflow-x-auto pb-1 custom-scrollbar ${mobileTab !== 'loja' ? 'hidden lg:flex' : ''}`}>
         {categories.map(cat => (
           <button
             key={cat.id}
@@ -606,7 +613,7 @@ export function StepEquipment() {
         ))}
       </div>
 
-      <div className="relative">
+      <div className={`relative ${mobileTab !== 'loja' ? 'hidden lg:block' : ''}`}>
         <input
           type="text"
           value={searchItem}
@@ -621,7 +628,7 @@ export function StepEquipment() {
 
       {/* ── Magic Items Tab ─────────────────────────────────────────────── */}
       {category === 'magico' && (
-        <div className="flex flex-col gap-6">
+        <div className={`flex flex-col gap-6 ${mobileTab !== 'loja' ? 'hidden lg:flex' : ''}`}>
           {/* Sub-tabs */}
           <div className="flex gap-2">
             {[
@@ -668,7 +675,7 @@ export function StepEquipment() {
                     <div className="flex items-center justify-between">
                       <span className="text-2xl">✨</span>
                       <span className={`text-xs font-black px-2 py-0.5 rounded-full uppercase ${isOwned ? 'bg-purple-500 text-white' : 'bg-gray-800 text-gray-500'}`}>
-                        {isOwned ? 'Equipado' : `T$ ${item.preco.toLocaleString('pt-BR')}`}
+                        {isOwned ? 'Equipado' : `T$ ${(item.preco ?? 0).toLocaleString('pt-BR')}`}
                       </span>
                     </div>
                     <div>
@@ -702,7 +709,7 @@ export function StepEquipment() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         {/* Catálogo (Loja) */}
-        <div className="lg:col-span-3 flex flex-col gap-6">
+        <div className={`lg:col-span-3 flex flex-col gap-6 ${mobileTab !== 'loja' ? 'hidden lg:flex' : ''}`}>
           <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 ${category === 'magico' ? 'hidden' : ''}`}>
             <AnimatePresence>
               {filteredItems.map(item => {
@@ -766,7 +773,7 @@ export function StepEquipment() {
         </div>
 
         {/* Mochila (Inventário) */}
-        <div className="lg:col-span-1 border-l border-white/5 pl-2">
+        <div className={`lg:col-span-1 border-l-0 lg:border-l border-white/5 pl-0 lg:pl-2 ${mobileTab !== 'mochila' ? 'hidden lg:block' : ''}`}>
            <div className="sticky top-6 flex flex-col gap-6">
               <div className="flex items-center justify-between px-2">
                  <h3 className="text-xs font-black text-white uppercase tracking-[0.3em] flex items-center gap-2">

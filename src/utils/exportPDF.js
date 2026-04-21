@@ -1,5 +1,5 @@
 import { ITENS } from '../data/items';
-import { CONDICOES_DATA, BUFFS_DATA } from './rules/characterStats';
+import { CONDICOES_DATA, BUFFS_DATA } from '../data/conditionsAndBuffs';
 
 export function exportToPDF(char, stats) {
   const signStr = (n) => (n >= 0 ? `+${n}` : String(n));
