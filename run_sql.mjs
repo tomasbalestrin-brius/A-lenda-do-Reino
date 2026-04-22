@@ -6,6 +6,7 @@ import path from 'path';
 const SQL_FILES = [
   'supabase_vtt.sql',
   'supabase_migration_v2.sql',
+  'supabase_production_rls.sql',
 ];
 
 const CONNECTION_STRING =
