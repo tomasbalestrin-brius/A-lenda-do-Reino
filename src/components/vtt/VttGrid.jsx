@@ -398,6 +398,9 @@ export function VttGrid({ isGM }) {
   const [rulerEnd, setRulerEnd] = useState(null);
   const [hoverCell, setHoverCell] = useState(null);
 
+  // Fog of War state
+  const [fogTool, setFogTool] = useState(false); // GM only: toggles reveal tool
+
   const GRID_SIZE = 15;
   const CELL_METERS = 1.5;
 
@@ -431,6 +434,8 @@ export function VttGrid({ isGM }) {
 
   const tokens = gridState.tokens || [];
   const mapUrl = gridState.map_url || null;
+  const fogEnabled = gridState.fog_enabled || false;
+  const fogRevealed = gridState.fog_revealed || []; // Array of revealed cell indices
 
   const playerTokens = players
     .filter(p => p.character_name)
@@ -525,6 +530,19 @@ export function VttGrid({ isGM }) {
     updateGridState({ ...gridState, tokens: newTokens });
   };
 
+  const toggleFogCell = (index) => {
+    if (!isGM) return;
+    const newRevealed = fogRevealed.includes(index)
+      ? fogRevealed.filter(i => i !== index)
+      : [...fogRevealed, index];
+    updateGridState({ ...gridState, fog_revealed: newRevealed });
+  };
+
+  const toggleFogAll = () => {
+    if (!isGM) return;
+    updateGridState({ ...gridState, fog_enabled: !fogEnabled });
+  };
+
   // Close context menu on outside click
   const handleGridClick = () => {
     if (contextMenu) { setContextMenu(null); return; }
@@ -584,6 +602,30 @@ export function VttGrid({ isGM }) {
       >
         <span>📏</span> {rulerMode ? 'Régua' : 'Medir'}
       </button>
+
+      {/* Fog of War Toggles (GM Only) */}
+      {isGM && (
+        <div className="absolute top-3 left-[230px] z-50 flex gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggleFogAll(); }}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg border ${
+              fogEnabled ? 'bg-indigo-600 text-white border-indigo-400' : 'bg-gray-900/90 border-white/10 text-slate-400 hover:text-white backdrop-blur-md'
+            }`}
+          >
+            <span>🌫️</span> {fogEnabled ? 'Fog On' : 'Fog Off'}
+          </button>
+          {fogEnabled && (
+            <button
+              onClick={(e) => { e.stopPropagation(); setFogTool(v => !v); setRulerMode(false); setDragToken(null); }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg border ${
+                fogTool ? 'bg-amber-600 text-gray-950 border-amber-400' : 'bg-gray-900/90 border-white/10 text-slate-400 hover:text-white backdrop-blur-md'
+              }`}
+            >
+              <span>🔦</span> {fogTool ? 'Revelando...' : 'Revelar'}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="absolute top-3 right-3 z-50 bg-gray-950/80 backdrop-blur-md border border-white/5 rounded-xl px-3 py-1.5">
@@ -670,6 +712,10 @@ export function VttGrid({ isGM }) {
               onMouseLeave={() => rulerMode && setHoverCell(null)}
               onClick={() => {
                 if (contextMenu) { setContextMenu(null); return; }
+                if (fogTool && isGM) {
+                  toggleFogCell(i);
+                  return;
+                }
                 if (rulerMode) {
                   if (!rulerStart) {
                     setRulerStart({ x: cx, y: cy });
@@ -683,7 +729,12 @@ export function VttGrid({ isGM }) {
                   setDragToken(null);
                 }
               }}
-            />
+            >
+              {/* Fog Layer */}
+              {fogEnabled && !fogRevealed.includes(i) && (
+                <div className={`absolute inset-0 transition-opacity ${isGM ? 'bg-black/80' : 'bg-black/95'}`} />
+              )}
+            </div>
           );
         })}
 

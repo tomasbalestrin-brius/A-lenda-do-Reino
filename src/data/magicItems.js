@@ -118,5 +118,19 @@ export const ARMAS_MAGICAS = Object.values(ITENS_MAGICOS_ESPECIFICOS).filter(i =
 export const ARMADURAS_MAGICAS = Object.values(ITENS_MAGICOS_ESPECIFICOS).filter(i => i.tipo === 'armadura');
 
 export const MAGIC_ITEMS_ALL = [
-  ...Object.values(ITENS_MAGICOS_ESPECIFICOS)
+  ...Object.values(ITENS_MAGICOS_ESPECIFICOS).map(i => ({ ...i, category: 'Específico' })),
+  ...Object.entries(ENCANTOS_ARMA).map(([id, e]) => ({ 
+    ...e, 
+    id: `enc_atk_${id}`, 
+    tipo: 'Encanto de Arma', 
+    category: 'Encantamento',
+    preco: `+${e.modificador} Bônus` 
+  })),
+  ...Object.entries(ENCANTOS_ARMADURA).map(([id, e]) => ({ 
+    ...e, 
+    id: `enc_def_${id}`, 
+    tipo: 'Encanto de Armadura', 
+    category: 'Encantamento',
+    preco: `+${e.modificador} Bônus` 
+  })),
 ];

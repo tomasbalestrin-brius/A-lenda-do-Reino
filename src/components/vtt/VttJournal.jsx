@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVttStore } from '../../store/useVttStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { ITENS } from '../../data/items';
+import { MAGIC_ITEMS_ALL } from '../../data/magicItems';
+import { MONSTERS } from '../../data/monsters';
 import { CONDICOES_DATA, BUFFS_DATA } from '../../data/conditionsAndBuffs';
 import {
   magiasArcanas1, magiasArcanas2, magiasArcanas3,
@@ -63,6 +65,8 @@ export function executeRoll({ count, sides, bonus, label, charName }) {
 
 // ─── Compêndio Tab ───────────────────────────────────────────────────────────
 const ITEM_LIST = Object.values(ITENS);
+const MAGIC_ITEM_LIST = MAGIC_ITEMS_ALL;
+const MONSTER_LIST = Object.values(MONSTERS);
 const COND_LIST = Object.entries(CONDICOES_DATA).map(([id, v]) => ({ id, ...v }));
 const BUFF_LIST = Object.entries(BUFFS_DATA).map(([id, v]) => ({ id, ...v }));
 
@@ -77,16 +81,53 @@ const ALL_SPELLS = [
 const CRIT_RANGE = (n) => n < 20 ? `${n}–20` : '20';
 
 const COMP_TABS = [
-  { id: 'armas',    label: '⚔️ Armas' },
-  { id: 'armaduras',label: '🛡️ Armaduras' },
-  { id: 'magias',   label: '✨ Magias' },
-  { id: 'condicoes',label: '💫 Condições' },
+  { id: 'armas',         label: '⚔️ Armas' },
+  { id: 'armaduras',     label: '🛡️ Armaduras' },
+  { id: 'magias',        label: '✨ Magias' },
+  { id: 'itens_magicos', label: '💎 Itens Mágicos' },
+  { id: 'bestiario',     label: '👾 Bestiário' },
+  { id: 'condicoes',     label: '💫 Condições' },
 ];
 
-function CompendiumPanel() {
+function CompendiumPanel({ isGM }) {
+  const { gridState, updateGridState } = useVttStore();
   const [tab, setTab] = useState('armas');
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState(null);
+
+  const spawnMonster = (monster) => {
+    if (!isGM) return;
+    const tokens = gridState.tokens || [];
+    const npcCount = tokens.filter(t => t.type === 'npc').length;
+    
+    // Pick a deterministic color based on monster name
+    const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#6366f1', '#d946ef'];
+    const color = colors[monster.nome.length % colors.length];
+
+    const newNpc = {
+      id: `npc_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      type: 'npc',
+      name: monster.nome,
+      hp: monster.pv,
+      hpMax: monster.pv,
+      color: color,
+      icon: monster.nome.toLowerCase().includes('dragão') ? '🐉' : 
+            monster.nome.toLowerCase().includes('goblin') ? '👹' :
+            monster.nome.toLowerCase().includes('esqueleto') ? '💀' :
+            monster.nome.toLowerCase().includes('orc') ? '⚔️' : '🧟',
+      x: (npcCount * 2 + 5) % 14,
+      y: Math.floor((npcCount * 2 + 5) / 14) * 2 + 4,
+      conditions: [],
+      // Extra data for reference
+      monsterId: monster.id,
+      nd: monster.nd
+    };
+
+    updateGridState({ ...gridState, tokens: [...tokens, newNpc] });
+    
+    // Feedback opcional no chat
+    // useVttStore.getState().sendEvent('message', `O Mestre invocou um ${monster.nome}!`, 'public');
+  };
 
   const armas = useMemo(() =>
     ITEM_LIST.filter(i => i.tipo === 'arma' && i.nome.toLowerCase().includes(search.toLowerCase())),
@@ -102,12 +143,22 @@ function CompendiumPanel() {
     ),
     [search]
   );
-  const magias = useMemo(() =>
-    ALL_SPELLS.filter(s => s.nome.toLowerCase().includes(search.toLowerCase())),
+  const itens_magicos = useMemo(() =>
+    MAGIC_ITEM_LIST.filter(i => i.nome.toLowerCase().includes(search.toLowerCase())),
+    [search]
+  );
+  const bestiario = useMemo(() =>
+    MONSTER_LIST.filter(m => m.nome.toLowerCase().includes(search.toLowerCase())),
     [search]
   );
 
-  const list = tab === 'armas' ? armas : tab === 'armaduras' ? armaduras : tab === 'magias' ? magias : condicoes;
+  const list = 
+    tab === 'armas' ? armas : 
+    tab === 'armaduras' ? armaduras : 
+    tab === 'magias' ? magias : 
+    tab === 'itens_magicos' ? itens_magicos :
+    tab === 'bestiario' ? bestiario :
+    condicoes;
 
   const CAT_COLORS = {
     simples:  { bg: 'bg-slate-800/60', text: 'text-slate-400', border: 'border-slate-600/30' },
@@ -118,6 +169,9 @@ function CompendiumPanel() {
     pesada:   { bg: 'bg-red-950/30',   text: 'text-red-400',   border: 'border-red-500/20' },
     escudo:   { bg: 'bg-indigo-950/30',text: 'text-indigo-400',border: 'border-indigo-500/20' },
     magia:    { bg: 'bg-purple-950/30',text: 'text-purple-400',border: 'border-purple-500/20' },
+    especifico:{ bg: 'bg-amber-950/30', text: 'text-amber-400', border: 'border-amber-500/20' },
+    encantamento:{ bg: 'bg-cyan-950/30', text: 'text-cyan-400',  border: 'border-cyan-500/20' },
+    monstro:  { bg: 'bg-red-950/30',   text: 'text-red-400',   border: 'border-red-500/20' },
   };
 
   return (
@@ -175,6 +229,16 @@ function CompendiumPanel() {
                       {cat}
                     </span>
                   )}
+                  {item.category && (
+                    <span className={`text-[7px] font-black uppercase tracking-widest ${CAT_COLORS[item.category.toLowerCase()]?.text || 'text-slate-500'}`}>
+                      {item.category}
+                    </span>
+                  )}
+                  {item.nd != null && (
+                    <span className="text-[7px] font-black uppercase tracking-widest text-red-400">
+                      ND {item.nd} · {item.tipo}
+                    </span>
+                  )}
                   {item.type === 'magia' && (
                     <span className="text-[7px] font-black uppercase tracking-widest text-purple-400">
                       {item.source} · {item.circulo}º Círculo
@@ -187,8 +251,15 @@ function CompendiumPanel() {
                 {item.custo != null && (
                   <span className="text-[9px] font-black text-blue-400 shrink-0">{item.custo} PM</span>
                 )}
-                {item.def != null && (
-                  <span className="text-[9px] font-black text-indigo-400 shrink-0">+{item.def}</span>
+                {item.nd != null && (
+                  <span className="text-[9px] font-black text-red-400 shrink-0">ND {item.nd}</span>
+                )}
+                {item.bonus && item.type !== 'magia' && (
+                  <div className="flex gap-1 shrink-0">
+                    {Object.entries(item.bonus).slice(0, 2).map(([k, v]) => (
+                      <span key={k} className="text-[8px] font-black text-amber-500">+{v}{k.toUpperCase()}</span>
+                    ))}
+                  </div>
                 )}
               </button>
             );
@@ -317,6 +388,141 @@ function CompendiumPanel() {
                   </div>
                 </div>
               )}
+              {/* Magic Item / Specific Detail */}
+              {tab === 'itens_magicos' && (
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: 'Tipo', value: selected.tipo },
+                      { label: 'Preço', value: selected.preco ? `${selected.preco} TOs` : 'Raro' },
+                      { label: 'Bônus', value: selected.bonus ? Object.entries(selected.bonus).map(([k, v]) => `${k.toUpperCase()}: +${v}`).join(', ') : 'Especial' },
+                    ].map(s => (
+                      <div key={s.label} className="bg-gray-900/50 border border-white/5 rounded-xl px-3 py-2">
+                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">{s.label}</p>
+                        <p className="text-sm font-black text-white capitalize">{s.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                  {selected.impacto && (
+                    <div className="bg-amber-950/20 border border-amber-500/15 rounded-2xl p-4">
+                      <p className="text-[8px] font-black text-amber-500 uppercase tracking-widest mb-1">Impacto Mecânico</p>
+                      <p className="text-xs text-amber-200/70 italic">Automado pelo sistema de regras</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Monster Stat Block */}
+              {tab === 'bestiario' && (
+                <div className="flex flex-col gap-5 bg-gray-900/40 border border-white/5 rounded-3xl p-6">
+                  {/* Header */}
+                  <div className="border-b border-white/10 pb-4">
+                    <div className="flex justify-between items-start mb-1">
+                      <div>
+                        <h3 className="text-2xl font-black text-white">{selected.nome}</h3>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                          {selected.tipo} · {selected.tamanho}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-red-500 font-black text-sm uppercase tracking-tighter">ND {selected.nd}</span>
+                        {isGM && (
+                          <button
+                            onClick={() => spawnMonster(selected)}
+                            className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-[9px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg active:scale-95 flex items-center gap-1.5"
+                          >
+                            ⚔️ Invocar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Core Stats */}
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-red-950/20 border border-red-500/20 rounded-2xl p-3 text-center">
+                      <p className="text-[8px] font-black text-red-500 uppercase tracking-widest">PV</p>
+                      <p className="text-xl font-black text-white">{selected.pv}</p>
+                    </div>
+                    <div className="bg-blue-950/20 border border-blue-500/20 rounded-2xl p-3 text-center">
+                      <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest">PM</p>
+                      <p className="text-xl font-black text-white">{selected.pm}</p>
+                    </div>
+                    <div className="bg-indigo-950/20 border border-indigo-500/20 rounded-2xl p-3 text-center">
+                      <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Defesa</p>
+                      <p className="text-xl font-black text-white">{selected.defesa}</p>
+                    </div>
+                  </div>
+
+                  {/* Attributes */}
+                  <div className="grid grid-cols-6 gap-1 bg-white/[0.03] rounded-2xl p-3 border border-white/5">
+                    {Object.entries(selected.atributos).map(([attr, val]) => (
+                      <div key={attr} className="text-center">
+                        <p className="text-[7px] font-black text-slate-600 uppercase">{attr}</p>
+                        <p className="text-xs font-black text-white">{val >= 0 ? `+${val}` : val}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Saves */}
+                  <div className="flex gap-4 px-1">
+                    {[
+                      { label: 'Fort', val: selected.fort, color: 'text-emerald-400' },
+                      { label: 'Refl', val: selected.refl, color: 'text-blue-400' },
+                      { label: 'Vont', val: selected.vont, color: 'text-purple-400' },
+                    ].map(s => (
+                      <div key={s.label} className="flex items-center gap-1.5">
+                        <span className="text-[8px] font-black text-slate-600 uppercase">{s.label}</span>
+                        <span className={`text-xs font-black ${s.color}`}>+{s.val}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Attacks */}
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-l-2 border-amber-500 pl-2">Ataques</p>
+                    {selected.ataques?.map((atk, idx) => (
+                      <div key={idx} className="bg-white/[0.02] border border-white/5 rounded-2xl p-3 flex justify-between items-center group hover:bg-white/[0.04] transition-colors">
+                        <div>
+                          <p className="text-[11px] font-black text-white">{atk.nome}</p>
+                          <p className="text-[9px] text-slate-500">{atk.tipo} {atk.alcance && `· ${atk.alcance}`}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[11px] font-black text-amber-400">+{atk.bonus}</p>
+                          <p className="text-[9px] font-black text-slate-400">{atk.dano} ({atk.critico})</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Abilities */}
+                  <div className="flex flex-col gap-3">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-l-2 border-blue-500 pl-2">Habilidades</p>
+                    <div className="flex flex-col gap-2">
+                      {selected.habilidades?.map((hab, idx) => (
+                        <div key={idx} className="text-xs leading-relaxed">
+                          <span className="font-black text-slate-200">{hab.nome}: </span>
+                          <span className="text-slate-400">{hab.descricao}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {selected.pericias && (
+                    <div className="pt-2">
+                      <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Perícias</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(selected.pericias).map(([p, v]) => (
+                          <span key={p} className="text-[9px] font-bold text-slate-500 bg-white/5 px-2 py-0.5 rounded-lg border border-white/5">
+                            {p} +{v}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {selected.tags && (
                 <div className="flex flex-wrap gap-2">
                   {selected.tags.map(tag => (
@@ -537,7 +743,7 @@ export function VttJournal({ isGM }) {
         )}
         {activeTab === 'compendio' && (
           <motion.div key="compendio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex overflow-hidden">
-            <CompendiumPanel />
+            <CompendiumPanel isGM={isGM} />
           </motion.div>
         )}
       </AnimatePresence>

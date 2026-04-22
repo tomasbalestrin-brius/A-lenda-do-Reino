@@ -76,7 +76,7 @@ function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
   );
 }
 
-export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompendium, onImport, onPlay, onVtt, loading }) {
+export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompendium, onImport, onPlay, onVtt, onBack, loading }) {
   const [search, setSearch] = useState('');
 
   const handleImportFile = (e) => {
@@ -101,6 +101,14 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Back Button */}
+      <button 
+        onClick={onBack}
+        className="absolute top-6 left-6 px-4 py-2 bg-gray-900/60 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-gray-800 transition-all z-20"
+      >
+        ← Início
+      </button>
+
       {/* Background Decorative Elements */}
       <div className="absolute top-[-10%] right-[-5%] w-[40%] h-[40%] bg-amber-600/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />

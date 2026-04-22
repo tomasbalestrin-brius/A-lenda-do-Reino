@@ -48,7 +48,7 @@ import { UserProfileModal } from './auth/UserProfileModal';
 
 // STEP_LABELS and MAX_STEPS moved to useCreationNavigation hook
 
-export default function CharacterCreation() {
+export default function CharacterCreation({ initialView = 'library', onExit }) {
   const { char, resetChar } = useCharacterStore(useShallow(state => ({ char: state.char, resetChar: state.resetChar })));
   const { user, signOut } = useAuthStore();
   const prefersReducedMotion = useReducedMotion();
@@ -64,7 +64,7 @@ export default function CharacterCreation() {
     handleNext,
     handlePrev,
     goToPrev
-  } = useCreationNavigation('library');
+  } = useCreationNavigation(initialView);
 
   const activeStepRefDesktop = useRef(null);
   const activeStepRefMobile = useRef(null);
@@ -151,8 +151,13 @@ export default function CharacterCreation() {
     setView('play');
   }
 
+  const handleExit = () => {
+    if (onExit) onExit();
+    else setView('library');
+  };
+
   if (view === 'play') {
-    return <PlaySheet char={char} onBack={() => setView('library')} onVtt={() => setView('vtt')} />;
+    return <PlaySheet char={char} onBack={handleExit} onVtt={() => setView('vtt')} />;
   }
 
   if (view === 'compendium') {
@@ -162,13 +167,13 @@ export default function CharacterCreation() {
           <div className="w-16 h-16 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
         </div>
       }>
-        <PDFCompendium onBack={() => setView('library')} />
+        <PDFCompendium onBack={handleExit} />
       </React.Suspense>
     );
   }
 
   if (view === 'vtt') {
-    return <Lobby onBack={() => setView('library')} onOpenSheet={() => setView('play')} characters={savedChars} />;
+    return <Lobby onBack={handleExit} onOpenSheet={() => setView('play')} characters={savedChars} />;
   }
 
   if (view === 'library') {
@@ -204,6 +209,7 @@ export default function CharacterCreation() {
           onImport={handleImportFromJSON}
           onPlay={handlePlayFromLibrary}
           onVtt={() => setView('vtt')}
+          onBack={handleExit}
           loading={loading}
         />
       </>
