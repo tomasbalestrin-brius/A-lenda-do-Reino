@@ -13,30 +13,56 @@ import {
 
 // ─── Dice helpers (exported for use in VttTabletop) ────────────────────────────
 function parseDiceExpression(expr) {
+  // Suporta: 1d20+5, 2d6+1d4+5, d20-2
   const clean = expr.trim().toLowerCase().replace(/\s+/g, '');
-  const match = clean.match(/^(\d+)?d(\d+)([+-]\d+)?/);
-  if (!match) return null;
-  const count = parseInt(match[1] || '1');
-  const sides = parseInt(match[2]);
-  const bonus = parseInt(match[3] || '0');
-  if (!sides || sides < 2) return null;
-  return { count, sides, bonus };
+  const parts = clean.split(/(?=[+-])/); // Split by + or - keeping the delimiter
+  
+  const dice = [];
+  let flatBonus = 0;
+
+  for (const part of parts) {
+    if (part.includes('d')) {
+      const match = part.match(/([+-])?(\d+)?d(\d+)/);
+      if (match) {
+        const sign = match[1] === '-' ? -1 : 1;
+        const count = parseInt(match[2] || '1');
+        const sides = parseInt(match[3]);
+        dice.push({ count, sides, sign });
+      }
+    } else {
+      flatBonus += parseInt(part) || 0;
+    }
+  }
+
+  if (dice.length === 0) return null;
+  return { dice, bonus: flatBonus };
 }
 
-function rollDice(count, sides) {
+function rollDice(diceList) {
+  const allRolls = [];
   let total = 0;
-  const rolls = [];
-  for (let i = 0; i < count; i++) {
-    const r = Math.floor(Math.random() * sides) + 1;
-    rolls.push(r);
-    total += r;
+  
+  for (const d of diceList) {
+    const rolls = [];
+    for (let i = 0; i < d.count; i++) {
+      const r = Math.floor(Math.random() * d.sides) + 1;
+      rolls.push(r);
+      total += r * d.sign;
+    }
+    allRolls.push({ ...d, rolls });
   }
-  return { rolls, total };
+  
+  return { allRolls, total };
 }
 
 export function parseChatCommand(input) {
   const trimmed = input.trim();
-  const cmdMatch = trimmed.match(/^\/(?:r(?:oll|olar)?|dado)\s*([\w+\-.\s]+)/i);
+  
+  // Detect secret prefix
+  const isSecretPrefix = trimmed.startsWith('/gm ') || trimmed.startsWith('/secret ');
+  const cleanInput = isSecretPrefix ? trimmed.substring(trimmed.indexOf(' ') + 1) : trimmed;
+
+  const cmdMatch = cleanInput.trim().match(/^(?:r(?:oll|olar)?|dado)\s*([\w+\-.\s]+)/i);
   if (!cmdMatch) return null;
   const rest = cmdMatch[1].trim();
   const diceMatch = rest.match(/^(\d*d\d+(?:[+-]\d+)?)\s*(.*)/i);
@@ -45,19 +71,30 @@ export function parseChatCommand(input) {
   const label = diceMatch[2].trim();
   const parsed = parseDiceExpression(diceExpr);
   if (!parsed) return null;
-  return { ...parsed, label };
+  return { ...parsed, label, visibility: isSecretPrefix ? 'secret' : 'public' };
 }
 
-export function executeRoll({ count, sides, bonus, label, charName }) {
-  const { rolls, total: rollsTotal } = rollDice(count, sides);
+export function executeRoll({ dice, bonus, label, charName }) {
+  const { allRolls, total: rollsTotal } = rollDice(dice);
   const total = rollsTotal + bonus;
-  const r = rolls[0];
-  const isCrit = count === 1 && sides === 20 && r === 20;
-  const isFail = count === 1 && sides === 20 && r === 1;
+  
+  // T20: Crit/Fail only on 1d20
+  const isSingleD20 = dice.length === 1 && dice[0].count === 1 && dice[0].sides === 20;
+  const d20Roll = isSingleD20 ? allRolls[0].rolls[0] : null;
+  const isCrit = isSingleD20 && d20Roll === 20;
+  const isFail = isSingleD20 && d20Roll === 1;
+
+  // Build expression string for display
+  const expr = dice.map(d => `${d.sign === -1 ? '-' : ''}${d.count}d${d.sides}`).join('') + (bonus !== 0 ? (bonus > 0 ? `+${bonus}` : bonus) : '');
+
   return {
-    sides, count, rolls, r, bonus, total,
-    label: label || `${count}d${sides}${bonus !== 0 ? (bonus > 0 ? `+${bonus}` : bonus) : ''}`,
-    crit: isCrit, fail: isFail,
+    dice: allRolls,
+    bonus,
+    total,
+    label: label || expr,
+    expr,
+    crit: isCrit,
+    fail: isFail,
     charName: charName || 'Mesa',
     ts: Date.now(),
   };

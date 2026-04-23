@@ -57,7 +57,42 @@ export function Lobby({ onBack, onOpenSheet, characters = [] }) {
             <h1 className="text-3xl font-black text-amber-500 mb-2 uppercase tracking-tighter text-center">Quem entrará na Masmorra?</h1>
             <p className="text-slate-400 text-xs text-center mb-12 uppercase tracking-[0.2em] font-bold opacity-60">Selecione seu herói para esta sessão</p>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="flex flex-col gap-6">
+               {/* Quick Access for GM or Spectator */}
+               {(isGM || mode === 'join') && (
+                 <div className="flex flex-col sm:flex-row gap-4 mb-2">
+                    {isGM && (
+                      <button 
+                        onClick={() => setMode('tabletop')}
+                        className="flex-1 flex items-center justify-between bg-emerald-950/20 border border-emerald-500/30 rounded-3xl p-6 hover:bg-emerald-950/40 hover:border-emerald-500 transition-all group"
+                      >
+                        <div className="flex items-center gap-4">
+                           <span className="text-3xl group-hover:scale-110 transition-transform">👑</span>
+                           <div className="text-left">
+                              <p className="text-sm font-black text-white uppercase tracking-widest">Modo Mestre</p>
+                              <p className="text-[9px] text-emerald-500/70 font-bold uppercase tracking-widest">Acesso total sem personagem</p>
+                           </div>
+                        </div>
+                        <span className="text-emerald-500 text-xl">→</span>
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setMode('tabletop')}
+                      className="flex-1 flex items-center justify-between bg-blue-950/20 border border-blue-500/20 rounded-3xl p-6 hover:bg-blue-950/40 hover:border-blue-500 transition-all group"
+                    >
+                      <div className="flex items-center gap-4">
+                         <span className="text-3xl group-hover:scale-110 transition-transform">👁️</span>
+                         <div className="text-left">
+                            <p className="text-sm font-black text-white uppercase tracking-widest">Modo Espectador</p>
+                            <p className="text-[9px] text-blue-400/70 font-bold uppercase tracking-widest">Apenas observar o tabuleiro</p>
+                         </div>
+                      </div>
+                      <span className="text-blue-400 text-xl">→</span>
+                    </button>
+                 </div>
+               )}
+
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                {characters.map((charItem, idx) => {
                  const char = charItem.data || charItem;
                  return (
@@ -85,17 +120,6 @@ export function Lobby({ onBack, onOpenSheet, characters = [] }) {
                  );
                })}
 
-               {/* Opção para GM ou Espectador */}
-               {isGM && (
-                  <button 
-                    onClick={() => setMode('tabletop')}
-                    className="flex flex-col items-center justify-center text-left bg-black/20 border border-dashed border-white/10 rounded-[2rem] p-6 hover:border-emerald-500/40 hover:bg-black/40 transition-all active:scale-95 gap-3"
-                  >
-                    <span className="text-3xl text-emerald-500">👑</span>
-                    <p className="text-xs font-black text-white uppercase tracking-widest text-center">Entrar como Mestre</p>
-                    <p className="text-[9px] text-slate-500 text-center uppercase tracking-widest">Apenas observando ou narrando</p>
-                  </button>
-               )}
 
                {characters.length === 0 && (
                  <div className="col-span-full py-20 text-center bg-gray-950/40 rounded-[2rem] border border-dashed border-white/5">
@@ -108,7 +132,8 @@ export function Lobby({ onBack, onOpenSheet, characters = [] }) {
                  </div>
                )}
             </div>
-         </div>
+          </div>
+        </div>
       </div>
     );
   }

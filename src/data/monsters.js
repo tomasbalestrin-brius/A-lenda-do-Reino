@@ -215,6 +215,82 @@ export const MONSTERS = {
       { nome: 'Dreno de Força', descricao: 'Se causar dano com o Toque da Sombra, o alvo deve passar em Fortitude CD 19 ou sofre 1d4 de dano de Força.' },
       { nome: 'Vulnerabilidade à Luz', descricao: 'Fica ofuscado sob luz solar ou magia Luz.' }
     ]
+  },
+  lich: {
+    id: 'lich',
+    nome: 'Lich (Sumo Sacerdote)',
+    nd: '11',
+    tipo: 'Morto-Vivo',
+    tamanho: 'Médio',
+    pv: 198,
+    pm: 84,
+    defesa: 32,
+    fort: 15,
+    refl: 15,
+    vont: 22,
+    deslocamento: '9m',
+    atributos: { for: 0, des: 3, con: 5, int: 9, sab: 6, car: 4 },
+    pericias: { Misticismo: 25, Conhecimento: 25, Percepção: 20, Vontade: 22 },
+    ataques: [
+      { nome: 'Toque Paralisante', bonus: 18, dano: '4d8+9 trevas', critico: '20', tipo: 'Trevas' }
+    ],
+    habilidades: [
+      { nome: 'Lançar Magias', descricao: 'O Lich conhece todas as magias de 1º a 4º círculo Arcanas e Divinas.' },
+      { nome: 'Resistência a Dano 15', descricao: 'Reduz todo dano físico (corte, impacto, perfuração) em 15, a menos que seja de uma arma mágica e sagrada.' },
+      { nome: 'Aura de Medo', descricao: 'Criaturas em alcance curto devem passar em Vontade CD 32 ou ficam Apavoradas por 1d4 rodadas.' },
+      { nome: 'Filactéria', descricao: 'Se destruído, o lich retorna à vida em 1d10 dias próximo à sua filactéria.' }
+    ]
+  },
+  dragao_vermelho_adulto: {
+    id: 'dragao_vermelho_adulto',
+    nome: 'Dragão Vermelho Adulto',
+    nd: '15',
+    tipo: 'Monstro',
+    tamanho: 'Colossal',
+    pv: 540,
+    pm: 60,
+    defesa: 42,
+    fort: 25,
+    refl: 18,
+    vont: 20,
+    deslocamento: '15m, voo 24m',
+    atributos: { for: 12, des: 2, con: 8, int: 5, sab: 5, car: 5 },
+    pericias: { Intimidação: 28, Percepção: 25, Misticismo: 20 },
+    ataques: [
+      { nome: 'Mordida', bonus: 35, dano: '4d10+20', critico: '20', tipo: 'Perfuração' },
+      { nome: '2 Garras', bonus: 32, dano: '2d12+20', critico: '20', tipo: 'Corte' },
+      { nome: 'Cauda', bonus: 32, dano: '3d8+20', critico: '20', tipo: 'Impacto' }
+    ],
+    habilidades: [
+      { nome: 'Sopro de Fogo', descricao: 'Cone de 18m, dano 15d12 de fogo (Reflexos CD 35 reduz à metade).' },
+      { nome: 'Vulnerabilidade a Frio', descricao: 'O dragão sofre +50% de dano de fontes de frio.' },
+      { nome: 'Imunidade a Fogo', descricao: 'O dragão não sofre dano de fogo.' },
+      { nome: 'Fedor de Enxofre', descricao: 'Criaturas adjacentes devem passar em Fortitude CD 35 ou ficam Enjoadas.' }
+    ]
+  },
+  troll_gigante: {
+    id: 'troll_gigante',
+    nome: 'Troll Gigante',
+    nd: '6',
+    tipo: 'Monstro',
+    tamanho: 'Grande',
+    pv: 130,
+    pm: 10,
+    defesa: 22,
+    fort: 12,
+    refl: 6,
+    vont: 4,
+    deslocamento: '9m',
+    atributos: { for: 7, des: 1, con: 5, int: -2, sab: 1, car: -1 },
+    pericias: { Percepção: 8, Atletismo: 12 },
+    ataques: [
+      { nome: 'Mordida', bonus: 18, dano: '2d6+7', critico: '20', tipo: 'Perfuração' },
+      { nome: '2 Garras', bonus: 16, dano: '1d8+7', critico: '20', tipo: 'Corte' }
+    ],
+    habilidades: [
+      { nome: 'Regeneração 10', descricao: 'No início de seu turno, o troll recupera 10 PV. Se sofrer dano de fogo ou ácido, esta habilidade não funciona no próximo turno.' },
+      { nome: 'Faro', descricao: 'O troll ignora camuflagem por escuridão.' }
+    ]
   }
 };
 

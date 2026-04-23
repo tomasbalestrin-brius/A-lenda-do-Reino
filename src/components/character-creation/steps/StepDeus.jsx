@@ -258,7 +258,7 @@ export function StepDeus() {
 
       {/* Painel de Consequências Mecânicas Premium */}
       <AnimatePresence mode="wait">
-        {char.deus && DEUSES[char.deus] && (
+        {char.deus && DEUSES[char.deus.toLowerCase()] && (
           <motion.div
             key={char.deus}
             initial={{ opacity: 0, y: 30 }}
@@ -275,7 +275,7 @@ export function StepDeus() {
                 <div>
                   <span className="text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] block mb-0.5">Juramento de Fidelidade</span>
                   <p className="text-lg font-black text-white uppercase tracking-tight leading-none">
-                    Caminho de {DEUSES[char.deus].nome}
+                    Caminho de {DEUSES[char.deus.toLowerCase()]?.nome}
                   </p>
                 </div>
               </div>
@@ -289,14 +289,14 @@ export function StepDeus() {
               {/* Coluna Esquerda: Poderes e Magias */}
               <div className="space-y-8">
                 {/* Magias Concedidas */}
-                {DEUSES[char.deus].devoto?.magiasConcedidas && (
+                {DEUSES[char.deus.toLowerCase()]?.devoto?.magiasConcedidas && (
                   <div className="space-y-4">
                     <p className="text-xs font-black text-purple-400 uppercase tracking-[0.3em] flex items-center gap-3">
                       <Sparkles size={14} /> 
                       {isDivine ? 'Magias Concedidas' : 'Dons Místicos'}
                     </p>
                     <div className="flex flex-wrap gap-3">
-                      {Object.entries(DEUSES[char.deus].devoto.magiasConcedidas).map(([circ, nome]) => (
+                      {Object.entries(DEUSES[char.deus.toLowerCase()].devoto.magiasConcedidas).map(([circ, nome]) => (
                         <div key={circ} className="group relative">
                           <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-purple-950/20 border border-purple-500/10 hover:border-purple-500/30 transition-all cursor-default">
                             <span className="text-[10px] font-black text-purple-500 uppercase">{circ}º</span>
@@ -314,16 +314,16 @@ export function StepDeus() {
                 )}
 
                 {/* Poderes de Devoto */}
-                {DEUSES[char.deus].devoto?.poderes?.length > 0 && (
+                {DEUSES[char.deus.toLowerCase()]?.devoto?.poderes?.length > 0 && (
                   <div className="space-y-4">
                     <p className="text-xs font-black text-emerald-400 uppercase tracking-[0.3em] flex items-center gap-3">
                       <ShieldCheck size={14} /> Poderes de Devoto
                     </p>
                     <div className="grid grid-cols-1 gap-3">
-                      {DEUSES[char.deus].devoto.poderes.map((p, i) => (
-                        <div key={i} className="px-5 py-4 rounded-2xl bg-emerald-950/10 border border-emerald-500/10 hover:bg-emerald-950/20 transition-all">
-                          <p className="text-xs font-black text-emerald-400 mb-2 uppercase tracking-tight">{p.nome}</p>
-                          <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{p.descricao}</p>
+                      {DEUSES[char.deus.toLowerCase()].devoto.poderes.map(poder => (
+                        <div key={poder.nome} className="p-4 rounded-2xl bg-emerald-950/10 border border-emerald-500/10 hover:border-emerald-500/30 transition-all">
+                          <h5 className="text-xs font-black text-emerald-400 uppercase tracking-widest mb-1">{poder.nome}</h5>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">{poder.descricao}</p>
                         </div>
                       ))}
                     </div>
@@ -333,24 +333,17 @@ export function StepDeus() {
 
               {/* Coluna Direita: Regras e Dogmas */}
               <div className="space-y-8">
-                {/* Restrições */}
-                {DEUSES[char.deus].devoto?.restricoes && (
-                  <div className="space-y-4">
-                     <p className="text-xs font-black text-rose-400 uppercase tracking-[0.3em] flex items-center gap-3">
-                        <Ban size={14} /> Obrigações & Restrições
-                     </p>
-                     <div className="p-6 rounded-[2rem] bg-rose-950/10 border-2 border-rose-500/10 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-6xl group-hover:scale-110 transition-transform">⚖️</div>
-                        <p className="text-[13px] text-rose-200/80 font-medium leading-relaxed relative z-10 italic">
-                          "{DEUSES[char.deus].devoto.restricoes}"
-                        </p>
-                        <div className="mt-4 flex items-center gap-2">
-                           <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                           <span className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest">Violar o dogma resulta em perda de PM</span>
-                        </div>
-                     </div>
+                {/* Obrigações e Restrições */}
+                <div className="space-y-4">
+                  <p className="text-xs font-black text-red-400 uppercase tracking-[0.3em] flex items-center gap-3">
+                    <AlertTriangle size={14} /> Obrigações e Restrições
+                  </p>
+                  <div className="p-6 rounded-[2rem] bg-red-950/10 border border-red-500/10">
+                    <p className="text-[11px] text-red-300 leading-relaxed font-medium">
+                      {DEUSES[char.deus.toLowerCase()]?.devoto?.obrigacoes || "Consulte o Livro Básico para detalhes sobre o comportamento esperado."}
+                    </p>
                   </div>
-                )}
+                </div>
 
                 {/* Info de Classe */}
                 <div className="p-6 rounded-[2rem] bg-amber-500/5 border border-amber-500/10">

@@ -3,7 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { computeStats, getAllTrainedSkills } from '../utils/rules/characterStats';
 import { ITENS } from '../data/items';
 import CLASSES from '../data/classes';
-import RACES from '../data/races';
+import { RACES } from '../data/races';
+import { CONDICOES_DATA } from '../data/conditionsAndBuffs';
+import SPELLS_DATA from '../data/spellsData';
+import { roll } from '../utils/dice';
 import { useVttStore } from '../store/useVttStore';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -48,10 +51,6 @@ function saveSession(id, data) {
   try { sessionStorage.setItem(SESSION_KEY(id), JSON.stringify(data)); } catch {}
 }
 
-function roll(sides) {
-  return Math.floor(Math.random() * sides) + 1;
-}
-
 function rollDice(diceStr) {
   const match = (diceStr || '').match(/(\d+)d(\d+)/);
   if (!match) return 0;
@@ -67,10 +66,14 @@ const SAVE_DESCRIPTIONS = {
   von:  'Resiste a magias mentais, ilusões e efeitos de encantamento.',
 };
 
-export function PlaySheet({ char, onBack, onVtt }) {
+  const [selectedSpellForCalc, setSelectedSpellForCalc] = useState(null);
+  const [spellEnhancements, setSpellEnhancements] = useState([]); // [{ desc: '', cost: 0 }]
+  
   const stats = useMemo(() => computeStats(char), [char]);
   const trainedSkills = useMemo(() => getAllTrainedSkills(char), [char]);
-  const { isConnected, sendEvent, syncHp } = useVttStore();
+  const { isConnected, sendEvent, syncHp, players } = useVttStore();
+  const { user } = useAuthStore();
+  const myPlayer = players.find(p => p.user_id === user?.id);
 
   const maxPV = stats.pv || 1;
   const maxPM = stats.pm || 0;
@@ -92,16 +95,25 @@ export function PlaySheet({ char, onBack, onVtt }) {
   const [newName, setNewName] = useState('');
   const [newIni, setNewIni] = useState('');
   const [activeSave, setActiveSave] = useState(null);
+  const [actionsUsed, setActionsUsed] = useState(session?.actionsUsed || { standard: false, move: false, swift: false, reaction: false });
 
   // Persist session on change
   useEffect(() => {
-    saveSession(char.id || char.nome, { currentPV, currentPM, conditions, notes });
-  }, [currentPV, currentPM, conditions, notes, char.id, char.nome]);
+    saveSession(char.id || char.nome, { currentPV, currentPM, conditions, notes, actionsUsed });
+  }, [currentPV, currentPM, conditions, notes, actionsUsed, char.id, char.nome]);
+
+  // Sincronização Bidirecional de HP (Store VTT -> State Local)
+  useEffect(() => {
+    if (isConnected && myPlayer && myPlayer.hp_current !== undefined) {
+      if (myPlayer.hp_current !== currentPV) {
+        setCurrentPV(myPlayer.hp_current);
+      }
+    }
+  }, [players, isConnected, myPlayer?.hp_current]);
 
   const adjustPV = useCallback((delta) => {
     setCurrentPV(v => {
       const next = Math.max(-10, Math.min(maxPV, v + delta));
-      // Fix 4: Sincronizar HP com VTT quando conectado
       if (isConnected) syncHp(next, maxPV);
       return next;
     });
@@ -120,10 +132,20 @@ export function PlaySheet({ char, onBack, onVtt }) {
   const doRoll = useCallback((sides, bonus = 0, label = '') => {
     const r = roll(sides);
     const total = r + bonus;
-    const entry = { sides, r, bonus, total, label, crit: r === sides, fail: r === 1, ts: Date.now() };
+    const isD20 = sides === 20;
+    const entry = { 
+      sides, 
+      r, 
+      bonus, 
+      total, 
+      label, 
+      crit: isD20 && r === 20, 
+      fail: isD20 && r === 1, 
+      ts: Date.now(),
+      dice: [{ count: 1, sides, sign: 1, rolls: [r] }]
+    };
     setRollHistory(prev => [entry, ...prev].slice(0, 10));
 
-    // Fix 1: sendEvent sem userId (store pega internamente)
     if (useVttStore.getState().isConnected) {
       useVttStore.getState().sendEvent(
         'dice_roll',
@@ -139,11 +161,22 @@ export function PlaySheet({ char, onBack, onVtt }) {
     const dmgRoll = rollDice(weapon.dano);
     const dmgTotal = Math.max(1, dmgRoll + dmgAttr);
     const ts = Date.now();
-    const atkEntry = { sides: 20, r: atkRoll, bonus: stats.atk || 0, total: atkTotal, label: `${weapon.nome} — Ataque`, crit: atkRoll === 20, fail: atkRoll === 1, ts };
-    const dmgEntry = { sides: null, r: dmgRoll, bonus: dmgAttr, total: dmgTotal, label: `${weapon.nome} — Dano`, crit: false, fail: false, ts: ts + 1, isDamage: true };
+    
+    const dmgDiceMatch = (weapon.dano || '').match(/(\d+)d(\d+)/);
+    const dmgDice = dmgDiceMatch ? [{ count: parseInt(dmgDiceMatch[1]), sides: parseInt(dmgDiceMatch[2]), sign: 1, rolls: [dmgRoll] }] : [];
+
+    const atkEntry = { 
+      sides: 20, r: atkRoll, bonus: stats.atk || 0, total: atkTotal, label: `${weapon.nome} — Ataque`, 
+      crit: atkRoll === 20, fail: atkRoll === 1, ts,
+      dice: [{ count: 1, sides: 20, sign: 1, rolls: [atkRoll] }]
+    };
+    const dmgEntry = { 
+      sides: null, r: dmgRoll, bonus: dmgAttr, total: dmgTotal, label: `${weapon.nome} — Dano`, 
+      crit: false, fail: false, ts: ts + 1, isDamage: true,
+      dice: dmgDice
+    };
     setRollHistory(prev => [dmgEntry, atkEntry, ...prev].slice(0, 10));
     
-    // Fix 1: sendEvent sem userId (store pega internamente)
     if (useVttStore.getState().isConnected) {
       useVttStore.getState().sendEvent('dice_roll', JSON.stringify({ charName: char.nome, ...atkEntry }));
       useVttStore.getState().sendEvent('dice_roll', JSON.stringify({ charName: char.nome, ...dmgEntry }));
@@ -188,19 +221,6 @@ export function PlaySheet({ char, onBack, onVtt }) {
     [char.equipamento]
   );
 
-  const allSpells = useMemo(() => {
-    const prog = Object.values(char.levelChoices || {})
-      .filter(c => c?.spells?.length > 0)
-      .flatMap(c => c.spells.filter(Boolean));
-    return [...(char.classSpells || []), ...(char.racialSpells || []), ...prog];
-  }, [char]);
-
-  const allPowers = useMemo(() =>
-    [...(char.poderes || []), ...(char.poderesGerais || []),
-     ...Object.values(char.levelChoices || {}).filter(c => c?.id && c?.type !== 'spell').map(c => ({ nome: c.nome || c.id }))],
-    [char]
-  );
-
   const pvPercent = maxPV > 0 ? Math.max(0, Math.min(100, (currentPV / maxPV) * 100)) : 0;
   const pmPercent = maxPM > 0 ? Math.max(0, Math.min(100, (currentPM / maxPM) * 100)) : 0;
   const pvColor = pvPercent > 50 ? 'bg-emerald-500' : pvPercent > 25 ? 'bg-yellow-500' : 'bg-red-500';
@@ -208,12 +228,41 @@ export function PlaySheet({ char, onBack, onVtt }) {
   const race = RACES[char.raca?.toLowerCase()] || {};
   const cls = CLASSES[char.classe?.toLowerCase()] || {};
 
-  // Se estiver conectado ao VTT, usamos o estado global da loja
   const { combatState, isConnected: isVttConnected, updateCombatState } = useVttStore();
   
   const displayCombatants = isVttConnected ? combatState.combatants : combatants;
   const displayTurn = isVttConnected ? combatState.currentTurn : currentTurn;
   const displayRound = isVttConnected ? combatState.round : round;
+
+  const allSpells = useMemo(() => {
+    const prog = Object.entries(char.levelChoices || {})
+      .filter(([lvl, c]) => c?.spells?.length > 0)
+      .flatMap(([lvl, c]) => {
+        const spells = Array.isArray(c.spells) ? c.spells : [];
+        return spells.filter(Boolean).map(s => {
+          const sObj = typeof s === 'string' ? { nome: s } : s;
+          return { ...sObj, sourceClassName: char.classe };
+        });
+      });
+    
+    return [
+      ...(char.classSpells || []).map(s => {
+        const sObj = typeof s === 'string' ? { nome: s } : s;
+        return { ...sObj, sourceClassName: char.classe };
+      }),
+      ...(char.racialSpells || []).map(s => {
+        const sObj = typeof s === 'string' ? { nome: s } : s;
+        return { ...sObj, sourceClassName: 'racial' };
+      }),
+      ...prog
+    ];
+  }, [char]);
+
+  const allPowers = useMemo(() =>
+    [...(char.poderes || []), ...(char.poderesGerais || []),
+     ...Object.values(char.levelChoices || {}).filter(c => c?.id && c?.type !== 'spell').map(c => ({ nome: c.nome || c.id }))],
+    [char]
+  );
 
   const handleUpdateCombat = useCallback((newState) => {
     if (isVttConnected) {
@@ -225,13 +274,9 @@ export function PlaySheet({ char, onBack, onVtt }) {
     }
   }, [isVttConnected, updateCombatState]);
 
-
-
-  // Tab: Initiative Tracker
   if (activeTab === 'initiative') {
     return (
       <div className="flex flex-col gap-3">
-        {/* Round Counter */}
         <div className="flex items-center justify-between bg-gray-900/60 border border-amber-500/20 rounded-[2rem] px-5 py-4">
           <div className="flex flex-col">
             <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest">Rodada</span>
@@ -261,7 +306,6 @@ export function PlaySheet({ char, onBack, onVtt }) {
           </div>
         </div>
 
-        {/* Add PC to initiative */}
         <button
           onClick={() => {
             const iniRoll = roll(20) + (stats.ini || 0);
@@ -275,7 +319,6 @@ export function PlaySheet({ char, onBack, onVtt }) {
           ⚡ Rolar Iniciativa do Personagem
         </button>
 
-        {/* Add Combatant */}
         <div className="flex gap-2">
           <input
             type="text"
@@ -304,7 +347,7 @@ export function PlaySheet({ char, onBack, onVtt }) {
           </button>
         </div>
 
-        {/* Combatants List */}
+
         {displayCombatants.length > 0 ? (
           <div className="flex flex-col gap-2">
             {displayCombatants.map((c, i) => (
@@ -361,7 +404,9 @@ export function PlaySheet({ char, onBack, onVtt }) {
            <div className="flex-1 min-w-0">
              <p className="font-black text-white text-lg leading-none truncate">{char.nome || 'Herói'}</p>
              <p className="text-[10px] text-amber-500 font-black uppercase tracking-widest mt-0.5">
-               {race?.nome || char.raca} · {cls?.nome || char.classe} · Nível {char.level || 1}
+               {race?.nome || char.raca} · {char.classes && char.classes.length > 0 
+                  ? char.classes.map(c => `${c.name} ${c.level}`).join('/') 
+                  : (cls?.nome || char.classe)} · Nível {char.level || 1}
              </p>
            </div>
         </div>
@@ -467,9 +512,59 @@ export function PlaySheet({ char, onBack, onVtt }) {
             onClick={() => { adjustPV(Math.abs(parseInt(damageInput) || 0)); setDamageInput(''); }}
             className="px-4 py-2.5 rounded-xl bg-emerald-900/40 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-wide hover:bg-emerald-900/60 active:scale-95 transition-all"
           >
-            💚 Curar
           </button>
         </div>
+
+        {/* Action Economy */}
+        <div className="bg-gray-900/40 border border-white/5 rounded-[2.5rem] p-4 flex flex-col gap-3">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Ações da Rodada</p>
+            <button 
+              onClick={() => setActionsUsed({ standard: false, move: false, swift: false, reaction: false })}
+              className="text-[8px] font-black text-amber-500/60 uppercase tracking-widest hover:text-amber-500 transition-colors"
+            >
+              Resetar Ações ↺
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { id: 'standard', l: 'Padrão', icon: '🎯' },
+              { id: 'move',     l: 'Movim.',  icon: '👟' },
+              { id: 'swift',    l: 'Veloz',   icon: '⚡' },
+              { id: 'reaction', l: 'Reação',  icon: '🔄' },
+            ].map(a => (
+              <button
+                key={a.id}
+                onClick={() => setActionsUsed(prev => ({ ...prev, [a.id]: !prev[a.id] }))}
+                className={`flex flex-col items-center gap-1 p-2 rounded-2xl border transition-all ${
+                  actionsUsed[a.id] 
+                    ? 'bg-gray-800/40 border-white/5 opacity-30 grayscale' 
+                    : 'bg-gray-900/60 border-amber-500/20 text-white'
+                }`}
+              >
+                <span className="text-sm">{a.icon}</span>
+                <span className="text-[8px] font-black uppercase tracking-tighter">{a.l}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* RD & Resistances */}
+        {(stats.rd > 0) && (
+          <div className="flex gap-2">
+            <div className="flex-1 bg-gray-900/60 border border-amber-500/20 rounded-2xl px-4 py-3 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest">Redução de Dano</span>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {stats.rdDetails?.map((d, i) => (
+                    <span key={i} className="text-[8px] text-slate-500 bg-gray-950 px-1.5 py-0.5 rounded border border-white/5">{d.label}</span>
+                  ))}
+                </div>
+              </div>
+              <span className="text-2xl font-black text-amber-400">{stats.rd}</span>
+            </div>
+          </div>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-4 gap-2">
@@ -540,64 +635,42 @@ export function PlaySheet({ char, onBack, onVtt }) {
           </div>
         )}
 
-        {/* Conditions */}
-        <div>
-          <button
-            onClick={() => setShowConditions(v => !v)}
-            className="w-full flex items-center justify-between px-5 py-3 bg-gray-900/40 border border-white/5 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-white/10 transition-all"
-          >
-            <span className="flex items-center gap-2">
-              Condições
-              {conditions.length > 0 && (
-                <span className="px-2 py-0.5 bg-red-500 rounded-full text-white text-[9px]">{conditions.length}</span>
-              )}
-            </span>
-            <span>{showConditions ? '▲' : '▼'}</span>
-          </button>
-          <AnimatePresence>
-            {showConditions && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden"
-              >
-                <div className="flex flex-col gap-2 pt-3">
-                  <div className="flex flex-wrap gap-2">
-                    {CONDITIONS.map(c => {
-                      const active = conditions.includes(c.id);
-                      const expanded = expandedCondition === c.id;
-                      return (
-                        <div key={c.id} className="flex flex-col">
-                          <button
-                            onClick={() => {
-                              toggleCondition(c.id);
-                              setExpandedCondition(expanded ? null : c.id);
-                            }}
-                            className={`px-3 py-1.5 rounded-xl border text-[10px] font-black transition-all active:scale-95 ${active ? CONDITION_COLORS[c.color] : 'bg-gray-900/40 border-white/5 text-slate-600 hover:border-white/10'}`}
-                          >
-                            {c.icon} {c.label}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {expandedCondition && (() => {
-                    const c = CONDITIONS.find(x => x.id === expandedCondition);
-                    return c ? (
-                      <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`p-3 rounded-xl border text-[10px] leading-relaxed ${CONDITION_COLORS[c.color]}`}
-                      >
-                        <span className="font-black uppercase">{c.icon} {c.label}:</span> {c.efeito}
-                      </motion.div>
-                    ) : null;
-                  })()}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+        {/* Conditions Selector */}
+        <div className="bg-gray-900/40 border border-white/5 rounded-[2.5rem] p-4 flex flex-col gap-3">
+          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-1">Condições Ativas</p>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(CONDICOES_DATA).map(([id, data]) => {
+              const isActive = (char.condicoesAtivas || []).includes(id);
+              return (
+                <button
+                  key={id}
+                  onClick={() => {
+                    const current = char.condicoesAtivas || [];
+                    const next = isActive ? current.filter(c => c !== id) : [...current, id];
+                    updateChar({ condicoesAtivas: next });
+                    
+                    if (isConnected) {
+                      sendEvent('combat_update', JSON.stringify({ 
+                        type: 'condition_toggle', 
+                        charName: char.nome, 
+                        conditionId: id, 
+                        isActive: !isActive 
+                      }));
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tight transition-all border ${
+                    isActive 
+                      ? 'bg-amber-950/40 border-amber-500/40 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.2)]' 
+                      : 'bg-gray-900/60 border-white/5 text-slate-500 hover:border-white/10'
+                  }`}
+                  title={Object.entries(data.penalidade || {}).map(([s, v]) => `${s}: ${v}`).join(', ')}
+                >
+                  {data.nome}
+                </button>
+              );
+            })}
+          </div>
+        </div>
           {conditions.length > 0 && !showConditions && (
             <div className="flex flex-wrap gap-2 mt-2">
               {conditions.map(id => {
@@ -621,7 +694,7 @@ export function PlaySheet({ char, onBack, onVtt }) {
             🌙 Descanso Curto <span className="opacity-60 normal-case font-medium">(restaura PM)</span>
           </button>
           <button
-            onClick={() => { setCurrentPV(maxPV); setCurrentPM(maxPM); setConditions([]); }}
+            onClick={() => { setCurrentPV(maxPV); setCurrentPM(maxPM); setConditions([]); setActionsUsed({ standard: false, move: false, swift: false, reaction: false }); }}
             className="py-2.5 px-4 rounded-2xl bg-emerald-900/20 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest hover:bg-emerald-900/40 active:scale-95 transition-all"
           >
             ✨ Descanso Longo <span className="opacity-60 normal-case font-medium">(restaura tudo)</span>
@@ -756,11 +829,27 @@ export function PlaySheet({ char, onBack, onVtt }) {
                 </div>
                 {allSpells.map((spell, i) => {
                   const s = typeof spell === 'string' ? { nome: spell } : spell;
+                  const limit = s.sourceClassName === 'racial' ? stats.totalLevel : (stats.classLevels[s.sourceClassName?.toLowerCase()] || stats.totalLevel);
+                  
                   return (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-950/40 border border-purple-500/10 rounded-xl">
-                      <div>
-                        <p className="text-[11px] font-black text-purple-200 uppercase">{s.nome}</p>
+                    <div key={i} className="flex items-center justify-between p-3 bg-gray-950/40 border border-purple-500/10 rounded-xl group hover:border-purple-500/30 transition-all">
+                      <div className="cursor-pointer flex-1" onClick={() => {
+                        // Find full data
+                        let full = null;
+                        Object.values(SPELLS_DATA).forEach(circle => {
+                          if (circle) {
+                            const found = Object.values(circle).find(sp => sp.nome === s.nome);
+                            if (found) full = found;
+                          }
+                        });
+                        setSelectedSpellForCalc({ ...s, ...full, limit });
+                        setSpellEnhancements([]);
+                      }}>
+                        <p className="text-[11px] font-black text-purple-200 uppercase group-hover:text-purple-400 transition-colors">{s.nome} <span>🔍</span></p>
                         {s.escola && <p className="text-[9px] text-purple-500">{s.escola} · {s.circulo ? `${s.circulo}º círculo` : ''}</p>}
+                        <p className="text-[8px] text-slate-500 mt-0.5 uppercase font-bold tracking-wider">
+                          Limite: {limit} PM
+                        </p>
                       </div>
                       {s.custo > 0 && (
                         <button
@@ -780,6 +869,114 @@ export function PlaySheet({ char, onBack, onVtt }) {
             )}
           </div>
         )}
+
+        {/* Spell Calculator Modal */}
+        <AnimatePresence>
+          {selectedSpellForCalc && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedSpellForCalc(null)} className="absolute inset-0 bg-gray-950/90 backdrop-blur-md" />
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 30 }} 
+                animate={{ scale: 1, opacity: 1, y: 0 }} 
+                exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+              >
+                <div className="p-8 border-b border-white/5 bg-gray-950/50">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="text-2xl font-black text-white uppercase tracking-tighter">{selectedSpellForCalc.nome}</h3>
+                      <p className="text-xs text-purple-400 font-bold uppercase tracking-widest">{selectedSpellForCalc.escola} · {selectedSpellForCalc.circulo}º Círculo</p>
+                    </div>
+                    <button onClick={() => setSelectedSpellForCalc(null)} className="text-slate-500 hover:text-white">✕</button>
+                  </div>
+                </div>
+
+                <div className="p-8 overflow-y-auto space-y-6" style={{ scrollbarWidth: 'thin' }}>
+                  {/* Basic Info */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                      <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Execução</span>
+                      <p className="text-[10px] text-white font-bold">{selectedSpellForCalc.execucao}</p>
+                    </div>
+                    <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
+                      <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">Alcance</span>
+                      <p className="text-[10px] text-white font-bold">{selectedSpellForCalc.alcance}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-purple-900/10 border border-purple-500/10 p-4 rounded-2xl">
+                    <p className="text-xs text-slate-300 leading-relaxed italic">{selectedSpellForCalc.descricao}</p>
+                  </div>
+
+                  {/* Enhancements List */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Aprimoramentos</p>
+                      <button 
+                        onClick={() => {
+                          const costStr = prompt('Custo adicional em PM:');
+                          const cost = parseInt(costStr) || 0;
+                          if (cost > 0) {
+                            const desc = prompt('Descrição do aprimoramento:');
+                            setSpellEnhancements([...spellEnhancements, { desc: desc || 'Personalizado', cost }]);
+                          }
+                        }}
+                        className="text-[9px] font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest"
+                      >
+                        + Adicionar
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-slate-300 font-bold">Custo Base</span>
+                        <span className="text-[10px] text-white font-black">{selectedSpellForCalc.custo} PM</span>
+                      </div>
+                      {spellEnhancements.map((e, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-purple-900/10 rounded-xl border border-purple-500/10 group">
+                          <span className="text-[10px] text-purple-200 font-medium italic">{e.desc}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] text-purple-400 font-black">+{e.cost} PM</span>
+                            <button onClick={() => setSpellEnhancements(spellEnhancements.filter((_, i) => i !== idx))} className="text-red-900 group-hover:text-red-500 transition-colors">✕</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8 border-t border-white/5 bg-gray-950/50 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Gasto</p>
+                      <p className={`text-2xl font-black ${
+                        (selectedSpellForCalc.custo + spellEnhancements.reduce((s, e) => s + e.cost, 0)) > selectedSpellForCalc.limit
+                          ? 'text-red-500'
+                          : 'text-blue-400'
+                      }`}>
+                        {selectedSpellForCalc.custo + spellEnhancements.reduce((s, e) => s + e.cost, 0)} / {selectedSpellForCalc.limit} PM
+                      </p>
+                    </div>
+                    <button
+                      disabled={(selectedSpellForCalc.custo + spellEnhancements.reduce((s, e) => s + e.cost, 0)) > currentPM || (selectedSpellForCalc.custo + spellEnhancements.reduce((s, e) => s + e.cost, 0)) > selectedSpellForCalc.limit}
+                      onClick={() => {
+                        const total = selectedSpellForCalc.custo + spellEnhancements.reduce((s, e) => s + e.cost, 0);
+                        adjustPM(-total);
+                        setSelectedSpellForCalc(null);
+                      }}
+                      className="px-8 py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-slate-600 text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all shadow-xl shadow-blue-950/20"
+                    >
+                      Conjurar Magia
+                    </button>
+                  </div>
+                  {(selectedSpellForCalc.custo + spellEnhancements.reduce((s, e) => s + e.cost, 0)) > selectedSpellForCalc.limit && (
+                    <p className="text-[9px] text-red-500 font-bold uppercase text-center bg-red-950/20 py-1 rounded-lg">Excede o limite de PM para seu nível!</p>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
         {/* Tab: Notes */}
         {activeTab === 'notes' && (

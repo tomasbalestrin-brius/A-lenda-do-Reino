@@ -13,6 +13,7 @@ const getInitialCharState = () => ({
   racaVariante: null, // For Suraggel/Lefou
   
   classe: null,
+  classes: [], // [{ name: string, level: number }]
   pericias: [],
   periciasObrigEscolha: {},
   classSpells: [],
@@ -64,6 +65,14 @@ export const useCharacterStore = create((set, get) => ({
     const newChar = { ...state.char, ...updates };
     
     // Regras de Reset: Isoladas no Store!
+    // Se a raça mudou, limpa escolhas raciais e variantes
+    if (updates.raca && updates.raca !== state.char.raca) {
+      newChar.racaEscolha = [];
+      newChar.racaVariante = null;
+      newChar.racialSpells = [];
+      newChar.choices = {}; // Limpa escolhas de herança (Humano, etc)
+    }
+
     // Se a classe mudou, limpa perícias e magias
     if (updates.classe && updates.classe !== state.char.classe) {
       newChar.pericias = [];
@@ -72,11 +81,16 @@ export const useCharacterStore = create((set, get) => ({
       newChar.classSpells = [];
       newChar.poderesGerais = [];
       newChar.levelChoices = {};
+      newChar.classes = updates.classe ? [{ name: updates.classe, level: state.char.level }] : [];
     }
 
     // Se o nível mudou, limpa magias iniciais (círculos acessíveis podem mudar)
     if (updates.level !== undefined && updates.level !== state.char.level) {
       newChar.classSpells = [];
+      // Sincroniza o nível da classe primária se não houver multiclasse ainda
+      if (newChar.classes.length === 1) {
+        newChar.classes[0].level = updates.level;
+      }
     }
     
     // Se a origem mudou, limpa benefícios e remove APENAS as perícias que eram benefícios da origem anterior

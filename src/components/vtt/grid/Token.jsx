@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TOKEN_CONDITIONS } from '../../../data/vttConstants';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../../data/conditionsAndBuffs';
 
 export const Token = React.memo(({ token, gridSize, isSelected, isGM, onClick, onContextMenu }) => {
   const isNpc = token.type === 'npc';
@@ -53,11 +53,11 @@ export const Token = React.memo(({ token, gridSize, isSelected, isGM, onClick, o
 
       {/* Active Condition Icons */}
       <div className="absolute -right-1 top-0 flex flex-col gap-0.5 z-20">
-        {tokenConditions.slice(0, 3).map(cid => {
-          const c = TOKEN_CONDITIONS.find(tc => tc.id === cid);
-          return c ? (
-            <div key={cid} className="w-4 h-4 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-[8px] shadow-lg" title={c.label}>
-              {c.icon}
+        {[...(token.conditions || []), ...(token.buffs || [])].slice(0, 4).map(cid => {
+          const data = CONDICOES_DATA[cid] || BUFFS_DATA[cid];
+          return data ? (
+            <div key={cid} className="w-4 h-4 rounded-full bg-black/80 border border-white/20 flex items-center justify-center text-[8px] shadow-lg" title={data.nome}>
+              {data.icone || data.icon}
             </div>
           ) : null;
         })}

@@ -327,3 +327,34 @@ describe('computeStats — Perícias Escalonamento (JdA)', () => {
     expect(stats.skills['Acrobacia'].profBonus).toBe(6);
   });
 });
+
+// ─── Multiclasse ─────────────────────────────────────────────────────────────
+describe('computeStats — Multiclasse', () => {
+  it('Guerreiro 1 / Arcanista 1 com CON 0 e INT 2: PV=20+3=23, PM=3+2=5', () => {
+    const char = makeChar({
+      classe: 'guerreiro',
+      level: 2,
+      atributos: { FOR: 0, DES: 0, CON: 0, INT: 2, SAB: 0, CAR: 0 },
+      levelChoices: {
+        2: { class: 'arcanista' }
+      }
+    });
+    const stats = computeStats(char);
+    expect(stats.pv).toBe(22);
+    // Guerreiro (1) + Arcanista (6) = 7 PM.
+    expect(stats.pm).toBe(7);
+  });
+
+  it('Arcanista 1 / Guerreiro 1 com INT 3: PM = 6 (Arc) + 1 (Gue) + 3 (INT) = 10', () => {
+    const char = makeChar({
+      classe: 'arcanista',
+      level: 2,
+      atributos: { FOR: 0, DES: 0, CON: 0, INT: 3, SAB: 0, CAR: 0 },
+      levelChoices: {
+        2: { class: 'guerreiro' }
+      }
+    });
+    const stats = computeStats(char);
+    expect(stats.pm).toBe(12);
+  });
+});

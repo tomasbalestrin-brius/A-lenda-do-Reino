@@ -57,21 +57,21 @@ const LandingPage = ({ onSelect }) => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl relative z-10">
       <button 
         onClick={() => onSelect('creator')}
-        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-8 text-left hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
+        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
       >
         <div className="text-4xl mb-6 bg-amber-500/10 w-16 h-16 rounded-2xl flex items-center justify-center border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-gray-950 transition-all">🏰</div>
         <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">A Taverna</h3>
-        <p className="text-slate-400 text-sm leading-relaxed mb-6">Crie, gerencie e evolua seus heróis com o guia completo de regras do Jogo do Ano.</p>
+        <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Crie, gerencie e evolua seus heróis com o guia completo de regras do Jogo do Ano.</p>
         <span className="text-amber-500 text-[10px] font-black uppercase tracking-widest">Acessar Heróis →</span>
       </button>
 
       <button 
         onClick={() => onSelect('vtt')}
-        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-[2.5rem] p-8 text-left hover:border-pink-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
+        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-pink-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
       >
         <div className="text-4xl mb-6 bg-pink-500/10 w-16 h-16 rounded-2xl flex items-center justify-center border border-pink-500/20 group-hover:bg-pink-500 group-hover:text-white transition-all">🎲</div>
         <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Mesa Virtual</h3>
-        <p className="text-slate-400 text-sm leading-relaxed mb-6">Jogue online com seus amigos em tempo real com grid tático, chat e dados sincronizados.</p>
+        <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Jogue online com seus amigos em tempo real com grid tático, chat e dados sincronizados.</p>
         <span className="text-pink-500 text-[10px] font-black uppercase tracking-widest">Entrar na Arena →</span>
       </button>
     </div>

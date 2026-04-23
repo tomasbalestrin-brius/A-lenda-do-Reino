@@ -104,7 +104,7 @@ function StepFocusPanel({ currentStep, char, stats }) {
 
   const renderContent = () => {
     if (hint === 'Bônus Raciais') {
-      const raceData = RACES[char.raca];
+      const raceData = RACES[char.raca?.toLowerCase()];
       if (!raceData) return <p className="text-xs text-gray-500 italic">Selecione uma raça.</p>;
       const attrBonuses = Object.entries(stats.raceBonus || {}).filter(([, v]) => v !== 0);
       return (
@@ -180,7 +180,7 @@ function StepFocusPanel({ currentStep, char, stats }) {
         ...(char.crencasBeneficios || []),
       ];
       return totalPowers.length > 0
-        ? <div className="flex flex-wrap gap-1">{totalPowers.map(p => <span key={p.nome} className="text-[9px] bg-purple-900/40 text-purple-300 border border-purple-700/30 px-2 py-0.5 rounded-full">{p.nome}</span>)}</div>
+        ? <div className="flex flex-wrap gap-1">{totalPowers.map((p, idx) => <span key={p?.nome || idx} className="text-[9px] bg-purple-900/40 text-purple-300 border border-purple-700/30 px-2 py-0.5 rounded-full">{p?.nome || p}</span>)}</div>
         : <p className="text-xs text-gray-500 italic">Nenhum poder ainda.</p>;
     }
 
@@ -220,14 +220,14 @@ function StepFocusPanel({ currentStep, char, stats }) {
 }
 
 export const CharacterPreview = React.memo(function CharacterPreview({ char, stats, currentStep }) {
-  const cls = CLASSES[char.classe];
-  const race = RACES[char.raca];
+  const cls = CLASSES[char.classe?.toLowerCase()];
+  const race = RACES[char.raca?.toLowerCase()];
   const spriteKey = `${char.raca}_${char.classe}`;
   const sprite = SPRITE_MAP[spriteKey] || SPRITE_MAP[`humano_${char.classe}`] || null;
 
   const chosenOriginBenefits = char.origemBeneficios || [];
   const originPericias = useMemo(
-    () => (ORIGENS[char.origem]?.pericias || []).filter(p => chosenOriginBenefits.includes(p)),
+    () => (ORIGENS[char.origem?.toLowerCase()]?.pericias || []).filter(p => chosenOriginBenefits.includes(p)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [char.origem, char.origemBeneficios]
   );
@@ -387,9 +387,9 @@ export const CharacterPreview = React.memo(function CharacterPreview({ char, sta
                 🙏 {p.nome}
               </span>
             ))}
-            {char.poderesGerais?.map(p => (
-              <span key={p.nome} className="text-[9px] bg-blue-900/40 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                ✨ {p.nome}
+            {char.poderesGerais?.map((p, idx) => (
+              <span key={p?.nome || idx} className="text-[9px] bg-blue-900/40 text-blue-300 border border-blue-700/40 px-2 py-0.5 rounded-lg flex items-center gap-1">
+                ✨ {p?.nome || p}
               </span>
             ))}
           </div>

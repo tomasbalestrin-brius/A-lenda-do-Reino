@@ -223,3 +223,48 @@ export function checkPowerEligibility(power, char, stats) {
 
   return { ok: true };
 }
+
+/**
+ * Verifica se um personagem pode pegar um nível em uma determinada classe (Multiclasse).
+ * Retorna { ok: boolean, reason: string }
+ */
+export function checkClassEligibility(className, char, stats) {
+  const name = className.toLowerCase();
+  const currentClasses = char.classes || (char.classe ? [{ name: char.classe, level: char.level || 1 }] : []);
+  const hasClass = currentClasses.some(c => c.name.toLowerCase() === name);
+
+  // Se já tem a classe, pode sempre aumentar nível nela
+  if (hasClass) return { ok: true };
+
+  // 1. Restrição de Arcanista: Não pode ter dois caminhos diferentes.
+  // Como nosso sistema trata "Arcanista" como uma única classe e o caminho como uma escolha interna,
+  // a restrição aqui é apenas para não pegar Arcanista se já tiver outra classe que "conflite" 
+  // (embora mecanicamente Arcanista seja a única com essa restrição explícita de "não pegar de novo").
+  
+  // 2. Devoção Obrigatória (Clérigo, Druida, Paladino)
+  const needsDevotion = ['clerigo', 'druida', 'paladino'].includes(name);
+  if (needsDevotion && !char.deus) {
+    return { ok: false, reason: `Requer Devoção a uma Divindade` };
+  }
+
+  // 3. Restrições de Divindade Específicas
+  if (char.deus) {
+    const god = char.deus.toLowerCase();
+    
+    if (name === 'druida') {
+      const allowed = ['allihanna', 'megalokk', 'oceano'];
+      if (!allowed.includes(god)) {
+        return { ok: false, reason: "Druidas devem ser devotos de Allihanna, Megalokk ou Oceano" };
+      }
+    }
+
+    if (name === 'paladino') {
+      const allowed = ['arsenal', 'azgher', 'khalmyr', 'lena', 'lin-wu', 'marah', 'tanna-toh', 'thyatis', 'valkaria'];
+      if (!allowed.includes(god)) {
+        return { ok: false, reason: "Esta divindade não aceita Paladinos" };
+      }
+    }
+  }
+
+  return { ok: true };
+}

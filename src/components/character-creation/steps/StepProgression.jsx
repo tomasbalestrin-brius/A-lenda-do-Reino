@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CLASSES from '../../../data/classes';
 import GENERAL_POWERS from '../../../data/powers';
 import SPELLS from '../../../data/spellsData';
-import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
+import { checkPowerEligibility, checkClassEligibility } from '../../../utils/rules/prerequisites';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -99,6 +99,21 @@ export function StepProgression({ stats }) {
       levelChoices: {
         ...selecoes,
         [lvl]: { ...selecoes[lvl], escolha: attr }
+      }
+    });
+  };
+
+  const handleClassChange = (lvl, newClass) => {
+    const eligibility = checkClassEligibility(newClass, char, stats);
+    if (!eligibility.ok) {
+      alert(`Não pode escolher ${newClass}: ${eligibility.reason}`);
+      return;
+    }
+
+    updateChar({
+      levelChoices: {
+        ...selecoes,
+        [lvl]: { ...selecoes[lvl], class: newClass, id: null, nome: null, type: 'power', escolha: null, spells: [] }
       }
     });
   };
@@ -279,8 +294,9 @@ export function StepProgression({ stats }) {
 
       <div className="grid grid-cols-1 gap-6">
         {levels.map(lvl => {
-          const autoSkills = cls?.habilidades?.[lvl] || [];
           const selected = selecoes[lvl] || {};
+          const currentCls = CLASSES[(selected.class || char.classe).toLowerCase()];
+          const autoSkills = currentCls?.habilidades?.[lvl] || [];
           const selectedPowerName = selected?.nome;
           const isAumentoAtributo = selectedPowerName === 'Aumento de Atributo';
           const isConhecimentoMagico = selectedPowerName === 'Conhecimento Mágico';
@@ -298,6 +314,16 @@ export function StepProgression({ stats }) {
                     <h3 className="text-base md:text-xl font-black text-white italic">Nível {lvl}</h3>
                   </div>
                   <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[10px] text-slate-500 uppercase font-black tracking-widest mr-2 shrink-0">Classe:</span>
+                    <select
+                      value={selected.class || char.classe}
+                      onChange={(e) => handleClassChange(lvl, e.target.value)}
+                      className="bg-gray-900/60 border border-white/10 rounded-lg px-3 py-1.5 text-[11px] font-black text-amber-400 uppercase tracking-wide focus:outline-none focus:border-amber-500/50 transition-all cursor-pointer"
+                    >
+                      {Object.entries(CLASSES).map(([id, clsData]) => (
+                        <option key={id} value={id}>{clsData.nome}</option>
+                      ))}
+                    </select>
                     {selectedPowerName ? (
                       <>
                         {validationResults[lvl]?.ok === false ? (
@@ -387,8 +413,8 @@ export function StepProgression({ stats }) {
                       </summary>
                       
                       <div className="mt-4 p-4 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                        <div className="col-span-full text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] px-2 py-2 mt-2">Poderes de {cls?.nome}</div>
-                        {allClassPowers.map(p => {
+                        <div className="col-span-full text-[10px] font-black text-amber-500/60 uppercase tracking-[0.3em] px-2 py-2 mt-2">Poderes de {currentCls?.nome}</div>
+                        {(currentCls?.poderes || []).map(p => {
                           const eligibility = checkPowerEligibility(p, { ...char, level: lvl }, stats);
                           const isPicked = selectedPowerName === p.nome;
                           const isStackable = STACKABLE_POWERS.has(p.nome);

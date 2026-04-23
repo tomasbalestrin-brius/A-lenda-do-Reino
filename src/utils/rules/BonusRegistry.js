@@ -22,10 +22,15 @@ export class BonusRegistry {
    * @param {string} type - The source type (Habilidade, Item, Magia, Aliado)
    */
   add(stat, value, name, type = 'Habilidade') {
-    if (!value && value !== 0) return;
+    if (value === undefined || value === null) return;
+    const numValue = Number(value);
+    if (isNaN(numValue)) {
+      console.warn(`BonusRegistry: Tentativa de adicionar valor inválido (${value}) para ${stat} via ${name}`);
+      return;
+    }
     if (!this.registry[stat]) this.registry[stat] = {};
     if (!this.registry[stat][type]) this.registry[stat][type] = [];
-    this.registry[stat][type].push({ name, value });
+    this.registry[stat][type].push({ name, value: numValue });
   }
 
   /**
@@ -36,23 +41,31 @@ export class BonusRegistry {
    */
   calculate(stat, base = 0) {
     if (!this.registry[stat]) return base;
-    let total = base;
+    let total = Number(base) || 0;
     
     Object.entries(this.registry[stat]).forEach(([type, list]) => {
-      if (NON_STACKING_TYPES.includes(type)) {
-        // Não-cumulativos (Itens Mágicos, Magias): Pega o maior bônus e a maior penalidade
-        const positiveBonuses = list.filter(b => b.value > 0);
-        const negativePenalties = list.filter(b => b.value < 0);
+      if (!Array.isArray(list) || list.length === 0) return;
+
+      if (NON_STACKING_TYPES.includes(type) || stat === 'rd' || stat.startsWith('res_')) {
+        // Não-cumulativos: Pega o maior bônus e a maior penalidade
+        const values = list.map(b => Number(b.value)).filter(v => !isNaN(v));
+        if (values.length === 0) return;
+
+        const positiveBonuses = values.filter(v => v > 0);
+        const negativePenalties = values.filter(v => v < 0);
         
         if (positiveBonuses.length > 0) {
-          total += Math.max(...positiveBonuses.map(b => b.value));
+          total += Math.max(...positiveBonuses);
         }
         if (negativePenalties.length > 0) {
-          total += Math.min(...negativePenalties.map(b => b.value));
+          total += Math.min(...negativePenalties);
         }
       } else {
-        // Cumulativos (Habilidades, Atributos, Base, Condições, Penalidades genéricas): Soma tudo
-        total += list.reduce((sum, b) => sum + b.value, 0);
+        // Cumulativos: Soma tudo
+        total += list.reduce((sum, b) => {
+          const v = Number(b.value);
+          return sum + (isNaN(v) ? 0 : v);
+        }, 0);
       }
     });
 

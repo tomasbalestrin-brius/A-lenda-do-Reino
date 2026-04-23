@@ -228,12 +228,12 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
           <motion.div
             initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="relative w-full max-w-sm bg-gray-900 border border-amber-500/20 rounded-[2.5rem] p-8 shadow-2xl flex flex-col gap-6"
+            className="relative w-full max-w-sm bg-gray-900 border border-amber-500/20 rounded-3xl p-8 shadow-2xl flex flex-col gap-6"
           >
             <div className="flex flex-col items-center text-center gap-3">
               <span className="text-4xl">⚠️</span>
               <h3 className="text-lg font-black text-white uppercase tracking-tight">Voltar?</h3>
-              <p className="text-sm text-slate-400 font-medium leading-relaxed">{confirmBack.message}</p>
+              <p className="text-sm text-slate-300 font-medium leading-relaxed">{confirmBack.message}</p>
             </div>
             <div className="flex gap-3">
               <button
@@ -295,6 +295,34 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
         );
       })()}
 
+      {/* ─── MOBILE TAB BAR (Fixed Bottom) ─── */}
+      <div 
+        className="md:hidden fixed bottom-0 inset-x-0 z-[100] bg-gray-950/95 backdrop-blur-3xl border-t border-white/10 flex items-center justify-around px-2"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)', height: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+      >
+        <button 
+          onClick={() => { setView('creation'); setPreviewOpen(false); }}
+          className={`flex flex-col items-center gap-1 flex-1 py-2 transition-all ${!previewOpen && view !== 'library' ? 'text-amber-500' : 'text-slate-500'}`}
+        >
+          <span className="text-xl">{!previewOpen && view !== 'library' ? '⚒️' : '🛠️'}</span>
+          <span className="text-[9px] font-black uppercase tracking-widest">Criação</span>
+        </button>
+        <button 
+          onClick={() => setPreviewOpen(true)}
+          className={`flex flex-col items-center gap-1 flex-1 py-2 transition-all ${previewOpen ? 'text-amber-500' : 'text-slate-500'}`}
+        >
+          <span className="text-xl">📋</span>
+          <span className="text-[9px] font-black uppercase tracking-widest">Resumo</span>
+        </button>
+        <button 
+          onClick={() => setSidebarOpen(true)}
+          className="flex flex-col items-center gap-1 flex-1 py-2 text-slate-500"
+        >
+          <span className="text-xl">🗺️</span>
+          <span className="text-[9px] font-black uppercase tracking-widest">Mapa</span>
+        </button>
+      </div>
+
       {/* ─── MOBILE DRAWER (hidden on md+) ─── */}
       <AnimatePresence>
         {sidebarOpen && (
@@ -302,7 +330,7 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
             <motion.div
               key="drawer-backdrop"
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="md:hidden fixed inset-0 z-[49] bg-black/70 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 z-[149] bg-black/70 backdrop-blur-sm"
               onClick={() => setSidebarOpen(false)}
             />
             <motion.div
@@ -311,7 +339,7 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: prefersReducedMotion ? 0 : '-100%', opacity: prefersReducedMotion ? 0 : 1 }}
               transition={prefersReducedMotion ? { duration: 0.15 } : { type: 'spring', damping: 28, stiffness: 260 }}
-              className="md:hidden fixed inset-y-0 left-0 w-72 z-[50] bg-[#040B16] border-r border-slate-800/60 shadow-2xl flex flex-col overflow-hidden"
+              className="md:hidden fixed inset-y-0 left-0 w-72 z-[150] bg-[#040B16] border-r border-slate-800/60 shadow-2xl flex flex-col overflow-hidden"
               style={{ scrollbarWidth: 'none', paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800/40 shrink-0">
@@ -486,23 +514,24 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
                     </div>
                   }>
                     {(() => {
+                      const stepProps = { onNext: handleNext, stats };
                       switch (step) {
-                        case 0: return <StepRace onNext={handleNext} />;
+                        case 0: return <StepRace {...stepProps} />;
                         case 1: return <StepHeritage />;
-                        case 2: return <StepClass onNext={handleNext} />;
+                        case 2: return <StepClass {...stepProps} />;
                         case 3: return <StepIdentity />;
                         case 4: return <StepClassSpecialization />;
-                        case 5: return <StepOrigin onNext={handleNext} />;
-                        case 6: return <StepOrigemBeneficios stats={stats} />;
+                        case 5: return <StepOrigin {...stepProps} />;
+                        case 6: return <StepOrigemBeneficios {...stepProps} />;
                         case 7: return <StepDeus />;
                         case 8: return <StepLevel />;
-                        case 9: return <StepSpells stats={stats} />;
-                        case 10: return <StepAttributes stats={stats} />;
+                        case 9: return <StepSpells {...stepProps} />;
+                        case 10: return <StepAttributes {...stepProps} />;
                         case 11: return <StepClassePericias />;
-                        case 12: return <StepIntPericias stats={stats} />;
+                        case 12: return <StepIntPericias {...stepProps} />;
                         case 13: return <StepEquipment />;
-                        case 14: return <StepPowers stats={stats} />;
-                        case 15: return <StepProgression stats={stats} />;
+                        case 14: return <StepPowers {...stepProps} />;
+                        case 15: return <StepProgression {...stepProps} />;
                         case 16: return <StepAllies />;
                         case 17: return (
                           <StepReview
@@ -525,7 +554,7 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
         {/* Bottom Navigation Bar - Fixed to bottom of the content column */}
         <div 
           className="shrink-0 z-40 px-4 md:px-12 py-4 md:py-6 bg-gray-950/80 backdrop-blur-3xl border-t border-white/10"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 76px)' }} // Higher padding for Tab Bar
         >
            <div className="max-w-4xl mx-auto flex items-center justify-between relative">
               <button
@@ -550,30 +579,20 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
                  )}
               </div>
               
-              <button
+              <motion.button
                 onClick={handleNext}
-                disabled={!canAdvance}
+                whileTap={canAdvance ? { scale: 0.95 } : { x: [0, -4, 4, -4, 4, 0] }}
                 className={`px-6 md:px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 md:gap-3 group ${
                   canAdvance 
-                    ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500 active:scale-95' 
-                    : 'bg-gray-900/50 border border-white/5 text-gray-600 cursor-not-allowed opacity-50'
+                    ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500' 
+                    : 'bg-rose-950/20 border border-rose-500/30 text-rose-500 shadow-inner'
                 } ${step === MAX_STEPS - 1 ? 'invisible pointer-events-none' : ''}`}
               >
-                <span className="hidden xs:inline">Avançar</span>
-                <span className="text-xl group-hover:translate-x-1 transition-transform">→</span>
-              </button>
+                <span className="hidden xs:inline">{canAdvance ? 'Avançar' : 'Pendente'}</span>
+                <span className="text-xl group-hover:translate-x-1 transition-transform">{canAdvance ? '→' : '⚠️'}</span>
+              </motion.button>
            </div>
         </div>
-
-        {/* Mobile Info Overlay Toggle (Floating) */}
-        {(!char.modalRace && !char.modalClass && !char.modalOrigin && !char.modalDeity) && (
-          <button
-            onClick={() => setPreviewOpen(true)}
-            className="lg:hidden fixed bottom-[120px] right-6 z-[90] w-14 h-14 rounded-2xl bg-amber-600 text-gray-950 shadow-[0_10px_40px_rgba(217,119,6,0.6)] border-2 border-amber-400 flex items-center justify-center text-xl active:scale-90 transition-all"
-          >
-            📋
-          </button>
-        )}
       </div>
 
       {/* Right Info Panel (Desktop) */}
@@ -582,7 +601,9 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
            <span className="w-1 h-3 bg-slate-600 rounded-full" />
            Visão Geral
          </h3>
-         <CharacterPreview char={char} stats={stats} currentStep={step} />
+         <ErrorBoundary fallback={<div className="p-4 bg-red-950/20 border border-red-500/20 rounded-2xl text-[10px] text-red-400 font-bold italic">Erro ao carregar prévia dos dados.</div>}>
+           <CharacterPreview char={char} stats={stats} currentStep={step} />
+         </ErrorBoundary>
       </div>
 
       {/* Mobile Info Overlay */}
@@ -602,7 +623,9 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
                 className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center border border-white/10 text-xl"
               >✕</button>
             </div>
-            <CharacterPreview char={char} stats={stats} currentStep={step} />
+            <ErrorBoundary fallback={<div className="p-4 bg-red-950/20 border border-red-500/20 rounded-2xl text-[10px] text-red-400 font-bold italic">Erro ao carregar prévia dos dados.</div>}>
+              <CharacterPreview char={char} stats={stats} currentStep={step} />
+            </ErrorBoundary>
           </motion.div>
         )}
       </AnimatePresence>

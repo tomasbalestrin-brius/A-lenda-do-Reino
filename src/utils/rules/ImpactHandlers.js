@@ -14,7 +14,7 @@ export const IMPACT_HANDLERS = {
     if (imp.fort) registry.add('fort', imp.fort, power.nome);
     if (imp.ref) registry.add('ref', imp.ref, power.nome);
     if (imp.von) registry.add('von', imp.von, power.nome);
-    if (imp.atk) registry.add('atk_geral', imp.atk, power.nome);
+    if (imp.atk) registry.add('atk', imp.atk, power.nome);
     if (imp.deslocamento) registry.add('deslocamento', imp.deslocamento, power.nome);
     if (imp.pericia) {
       registry.add(imp.pericia.toLowerCase(), imp.valor, power.nome);

@@ -114,7 +114,7 @@ export const RACES = {
   lefou: {
     nome: "Lefou",
     descricao: "Tocados pela Tormenta, os lefou carregam marcas visíveis da corrupção. Temidos e incompreendidos, muitos escolhem combater o mesmo mal que os criou.",
-    atributos: { escolha: 3, valor: 1, carisma: -1 }, // +1 em três atributos (exceto Car), Car -1
+    atributos: { escolha: 3, valor: 1, carisma: -2 }, // +1 em três atributos (exceto Car), Car -2
     escolhaRestricao: ['CAR'], // não pode escolher CAR
     habilidades: [
       {
@@ -176,7 +176,7 @@ export const RACES = {
   golem: {
     nome: "Golem",
     descricao: "Constructos animados por espíritos elementais. Movidos por forças vivas presas em corpos de pedra e metal. Perguntam-se se têm alma.",
-    atributos: { forca: 2, constituicao: 1, carisma: -1 },
+    atributos: { forca: 2, constituicao: 1, carisma: -2 },
     deslocamento: 6,
     habilidades: [
       {

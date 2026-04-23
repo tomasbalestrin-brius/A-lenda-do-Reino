@@ -27,23 +27,22 @@ export function StepEquipment() {
   const [modalTab, setModalTab] = useState('mods'); // 'mods' or 'mat'
   const [mobileTab, setMobileTab] = useState('loja'); // 'loja' or 'mochila'
 
-  // Auto-claim static items once
+  // Auto-claim origin items once (Standard Kit is handled in StepClass)
   useEffect(() => {
-    if (!char.choices?.claimedStartingKit && !char.choices?.initializingKit) {
-      updateChar({ choices: { ...(char.choices || {}), initializingKit: true } });
+    if (char.choices?.claimedStartingKit && !char.choices?.initializingOriginKit) {
+      updateChar({ choices: { ...(char.choices || {}), initializingOriginKit: true } });
       
       const originItensNames = ORIGENS[char.origem?.toLowerCase()]?.itens || [];
-      const staticIds = ['mochila', 'saco_dormir', 'traje_viajante'];
       
       const matchedOriginIds = originItensNames.map(name => {
         const entry = Object.entries(ITENS).find(([id, item]) => item.nome.toLowerCase() === name.toLowerCase());
         return entry ? entry[0] : null;
       }).filter(Boolean);
 
-      const allInitialIds = [...new Set([...staticIds, ...matchedOriginIds])];
-      const initialEquip = allInitialIds.map(id => ({ id, uid: `${id}_${Math.random().toString(36).substr(2, 9)}`, mods: [], material: null }));
-
-      updateChar({ equipamento: initialEquip });
+      if (matchedOriginIds.length > 0) {
+        const originEquip = matchedOriginIds.map(id => ({ id, uid: `${id}_${Math.random().toString(36).substr(2, 9)}`, mods: [], material: null }));
+        updateChar({ equipamento: [...(char.equipamento || []), ...originEquip] });
+      }
     }
   }, [char.choices?.claimedStartingKit, char.origem, updateChar]);
 

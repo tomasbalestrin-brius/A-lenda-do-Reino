@@ -12,6 +12,23 @@ export const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 // +2 do 1º ao 6º nível, +4 do 7º ao 14º, +6 do 15º em diante
 export const TRAINING_BONUS = { low: 2, mid: 4, high: 6 };
 export const TRAINING_BONUS_THRESHOLDS = { mid: 7, high: 15 };
+export const STANDARD_KIT_ITEMS = [
+  'mochila',
+  'saco_dormir',
+  'corda',
+  'odre',
+  'traje_viajante',
+  'racao_viagem',
+  'racao_viagem',
+  'racao_viagem',
+  'racao_viagem',
+  'racao_viagem',
+  'racao_viagem',
+  'racao_viagem',
+  'tocha',
+  'tocha',
+  'tocha'
+];
 
 // Passos de dano (T20)
 export const DAMAGE_STEPS = [

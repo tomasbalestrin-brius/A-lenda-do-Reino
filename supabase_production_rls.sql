@@ -11,19 +11,19 @@ FOR UPDATE
 USING (auth.uid() = game_master_id)
 WITH CHECK (auth.uid() = game_master_id);
 
+DROP POLICY IF EXISTS "Qualquer um logado lê as salas" ON public.rooms;
+CREATE POLICY "Qualquer um logado lê as salas" ON public.rooms
+FOR SELECT
+USING (auth.role() = 'authenticated');
+
 -- 2. SEGURANÇA NA TABELA 'ROOM_PLAYERS'
 -- Jogadores só podem atualizar seu próprio HP/Ficha ou o GM pode atualizar todos.
 ALTER TABLE public.room_players ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Acesso total aos players da própria sala" ON public.room_players;
-CREATE POLICY "Acesso total aos players da própria sala" ON public.room_players
+DROP POLICY IF EXISTS "Leitura de players da sala" ON public.room_players;
+CREATE POLICY "Leitura de players da sala" ON public.room_players
 FOR SELECT
-USING (
-  EXISTS (
-    SELECT 1 FROM public.room_players AS rp 
-    WHERE rp.room_id = room_id AND rp.user_id = auth.uid()
-  )
-);
+USING (auth.role() = 'authenticated');
 
 DROP POLICY IF EXISTS "Atualização de dados do player" ON public.room_players;
 CREATE POLICY "Atualização de dados do player" ON public.room_players

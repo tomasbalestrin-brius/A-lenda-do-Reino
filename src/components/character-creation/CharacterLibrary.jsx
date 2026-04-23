@@ -18,7 +18,7 @@ function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
   const race = RACES[char.raca] || {};
   const s = char.stats || {};
   return (
-    <div className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative">
+    <div className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-3xl p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative">
       <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl group-hover:opacity-10 transition-opacity">
         {CLASS_ICONS[char.classe] || '⚔️'}
       </div>
@@ -104,7 +104,7 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
       {/* Back Button */}
       <button 
         onClick={onBack}
-        className="absolute top-6 left-6 px-4 py-2 bg-gray-900/60 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white hover:bg-gray-800 transition-all z-20"
+        className="absolute top-6 left-6 px-4 py-2 bg-gray-900/60 border border-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:bg-gray-800 transition-all z-20"
       >
         ← Início
       </button>
@@ -139,7 +139,7 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[1, 2, 3].map(i => (
-              <div key={i} className="bg-gray-900/40 border border-gray-800/60 rounded-[2.5rem] p-6 flex flex-col gap-6 animate-pulse">
+              <div key={i} className="bg-gray-900/40 border border-gray-800/60 rounded-3xl p-6 flex flex-col gap-6 animate-pulse">
                 <div className="flex items-center gap-5">
                   <div className="w-20 h-20 rounded-3xl bg-gray-800" />
                   <div className="flex-1 space-y-3">

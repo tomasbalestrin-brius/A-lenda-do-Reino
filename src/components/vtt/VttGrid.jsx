@@ -24,6 +24,8 @@ export function VttGrid({ isGM }) {
   const [rulerStart, setRulerStart] = useState(null);
   const [rulerEnd, setRulerEnd] = useState(null);
   const [hoverCell, setHoverCell] = useState(null);
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [lastFogIdx, setLastFogIdx] = useState(null);
 
   // Fog of War state
   const [fogTool, setFogTool] = useState(false); // GM only: toggles reveal tool
@@ -157,11 +159,17 @@ export function VttGrid({ isGM }) {
     updateGridState({ ...gridState, tokens: newTokens });
   };
 
-  const toggleFogCell = (index) => {
+  const toggleFogCell = (index, forceState = null) => {
     if (!isGM) return;
-    const newRevealed = fogRevealed.includes(index)
-      ? fogRevealed.filter(i => i !== index)
-      : [...fogRevealed, index];
+    const isCurrentlyRevealed = fogRevealed.includes(index);
+    const shouldReveal = forceState !== null ? forceState : !isCurrentlyRevealed;
+    
+    if (shouldReveal === isCurrentlyRevealed) return;
+
+    const newRevealed = shouldReveal
+      ? [...fogRevealed, index]
+      : fogRevealed.filter(i => i !== index);
+      
     updateGridState({ ...gridState, fog_revealed: newRevealed });
   };
 
@@ -199,6 +207,9 @@ export function VttGrid({ isGM }) {
     <div
       className="flex-1 relative bg-slate-900 overflow-hidden flex items-center justify-center p-2 md:p-4"
       onClick={handleGridClick}
+      onMouseDown={() => setIsMouseDown(true)}
+      onMouseUp={() => { setIsMouseDown(false); setLastFogIdx(null); }}
+      onMouseLeave={() => { setIsMouseDown(false); setLastFogIdx(null); }}
       onContextMenu={e => { if (contextMenu) { e.preventDefault(); setContextMenu(null); } }}
     >
       {/* GM Panel Toggle */}
@@ -326,7 +337,13 @@ export function VttGrid({ isGM }) {
               fogEnabled={fogEnabled}
               isRevealed={fogRevealed.includes(i)}
               isGM={isGM}
-              onMouseEnter={() => rulerMode && setHoverCell({ x: cx, y: cy })}
+              onMouseEnter={() => {
+                if (rulerMode) setHoverCell({ x: cx, y: cy });
+                if (fogTool && isGM && isMouseDown && lastFogIdx !== i) {
+                  toggleFogCell(i);
+                  setLastFogIdx(i);
+                }
+              }}
               onMouseLeave={() => rulerMode && setHoverCell(null)}
               onClick={() => {
                 if (contextMenu) { setContextMenu(null); return; }

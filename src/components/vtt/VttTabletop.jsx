@@ -4,6 +4,9 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { VttGrid } from './VttGrid';
 import { VttJournal, parseChatCommand, executeRoll } from './VttJournal';
+import { MONSTERS } from '../../data/monsters';
+import { MonsterSheet } from './MonsterSheet';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../data/conditionsAndBuffs';
 
 // ─── Sound Effects ─────────────────────────────────────────────────────────────
 const AudioCtx = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;
@@ -65,14 +68,31 @@ function playTurnSound() {
   } catch (_) {}
 }
 
+function playSendSound() {
+  if (!AudioCtx) return;
+  try {
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.frequency.setValueAtTime(600, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+    osc.start(); osc.stop(ctx.currentTime + 0.1);
+  } catch (_) {}
+}
+
 // ─── Initiative Tracker (Drag-and-Drop) ────────────────────────────────────────
-function InitiativeTracker({ combatants, currentTurn, round, isGM }) {
+function InitiativeTracker({ combatants, currentTurn, round, isGM, onSelect }) {
   const { combatState, updateCombatState } = useVttStore.getState ? useVttStore() : {};
   const [items, setItems] = useState(combatants);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState('');
   const [newInit, setNewInit] = useState('');
   const [collapsed, setCollapsed] = useState(false);
+
+  const [showMonsterSelect, setShowMonsterSelect] = useState(false);
 
   // Keep local order in sync with store
   useEffect(() => { setItems(combatants); }, [combatants]);
@@ -88,29 +108,12 @@ function InitiativeTracker({ combatants, currentTurn, round, isGM }) {
         >
           + Iniciar Combate
         </button>
-        <AnimatePresence>
-          {showAdd && (
-            <motion.form
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: 'auto' }}
-              exit={{ opacity: 0, width: 0 }}
-              className="flex items-center gap-2 overflow-hidden"
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (!newName.trim()) return;
-                const newCombatant = { name: newName.trim(), initiative: parseInt(newInit) || 0, id: `c_${Date.now()}` };
-                const newList = [...(combatants || []), newCombatant].sort((a, b) => b.initiative - a.initiative);
-                useVttStore.getState().updateCombatState({ combatants: newList, currentTurn: 0, round: 1 });
-                setNewName(''); setNewInit(''); setShowAdd(false);
-              }}
-            >
-              <input autoFocus value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nome..." className="bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-xs text-white w-28 focus:outline-none focus:border-amber-500/40" />
-              <input value={newInit} onChange={e => setNewInit(e.target.value)} placeholder="Init" type="number" className="bg-gray-900 border border-white/10 rounded-lg px-2 py-1 text-xs text-white w-14 text-center focus:outline-none" />
-              <button type="submit" className="bg-amber-600 text-gray-950 font-black text-[9px] uppercase px-2 py-1 rounded-lg">OK</button>
-              <button type="button" onClick={() => setShowAdd(false)} className="text-slate-600 hover:text-white text-xs">✕</button>
-            </motion.form>
-          )}
-        </AnimatePresence>
+        <button
+          onClick={() => setShowMonsterSelect(true)}
+          className="text-[9px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-400 transition-colors px-3 py-1 rounded-lg bg-emerald-950/20 border border-emerald-500/20"
+        >
+          👾 Add Monstro
+        </button>
       </div>
     );
   }
@@ -160,8 +163,8 @@ function InitiativeTracker({ combatants, currentTurn, round, isGM }) {
           <button onClick={() => setShowAdd(true)} className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-amber-400 transition-colors px-2 py-1 rounded-lg">+ Add</button>
         )}
         {isGM && (
-          <button onClick={handleNextTurn} className="text-[9px] bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded-lg text-gray-950 font-black uppercase tracking-widest transition-all active:scale-95">
-            ▶ Próximo
+          <button onClick={handleNextTurn} className="text-[9px] bg-amber-600 hover:bg-amber-500 px-3 py-1.5 rounded-lg text-gray-950 font-black uppercase tracking-widest transition-all active:scale-95 shadow-lg shadow-amber-900/20">
+            Próximo Turno ▶
           </button>
         )}
         {isGM && (
@@ -195,7 +198,8 @@ function InitiativeTracker({ combatants, currentTurn, round, isGM }) {
                 >
                   <motion.div
                     layout
-                    className={`relative flex flex-col items-center px-3 py-2 rounded-xl border transition-colors select-none group ${
+                    onClick={() => onSelect?.(c)}
+                    className={`relative flex flex-col items-center px-3 py-2 rounded-xl border transition-colors select-none group cursor-pointer ${
                       i === currentTurn
                         ? 'bg-amber-900/40 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]'
                         : 'bg-white/[0.04] border-white/8 hover:border-white/20'
@@ -209,6 +213,16 @@ function InitiativeTracker({ combatants, currentTurn, round, isGM }) {
                     )}
                     <span className="text-[10px] font-black text-white whitespace-nowrap max-w-[80px] truncate">{c.name}</span>
                     <span className={`text-[9px] font-bold ${i === currentTurn ? 'text-amber-400' : 'text-slate-500'}`}>{c.initiative}</span>
+                    
+                    {/* Condition & Buff Icons */}
+                    <div className="flex flex-wrap gap-0.5 mt-1 justify-center max-w-[60px]">
+                      {(c.condicoes || []).map(cid => (
+                        <span key={cid} title={CONDICOES_DATA[cid]?.nome} className="text-[10px]">{CONDICOES_DATA[cid]?.icone}</span>
+                      ))}
+                      {(c.buffs || []).map(bid => (
+                        <span key={bid} title={BUFFS_DATA[bid]?.nome} className="text-[10px]">{BUFFS_DATA[bid]?.icone}</span>
+                      ))}
+                    </div>
                     {isGM && (
                       <button
                         onClick={() => removeOne(c.id || c.name)}
@@ -252,6 +266,42 @@ function InitiativeTracker({ combatants, currentTurn, round, isGM }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Monster Select Modal (GM Only) */}
+      <AnimatePresence>
+        {isGM && showMonsterSelect && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMonsterSelect(false)} className="absolute inset-0 bg-gray-950/80 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
+              <div className="p-6 border-b border-white/5 flex justify-between items-center bg-gray-950/50">
+                <h3 className="text-sm font-black uppercase tracking-widest text-white">Adicionar Monstro</h3>
+                <button onClick={() => setShowMonsterSelect(false)} className="text-slate-500 hover:text-white">✕</button>
+              </div>
+              <div className="p-4 overflow-y-auto grid grid-cols-1 gap-2">
+                {Object.values(MONSTERS).map(m => (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      const rollIni = Math.floor(Math.random() * 20) + 1 + (m.refl || 0);
+                      const newC = { ...m, initiative: rollIni, id: `m_${Date.now()}_${m.id}`, isMonster: true };
+                      const newList = [...items, newC].sort((a, b) => b.initiative - a.initiative);
+                      handleReorder(newList);
+                      setShowMonsterSelect(false);
+                    }}
+                    className="flex items-center justify-between p-4 bg-gray-950/50 border border-white/5 rounded-2xl hover:border-emerald-500/30 transition-all text-left"
+                  >
+                    <div>
+                      <p className="text-xs font-black text-white uppercase">{m.nome}</p>
+                      <p className="text-[9px] text-slate-500 font-bold uppercase tracking-tighter">ND {m.nd} · {m.tipo}</p>
+                    </div>
+                    <span className="text-xl">👾</span>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -269,6 +319,8 @@ export function VttTabletop({ room, onOpenSheet }) {
   const messagesEndRef = useRef(null);
   const prevEventsLen = useRef(0);
   const prevTurn = useRef(-1);
+
+  const [selectedCombatant, setSelectedCombatant] = useState(null);
 
   const myPlayer = players.find(p => p.user_id === user?.id);
   const isGM = myPlayer?.role === 'game_master';
@@ -298,15 +350,37 @@ export function VttTabletop({ room, onOpenSheet }) {
   useEffect(() => {
     if (events.length > prevEventsLen.current) {
       const newEvt = events[events.length - 1];
+      
+      // Dice Sound
       if (newEvt?.event_type === 'dice_roll') {
         try {
           const d = typeof newEvt.content === 'string' ? JSON.parse(newEvt.content) : newEvt.content;
           playDiceSound(d.crit, d.fail);
         } catch (_) { playDiceSound(); }
       }
+
+      // Combat Updates (Conditions, etc)
+      if (newEvt?.event_type === 'combat_update' && isGM) {
+        try {
+          const d = typeof newEvt.content === 'string' ? JSON.parse(newEvt.content) : newEvt.content;
+          if (d.type === 'condition_toggle') {
+             const nextCombatants = (combatState.combatants || []).map(c => {
+               if (c.name === d.charName) {
+                 const conds = c.condicoes || [];
+                 const next = d.isActive 
+                    ? (conds.includes(d.conditionId) ? conds : [...conds, d.conditionId]) 
+                    : conds.filter(id => id !== d.conditionId);
+                 return { ...c, condicoes: next };
+               }
+               return c;
+             });
+             updateCombatState({ ...combatState, combatants: nextCombatants });
+          }
+        } catch (e) { console.error("Combat sync error:", e); }
+      }
     }
     prevEventsLen.current = events.length;
-  }, [events]);
+  }, [events, isGM, combatState, updateCombatState]);
 
   const handleCopyCode = () => {
     if (!room?.join_code) return;
@@ -339,8 +413,9 @@ export function VttTabletop({ room, onOpenSheet }) {
       if (evt.event_type === 'dice_roll') {
         const tag = content.crit ? ' ⭐ CRÍTICO' : content.fail ? ' 💀 FALHA' : '';
         const secret = isSecret ? ' *(Rolagem Secreta)*' : '';
-        md += `**${sender}** rolou **${content.label || `d${content.sides}`}**: **${content.total}**${tag}${secret}  \n`;
-        md += `> d${content.sides}(${content.r})${content.bonus !== 0 ? ` ${content.bonus > 0 ? '+' : ''}${content.bonus}` : ''}\n\n`;
+        md += `**${sender}** rolou **${content.label || content.expr}**: **${content.total}**${tag}${secret}  \n`;
+        const rollsStr = content.dice.map(d => `d${d.sides}(${d.rolls.join(',')})`).join(' ');
+        md += `> ${rollsStr}${content.bonus !== 0 ? ` ${content.bonus > 0 ? '+' : ''}${content.bonus}` : ''}\n\n`;
       } else if (evt.event_type === 'message') {
         const text = content.text || evt.content;
         const secret = isSecret ? ' *(Sussurro)*' : '';
@@ -411,7 +486,7 @@ export function VttTabletop({ room, onOpenSheet }) {
             <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60 mb-2 mt-2">
               {rollData.charName || 'Visitante'} rolou
             </p>
-            <p className="text-sm font-black mb-1">{rollData.label}</p>
+            <p className="text-sm font-black mb-1 text-center">{rollData.label}</p>
 
             <motion.div
               initial={{ scale: 0.6, rotate: -10 }}
@@ -422,8 +497,10 @@ export function VttTabletop({ room, onOpenSheet }) {
               <span className="text-4xl font-black">{rollData.total}</span>
             </motion.div>
 
-            <div className="flex gap-2 text-[10px] uppercase font-bold tracking-widest opacity-80 mt-1">
-              <span>{`d${rollData.sides}(${rollData.r})`}</span>
+            <div className="flex flex-wrap justify-center gap-2 text-[10px] uppercase font-bold tracking-widest opacity-80 mt-1">
+              {rollData.dice.map((d, i) => (
+                <span key={i}>{`${d.count}d${d.sides}(${d.rolls.join(',')})`}</span>
+              ))}
               {rollData.bonus !== 0 && <span>{rollData.bonus >= 0 ? '+' : '−'} {Math.abs(rollData.bonus)}</span>}
             </div>
           </div>
@@ -485,7 +562,8 @@ export function VttTabletop({ room, onOpenSheet }) {
       const sender = players.find(p => p.user_id === user?.id);
       const charName = sender?.character_name || (sender?.role === 'game_master' ? 'Mestre' : 'Aventureiro');
       const result = executeRoll({ ...diceCmd, charName });
-      await sendEvent('dice_roll', JSON.stringify(result), isSecret ? 'secret' : 'public');
+      const finalVisibility = diceCmd.visibility === 'secret' ? 'secret' : (isSecret ? 'secret' : 'public');
+      await sendEvent('dice_roll', JSON.stringify(result), finalVisibility);
       setChatInput('');
       return;
     }
@@ -653,9 +731,43 @@ export function VttTabletop({ room, onOpenSheet }) {
             currentTurn={combatState.currentTurn || 0}
             round={combatState.round || 1}
             isGM={isGM}
+            onSelect={setSelectedCombatant}
           />
 
           <div className="flex-1 overflow-hidden relative">
+            {/* Combatant Sheet Modal */}
+            <AnimatePresence>
+              {selectedCombatant && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedCombatant(null)} className="absolute inset-0 bg-gray-950/90 backdrop-blur-md" />
+                  <motion.div 
+                    initial={{ scale: 0.95, opacity: 0, y: 30 }} 
+                    animate={{ scale: 1, opacity: 1, y: 0 }} 
+                    exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                    className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
+                  >
+                    {selectedCombatant.isMonster ? (
+                      <MonsterSheet 
+                        monster={selectedCombatant} 
+                        onRoll={(r) => {
+                          sendEvent('dice_roll', JSON.stringify({ charName: selectedCombatant.nome, ...r }));
+                          setSelectedCombatant(null);
+                        }} 
+                      />
+                    ) : (
+                      // If it's a player, we would ideally show their PlaySheet. 
+                      // For now, if the GM clicks, we could show a summary or the PlaySheet if we have the data.
+                      <div className="bg-gray-900 p-8 rounded-[2rem] border border-white/10 text-center">
+                        <p className="text-white font-black uppercase tracking-widest">{selectedCombatant.name}</p>
+                        <p className="text-xs text-slate-500 mt-2 italic">Acesso à ficha completa do jogador em breve.</p>
+                        <button onClick={() => setSelectedCombatant(null)} className="mt-6 px-6 py-2 bg-gray-800 rounded-xl text-xs font-black uppercase">Fechar</button>
+                      </div>
+                    )}
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
+
             <AnimatePresence mode="wait">
               {view === 'chat' && (
                 <motion.div
@@ -730,17 +842,17 @@ export function VttTabletop({ room, onOpenSheet }) {
             className="shrink-0 bg-gray-950/95 backdrop-blur-xl border-t border-white/10 z-20"
             style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
           >
-            {/* Dice hint */}
-            <AnimatePresence>
-              {isDiceInput && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="px-4 pt-3">
-                    <div className="max-w-3xl mx-auto flex items-center gap-2 bg-indigo-950/60 border border-indigo-500/30 rounded-2xl px-4 py-2">
+            {/* Dice hint & Quick Dice Bar */}
+            <div className="px-3 pt-3 flex flex-col gap-2 max-w-3xl mx-auto">
+              <AnimatePresence>
+                {isDiceInput && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center gap-2 bg-indigo-950/60 border border-indigo-500/30 rounded-2xl px-4 py-2">
                       <motion.span
                         animate={{ rotate: [0, 20, -20, 0] }}
                         transition={{ repeat: Infinity, duration: 0.6 }}
@@ -748,10 +860,31 @@ export function VttTabletop({ room, onOpenSheet }) {
                       >🎲</motion.span>
                       <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Rolagem detectada — pressione Enter para rolar</span>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Quick Dice Bar (Mobile focused) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none no-scrollbar">
+                {[4, 6, 8, 10, 12, 20].map(sides => (
+                  <button
+                    key={sides}
+                    onClick={() => setChatInput(`/r 1d${sides}`)}
+                    className="shrink-0 h-9 px-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black text-slate-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 flex items-center gap-1.5"
+                  >
+                    <span className="opacity-50">d{sides}</span>
+                    <span className="text-[14px]">🎲</span>
+                  </button>
+                ))}
+                <div className="w-px h-4 bg-white/10 mx-1" />
+                <button
+                  onClick={() => setIsSecret(!isSecret)}
+                  className={`shrink-0 h-9 px-3 rounded-xl border text-[10px] font-black transition-all flex items-center gap-1.5 ${isSecret ? 'bg-purple-950/40 border-purple-500/40 text-purple-400' : 'bg-white/5 border-white/5 text-slate-500'}`}
+                >
+                  {isSecret ? '🕵️ Secreto' : '👁️ Público'}
+                </button>
+              </div>
+            </div>
 
             <div className="p-3">
               <form onSubmit={handleSendChat} className="max-w-3xl mx-auto flex gap-2 relative">

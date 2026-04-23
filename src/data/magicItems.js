@@ -110,6 +110,31 @@ export const ITENS_MAGICOS_ESPECIFICOS = {
     preco: 18000,
     impacto: { tipo: 'acao_movimento_extra', custo: 1 },
     descricao: "Você pode gastar 1 PM para receber uma ação de movimento adicional no seu turno."
+  },
+  cinto_forca_gigante: {
+    id: 'cinto_forca_gigante',
+    nome: 'Cinto da Força do Gigante',
+    tipo: 'acessorio',
+    preco: 12000,
+    bonus: { for: 2 },
+    impacto: { tipo: 'bonus_atributo', atributo: 'for', valor: 2 },
+    descricao: "Um cinto largo com fivela de ferro. Aumenta sua Força em +2."
+  },
+  manto_invisibilidade: {
+    id: 'manto_invisibilidade',
+    nome: 'Manto da Invisibilidade',
+    tipo: 'acessorio',
+    preco: 50000,
+    impacto: { tipo: 'magia_invisibilidade_permanente' },
+    descricao: "Enquanto estiver usando o capuz, você fica sob efeito da magia Invisibilidade. Atacar ou lançar magias cancela o efeito até o próximo turno."
+  },
+  colar_adaptabilidade: {
+    id: 'colar_adaptabilidade',
+    nome: 'Colar de Adaptabilidade',
+    tipo: 'acessorio',
+    preco: 5000,
+    impacto: { tipo: 'imunidade_ambientes_hostis' },
+    descricao: "O usuário pode respirar em qualquer ambiente (incluindo vácuo e água) e ignora efeitos de pressão e temperaturas extremas."
   }
 };
 

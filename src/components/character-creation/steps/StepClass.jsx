@@ -4,6 +4,7 @@ import CLASSES from '../../../data/classes';
 import { ClassModal } from '../modals/ClassModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
+import { STANDARD_KIT_ITEMS } from '../../../utils/rules/constants';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -140,7 +141,21 @@ export function StepClass({ onNext }) {
         onClose={() => updateChar({ modalClass: null })}
         onConfirm={() => {
           const id = char.modalClass;
-          updateChar({ classe: id, modalClass: null });
+          
+          // Auto-equip Standard Kit if not already claimed
+          const updates = { classe: id, modalClass: null };
+          if (!char.choices?.claimedStartingKit) {
+            const kitObjects = STANDARD_KIT_ITEMS.map(itemId => ({
+              id: itemId,
+              uid: `${itemId}_${Math.random().toString(36).substr(2, 9)}`,
+              mods: [],
+              material: null
+            }));
+            updates.equipamento = [...(char.equipamento || []), ...kitObjects];
+            updates.choices = { ...char.choices, claimedStartingKit: true };
+          }
+          
+          updateChar(updates);
           if (onNext) onNext();
         }}
         isSelected={char.classe === char.modalClass}
