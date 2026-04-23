@@ -76,11 +76,15 @@ export const magiasArcanas1 = {
     execucao: "padrão",
     alcance: "pessoal",
     alvo: "cone de 6m",
-    duracao: "instantâneo",
+    duracao: "instant\u00e2neo",
     resistencia: "Reflexos reduz metade",
     custo: 1,
-    descricao: "As chamas causam 2d6 pontos de dano de fogo às criaturas na área.",
+    descricao: "As chamas causam 2d6 pontos de dano de fogo \u00e0s criaturas na \u00e1rea.",
     efeito: "2d6 dano fogo em Cone",
+    aprimoramentos: [
+      { custo: 2, descricao: "+2d6 de dano", tipo: "dano", valor: "2d6" },
+      { custo: 2, descricao: "Aumenta o cone para 9m", tipo: "alvo", valor: "cone de 9m" }
+    ]
   },
   sono: {
     nome: "Sono",

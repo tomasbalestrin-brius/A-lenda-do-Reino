@@ -909,38 +909,57 @@ const SAVE_DESCRIPTIONS = {
                   </div>
 
                   {/* Enhancements List */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Aprimoramentos</p>
+                  <div className="space-y-4">
+                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Aprimoramentos</p>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
+                        <span className="text-[10px] text-slate-300 font-bold uppercase tracking-widest">Custo Base</span>
+                        <span className="text-[10px] text-white font-black">{selectedSpellForCalc.custo} PM</span>
+                      </div>
+
+                      {selectedSpellForCalc.aprimoramentos?.map((aprim, idx) => {
+                        const isSelected = spellEnhancements.some(e => e.desc === aprim.descricao);
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSpellEnhancements(spellEnhancements.filter(e => e.desc !== aprim.descricao));
+                              } else {
+                                setSpellEnhancements([...spellEnhancements, { desc: aprim.descricao, cost: aprim.custo, tipo: aprim.tipo, valor: aprim.valor }]);
+                              }
+                            }}
+                            className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${
+                              isSelected 
+                                ? 'bg-purple-900/30 border-purple-500/50 text-white' 
+                                : 'bg-gray-950/40 border-white/5 text-slate-400 hover:border-purple-500/30'
+                            }`}
+                          >
+                            <div className="flex flex-col items-start gap-0.5">
+                              <span className="text-[10px] font-bold text-left">{aprim.descricao}</span>
+                              <span className="text-[8px] text-slate-500 uppercase font-black">+{aprim.custo} PM</span>
+                            </div>
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center text-[10px] ${isSelected ? 'bg-purple-500 border-purple-400 text-gray-950' : 'border-white/10'}`}>
+                              {isSelected ? '✓' : '+'}
+                            </div>
+                          </button>
+                        );
+                      })}
+
                       <button 
                         onClick={() => {
                           const costStr = prompt('Custo adicional em PM:');
                           const cost = parseInt(costStr) || 0;
                           if (cost > 0) {
                             const desc = prompt('Descrição do aprimoramento:');
-                            setSpellEnhancements([...spellEnhancements, { desc: desc || 'Personalizado', cost }]);
+                            setSpellEnhancements([...spellEnhancements, { desc: desc || 'Personalizado', cost, tipo: 'custom' }]);
                           }
                         }}
-                        className="text-[9px] font-black text-amber-500 hover:text-amber-400 uppercase tracking-widest"
+                        className="w-full py-2 border border-dashed border-white/10 rounded-xl text-[9px] font-black text-slate-600 uppercase tracking-widest hover:border-amber-500/30 hover:text-amber-500/60 transition-all"
                       >
-                        + Adicionar
+                        + Adicionar Personalizado
                       </button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/5">
-                        <span className="text-[10px] text-slate-300 font-bold">Custo Base</span>
-                        <span className="text-[10px] text-white font-black">{selectedSpellForCalc.custo} PM</span>
-                      </div>
-                      {spellEnhancements.map((e, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-3 bg-purple-900/10 rounded-xl border border-purple-500/10 group">
-                          <span className="text-[10px] text-purple-200 font-medium italic">{e.desc}</span>
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] text-purple-400 font-black">+{e.cost} PM</span>
-                            <button onClick={() => setSpellEnhancements(spellEnhancements.filter((_, i) => i !== idx))} className="text-red-900 group-hover:text-red-500 transition-colors">✕</button>
-                          </div>
-                        </div>
-                      ))}
                     </div>
                   </div>
                 </div>

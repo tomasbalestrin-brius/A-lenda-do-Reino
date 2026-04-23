@@ -126,6 +126,130 @@ const COMP_TABS = [
   { id: 'condicoes',     label: '💫 Condições' },
 ];
 
+function CombatPanel({ isGM }) {
+  const { gridState, updateGridState } = useVttStore();
+  const combat = gridState.combat || { order: [], active: false, turn: 0, round: 1 };
+
+  const startCombat = () => {
+    if (!isGM) return;
+    const tokens = (gridState.tokens || []).map(t => ({
+      id: t.id,
+      name: t.name || 'Desconhecido',
+      initiative: 0,
+      type: t.type
+    }));
+    updateGridState({ ...gridState, combat: { ...combat, order: tokens, active: true, turn: 0, round: 1 } });
+  };
+
+  const nextTurn = () => {
+    if (!isGM) return;
+    let newTurn = combat.turn + 1;
+    let newRound = combat.round;
+    if (newTurn >= combat.order.length) {
+      newTurn = 0;
+      newRound++;
+    }
+    updateGridState({ ...gridState, combat: { ...combat, turn: newTurn, round: newRound } });
+  };
+
+  const updateInitiative = (id, val) => {
+    if (!isGM) return;
+    const newOrder = combat.order.map(c => c.id === id ? { ...c, initiative: parseInt(val) || 0 } : c);
+    updateGridState({ ...gridState, combat: { ...combat, order: newOrder } });
+  };
+
+  const sortInitiative = () => {
+    if (!isGM) return;
+    const sorted = [...combat.order].sort((a, b) => b.initiative - a.initiative);
+    updateGridState({ ...gridState, combat: { ...combat, order: sorted, turn: 0 } });
+  };
+
+  const removeFromCombat = (id) => {
+    if (!isGM) return;
+    const newOrder = combat.order.filter(c => c.id !== id);
+    updateGridState({ ...gridState, combat: { ...combat, order: newOrder } });
+  };
+
+  return (
+    <div className="flex-1 flex flex-col p-5 bg-gray-950/40 overflow-hidden">
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <div>
+          <h3 className="text-lg font-black text-white uppercase tracking-tight">Rastreador de Combate</h3>
+          <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Rodada {combat.round}</p>
+        </div>
+        {isGM && (
+          <div className="flex gap-2">
+            {!combat.active ? (
+              <button onClick={startCombat} className="px-4 py-2 bg-amber-600 text-gray-950 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-amber-500 transition-all active:scale-95">Iniciar</button>
+            ) : (
+              <button onClick={nextTurn} className="px-4 py-2 bg-blue-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-blue-500 transition-all active:scale-95">Próximo Turno →</button>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1" style={{ scrollbarWidth: 'thin' }}>
+        {combat.order.map((c, idx) => {
+          const isActive = combat.active && combat.turn === idx;
+          return (
+            <div 
+              key={c.id} 
+              className={`flex items-center gap-4 p-3 rounded-2xl border transition-all ${
+                isActive ? 'bg-amber-900/20 border-amber-500/50 shadow-lg shadow-amber-900/10' : 'bg-white/[0.02] border-white/5'
+              }`}
+            >
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-xs ${isActive ? 'bg-amber-500 text-gray-950' : 'bg-gray-800 text-slate-500'}`}>
+                {idx + 1}
+              </div>
+              <div className="flex-1">
+                <p className={`text-[11px] font-black uppercase tracking-wide ${isActive ? 'text-amber-400' : 'text-slate-300'}`}>{c.name}</p>
+                <p className="text-[8px] text-slate-600 font-black uppercase tracking-widest">{c.type}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {isGM ? (
+                  <input 
+                    type="number" 
+                    value={c.initiative} 
+                    onChange={(e) => updateInitiative(c.id, e.target.value)}
+                    className="w-12 bg-gray-950 border border-white/10 rounded-lg py-1 text-center text-xs font-black text-amber-500 focus:outline-none focus:border-amber-500/40"
+                  />
+                ) : (
+                  <span className="text-xs font-black text-amber-500">{c.initiative}</span>
+                )}
+                {isGM && (
+                  <button onClick={() => removeFromCombat(c.id)} className="text-slate-700 hover:text-red-500 transition-colors">✕</button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        
+        {combat.order.length > 0 && isGM && (
+          <button onClick={sortInitiative} className="w-full py-3 mt-4 border border-dashed border-white/10 rounded-2xl text-[9px] font-black text-slate-600 uppercase tracking-widest hover:border-amber-500/30 hover:text-amber-500/60 transition-all">
+            Reordenar por Iniciativa
+          </button>
+        )}
+
+        {combat.order.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 opacity-20">
+            <span className="text-5xl mb-4">⚔️</span>
+            <p className="text-[10px] font-black uppercase tracking-widest">Ninguém em combate</p>
+          </div>
+        )}
+      </div>
+
+      {combat.active && isGM && (
+        <button 
+          onClick={() => updateGridState({ ...gridState, combat: { ...combat, active: false } })}
+          className="mt-4 py-3 bg-red-950/20 border border-red-500/20 text-red-500 text-[9px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-950/40 transition-all"
+        >
+          Finalizar Combate
+        </button>
+      )}
+    </div>
+  );
+}
+
 function CompendiumPanel({ isGM }) {
   const { gridState, updateGridState } = useVttStore();
   const [tab, setTab] = useState('armas');
@@ -192,7 +316,7 @@ function CompendiumPanel({ isGM }) {
   const list = 
     tab === 'armas' ? armas : 
     tab === 'armaduras' ? armaduras : 
-    tab === 'magias' ? magias : 
+    tab === 'magias' ? ALL_SPELLS.filter(s => s.nome.toLowerCase().includes(search.toLowerCase())) : 
     tab === 'itens_magicos' ? itens_magicos :
     tab === 'bestiario' ? bestiario :
     condicoes;
@@ -747,6 +871,7 @@ function NotesPanel({ isGM }) {
 // ─── Journal Root ─────────────────────────────────────────────────────────────
 const JOURNAL_TABS = [
   { id: 'notes',    label: '📝 Notas' },
+  { id: 'combate',  label: '⚔️ Combate' },
   { id: 'compendio',label: '📚 Compêndio' },
 ];
 
@@ -776,6 +901,11 @@ export function VttJournal({ isGM }) {
         {activeTab === 'notes' && (
           <motion.div key="notes" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex overflow-hidden">
             <NotesPanel isGM={isGM} />
+          </motion.div>
+        )}
+        {activeTab === 'combate' && (
+          <motion.div key="combate" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex overflow-hidden">
+            <CombatPanel isGM={isGM} />
           </motion.div>
         )}
         {activeTab === 'compendio' && (
