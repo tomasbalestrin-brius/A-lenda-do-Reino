@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import CLASSES from '../../../data/classes';
+import CLASSES from '../../../data/t20/classes';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { 
   TrendingUp, Shield, Zap, Heart, 

@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { computeStats, getAllTrainedSkills } from '../utils/rules/characterStats';
-import { ITENS } from '../data/items';
-import CLASSES from '../data/classes';
-import { RACES } from '../data/races';
-import { CONDICOES_DATA } from '../data/conditionsAndBuffs';
-import SPELLS_DATA from '../data/spellsData';
+import { ITENS } from '../data/t20/items';
+import CLASSES from '../data/t20/classes';
+import { RACES } from '../data/t20/races';
+import { CONDICOES_DATA } from '../data/t20/conditionsAndBuffs';
+import SPELLS_DATA from '../data/t20/spellsData';
 import { roll } from '../utils/dice';
 import { useVttStore } from '../store/useVttStore';
 import { useAuthStore } from '../store/useAuthStore';
-
+import { DNDCombatBlock } from './playsheet/DNDCombatBlock';
+import { DNDSkillsBlock } from './playsheet/DNDSkillsBlock';
+import { DNDSpellsBlock } from './playsheet/DNDSpellsBlock';
 const CONDITIONS = [
   { id: 'abalado',    label: 'Abalado',    icon: '😰', color: 'yellow', efeito: '−2 em testes de perícia.' },
   { id: 'apavorado',  label: 'Apavorado',  icon: '😱', color: 'orange', efeito: '−2 em testes de ataque e perícia; deve fugir da fonte do medo se puder.' },
@@ -66,6 +68,7 @@ const SAVE_DESCRIPTIONS = {
   von:  'Resiste a magias mentais, ilusões e efeitos de encantamento.',
 };
 
+export function PlaySheet({ char, updateChar, onBack, onVtt }) {
   const [selectedSpellForCalc, setSelectedSpellForCalc] = useState(null);
   const [spellEnhancements, setSpellEnhancements] = useState([]); // [{ desc: '', cost: 0 }]
   
@@ -390,6 +393,8 @@ const SAVE_DESCRIPTIONS = {
     );
   }
 
+  const isDND = char.system === 'dnd5e';
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-300 font-sans">
       {/* Header */}
@@ -435,8 +440,19 @@ const SAVE_DESCRIPTIONS = {
 
       <div className="max-w-2xl mx-auto px-4 py-4 flex flex-col gap-4">
 
-        {/* PV / PM Trackers */}
-        <div className="grid grid-cols-2 gap-3">
+        {/* PV / PM Trackers e Quick Stats */}
+        {isDND ? (
+          <DNDCombatBlock
+            stats={stats}
+            currentPV={currentPV}
+            maxPV={maxPV}
+            adjustPV={adjustPV}
+            damageInput={damageInput}
+            setDamageInput={setDamageInput}
+          />
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3">
           {/* PV */}
           <div className="bg-gray-900/60 border border-red-500/20 rounded-[2rem] p-4 flex flex-col gap-3">
             <div className="flex items-center justify-between">
@@ -671,19 +687,6 @@ const SAVE_DESCRIPTIONS = {
             })}
           </div>
         </div>
-          {conditions.length > 0 && !showConditions && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {conditions.map(id => {
-                const c = CONDITIONS.find(x => x.id === id);
-                return c ? (
-                  <span key={id} className={`px-3 py-1 rounded-xl border text-[10px] font-black ${CONDITION_COLORS[c.color]}`}>
-                    {c.icon} {c.label}
-                  </span>
-                ) : null;
-              })}
-            </div>
-          )}
-        </div>
 
         {/* Rest Buttons */}
         <div className="grid grid-cols-2 gap-2">
@@ -700,6 +703,8 @@ const SAVE_DESCRIPTIONS = {
             ✨ Descanso Longo <span className="opacity-60 normal-case font-medium">(restaura tudo)</span>
           </button>
         </div>
+        </>
+        )}
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-950/40 p-1 rounded-2xl border border-white/5">
@@ -796,8 +801,11 @@ const SAVE_DESCRIPTIONS = {
 
         {/* Tab: Skills */}
         {activeTab === 'skills' && (
-          <div className="bg-gray-900/40 border border-white/5 rounded-[2rem] p-4 flex flex-col gap-2">
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Perícias Treinadas</p>
+          isDND ? (
+            <DNDSkillsBlock stats={stats} doRoll={doRoll} />
+          ) : (
+            <div className="bg-gray-900/40 border border-white/5 rounded-[2rem] p-4 flex flex-col gap-2">
+              <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-1">Perícias Treinadas</p>
             <div className="grid grid-cols-1 gap-1.5">
               {trainedSkills.map((skill, i) => (
                 <button
@@ -813,12 +821,16 @@ const SAVE_DESCRIPTIONS = {
                 <p className="text-slate-600 text-sm italic text-center py-4">Nenhuma perícia treinada.</p>
               )}
             </div>
-          </div>
+            </div>
+          )
         )}
 
         {/* Tab: Spells */}
         {activeTab === 'spells' && (
-          <div className="flex flex-col gap-3">
+          isDND ? (
+            <DNDSpellsBlock char={char} stats={stats} doRoll={doRoll} />
+          ) : (
+            <div className="flex flex-col gap-3">
             {allSpells.length > 0 ? (
               <div className="bg-gray-900/40 border border-white/5 rounded-[2rem] p-4 flex flex-col gap-2">
                 <div className="flex items-center justify-between mb-1">
@@ -868,6 +880,7 @@ const SAVE_DESCRIPTIONS = {
               <div className="text-center py-12 text-slate-600 italic">Esta classe não possui magias.</div>
             )}
           </div>
+          )
         )}
 
         {/* Spell Calculator Modal */}

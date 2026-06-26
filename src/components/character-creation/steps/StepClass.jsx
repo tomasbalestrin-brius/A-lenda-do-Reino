@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import CLASSES from '../../../data/classes';
+import CLASSES_T20 from '../../../data/t20/classes';
+import CLASSES_DND5E from '../../../data/dnd5e/classes';
 import { ClassModal } from '../modals/ClassModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -11,6 +12,7 @@ const CLASS_ICONS = {
   cacador: '🏹', cavaleiro: '🛡️', clerigo: '✝️', druida: '🌿',
   guerreiro: '⚔️', inventor: '⚙️', ladino: '🗡️', lutador: '👊',
   nobre: '👑', paladino: '⚔️',
+  bruxo: '👁️', feiticeiro: '🔥', mago: '📜', monge: '🥋', patrulheiro: '🏹'
 };
 
 const CLASS_ROLE = {
@@ -19,6 +21,7 @@ const CLASS_ROLE = {
   clerigo: 'Curandeiro', druida: 'Natureza', guerreiro: 'Guerreiro',
   inventor: 'Utilitário', ladino: 'Furtivo', lutador: 'Combatente',
   nobre: 'Social', paladino: 'Paladino',
+  bruxo: 'Mago', feiticeiro: 'Mago', mago: 'Mago', monge: 'Combatente', patrulheiro: 'Ranger'
 };
 
 const CLASS_IMAGES = {
@@ -36,18 +39,24 @@ const CLASS_IMAGES = {
   lutador: '/assets/images/classes/lutador.png',
   nobre: '/assets/images/classes/nobre.png',
   paladino: '/assets/images/classes/paladino.png',
+  bruxo: '/assets/images/classes/arcanista.png',
+  feiticeiro: '/assets/images/classes/arcanista.png',
+  mago: '/assets/images/classes/arcanista.png',
+  monge: '/assets/images/classes/lutador.png',
+  patrulheiro: '/assets/images/classes/cacador.png'
 };
 
 const ROLE_GROUPS = {
   'Todos': null,
-  'Combate': ['barbaro', 'guerreiro', 'lutador', 'cavaleiro'],
-  'Magia': ['arcanista', 'clerigo', 'druida', 'bardo'],
-  'Furtivo': ['ladino', 'bucaneiro', 'cacador'],
+  'Combate': ['barbaro', 'guerreiro', 'lutador', 'cavaleiro', 'monge'],
+  'Magia': ['arcanista', 'clerigo', 'druida', 'bardo', 'bruxo', 'feiticeiro', 'mago'],
+  'Furtivo': ['ladino', 'bucaneiro', 'cacador', 'patrulheiro'],
   'Especial': ['inventor', 'nobre', 'paladino'],
 };
 
 export function StepClass({ onNext }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
+  const CLASSES = char.system === 'dnd5e' ? CLASSES_DND5E : CLASSES_T20;
   const [roleFilter, setRoleFilter] = React.useState('Todos');
   const allClasses = Object.entries(CLASSES);
   const classes = roleFilter === 'Todos'
@@ -137,7 +146,7 @@ export function StepClass({ onNext }) {
 
       <ClassModal 
         id={char.modalClass}
-        cls={CLASSES[char.modalClass]}
+        cls={char.modalClass ? CLASSES[char.modalClass] : null}
         onClose={() => updateChar({ modalClass: null })}
         onConfirm={() => {
           const id = char.modalClass;

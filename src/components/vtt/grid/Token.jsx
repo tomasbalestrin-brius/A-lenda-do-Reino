@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../../data/conditionsAndBuffs';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../../data/t20/conditionsAndBuffs';
 
 export const Token = React.memo(({ token, gridSize, isSelected, isGM, onClick, onContextMenu }) => {
   const isNpc = token.type === 'npc';

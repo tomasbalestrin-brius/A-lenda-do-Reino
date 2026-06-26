@@ -7,7 +7,7 @@ import { Token } from './grid/Token';
 import { GridCell } from './grid/GridCell';
 import { TokenContextMenu } from './grid/TokenContextMenu';
 import { GMPanel } from './grid/GMPanel';
-import { TOKEN_CONDITIONS } from '../../data/vttConstants';
+import { TOKEN_CONDITIONS } from '../../data/t20/vttConstants';
 
 // TOKEN_CONDITIONS and Sub-components moved to separate files
 

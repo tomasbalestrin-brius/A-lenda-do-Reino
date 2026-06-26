@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeStats } from './characterStats';
-import { ITENS } from '../../data/items';
+import { ITENS } from '../../data/t20/items';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

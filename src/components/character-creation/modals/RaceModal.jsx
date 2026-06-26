@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import RACES from '../../../data/races';
+import RACES from '../../../data/t20/races';
 
 const RACE_IMAGES = {
   humano: '/assets/images/races/humano.webp',

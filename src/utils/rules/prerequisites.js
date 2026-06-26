@@ -1,5 +1,5 @@
-import CLASSES from '../../data/classes';
-import { ORIGENS } from '../../data/origins';
+import CLASSES from '../../data/t20/classes';
+import { ORIGENS } from '../../data/t20/origins';
 
 import { getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from './characterStats';
 

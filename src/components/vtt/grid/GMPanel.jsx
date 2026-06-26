@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useVttStore } from '../../../store/useVttStore';
 import { useAuthStore } from '../../../store/useAuthStore';
-import { NPC_COLORS, NPC_ICONS, TOKEN_CONDITIONS } from '../../../data/vttConstants';
+import { NPC_COLORS, NPC_ICONS, TOKEN_CONDITIONS } from '../../../data/t20/vttConstants';
 
 export function GMPanel({ onClose }) {
   const { players, gridState, updateGridState } = useVttStore();

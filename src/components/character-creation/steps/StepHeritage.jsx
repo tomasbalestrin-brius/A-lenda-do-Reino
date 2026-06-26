@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import RACES from '../../../data/races';
+import RACES from '../../../data/t20/races';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import { GENERAL_POWERS } from '../../../data/powers';
+import { GENERAL_POWERS } from '../../../data/t20/powers';
 import { computeStats } from '../../../utils/rules/characterStats';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 

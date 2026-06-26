@@ -4,9 +4,9 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { VttGrid } from './VttGrid';
 import { VttJournal, parseChatCommand, executeRoll } from './VttJournal';
-import { MONSTERS } from '../../data/monsters';
+import { MONSTERS } from '../../data/t20/monsters';
 import { MonsterSheet } from './MonsterSheet';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../data/conditionsAndBuffs';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../data/t20/conditionsAndBuffs';
 
 // ─── Sound Effects ─────────────────────────────────────────────────────────────
 const AudioCtx = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;

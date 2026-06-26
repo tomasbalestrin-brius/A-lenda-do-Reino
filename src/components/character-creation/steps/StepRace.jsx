@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import RACES from '../../../data/races';
+import RACES_T20 from '../../../data/t20/races';
+import RACES_DND5E from '../../../data/dnd5e/races';
 import { RaceModal } from '../modals/RaceModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -54,6 +55,8 @@ const RACE_IMAGES = {
 
 export function StepRace({ onNext }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
+  
+  const RACES = char.system === 'dnd5e' ? RACES_DND5E : RACES_T20;
   const races = Object.entries(RACES);
   const selectedRace = RACES[char.raca];
   const hasEscolha = selectedRace?.atributos?.escolha;

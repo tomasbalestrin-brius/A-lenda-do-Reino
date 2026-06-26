@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import CLASSES from '../../data/classes';
-import RACES from '../../data/races';
-import { VELOX_PRESET } from '../../data/presets/velox';
+import { motion, AnimatePresence } from 'framer-motion';
+import CLASSES from '../../data/t20/classes';
+import RACES from '../../data/t20/races';
+import { VELOX_PRESET } from '../../data/t20/presets/velox';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -78,6 +79,7 @@ function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
 
 export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompendium, onImport, onPlay, onVtt, onBack, loading }) {
   const [search, setSearch] = useState('');
+  const [showSystemSelector, setShowSystemSelector] = useState(false);
 
   const handleImportFile = (e) => {
     const file = e.target.files?.[0];
@@ -101,6 +103,60 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      
+      {/* System Selector Modal */}
+      <AnimatePresence>
+        {showSystemSelector && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+              onClick={() => setShowSystemSelector(false)} 
+              className="absolute inset-0 bg-gray-950/90 backdrop-blur-md" 
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-2xl bg-[#040B16] border border-white/10 rounded-[3rem] p-8 md:p-12 shadow-2xl flex flex-col items-center"
+            >
+              <h3 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tighter mb-2 text-center">Escolha o Sistema</h3>
+              <p className="text-slate-400 text-sm font-medium mb-10 text-center">Sob quais regras o seu novo herói será forjado?</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                {/* Tormenta 20 */}
+                <button
+                  onClick={() => { setShowSystemSelector(false); onNew('t20'); }}
+                  className="group relative flex flex-col items-center p-8 bg-gray-900/60 border-2 border-amber-500/20 rounded-[2rem] hover:border-amber-500/60 hover:bg-amber-950/20 transition-all active:scale-95 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-6xl mb-4 relative z-10 drop-shadow-lg group-hover:scale-110 transition-transform">⚔️</span>
+                  <span className="text-2xl font-black text-white uppercase tracking-tight relative z-10 group-hover:text-amber-400 transition-colors">Tormenta 20</span>
+                  <span className="text-[10px] font-black text-amber-500/60 uppercase tracking-widest mt-2 relative z-10">T20 Jogo do Ano</span>
+                </button>
+
+                {/* D&D 5e */}
+                <button
+                  onClick={() => { setShowSystemSelector(false); onNew('dnd5e'); }}
+                  className="group relative flex flex-col items-center p-8 bg-gray-900/60 border-2 border-red-500/20 rounded-[2rem] hover:border-red-500/60 hover:bg-red-950/20 transition-all active:scale-95 overflow-hidden"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-b from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <span className="text-6xl mb-4 relative z-10 drop-shadow-lg group-hover:scale-110 transition-transform">🐉</span>
+                  <span className="text-2xl font-black text-white uppercase tracking-tight relative z-10 group-hover:text-red-400 transition-colors">D&D 5e</span>
+                  <span className="text-[10px] font-black text-red-500/60 uppercase tracking-widest mt-2 relative z-10">Dungeons & Dragons</span>
+                </button>
+              </div>
+
+              <button 
+                onClick={() => setShowSystemSelector(false)}
+                className="mt-10 px-8 py-3 rounded-full bg-white/5 hover:bg-white/10 text-slate-300 font-black text-xs uppercase tracking-widest transition-all"
+              >
+                Cancelar
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Back Button */}
       <button 
         onClick={onBack}
@@ -165,7 +221,7 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
             <p className="text-white text-xl font-black uppercase tracking-widest">A taverna está vazia</p>
             <p className="text-gray-500 mt-2">Nenhum herói atendeu ao chamado ainda.</p>
             <div className="flex flex-wrap justify-center gap-3 mt-6">
-              <button onClick={onNew} className="px-10 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-gray-900 font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
+              <button onClick={() => setShowSystemSelector(true)} className="px-10 py-4 rounded-full bg-amber-600 hover:bg-amber-500 text-gray-900 font-black uppercase tracking-widest transition-all shadow-xl shadow-amber-900/20 active:scale-95">
                 Criar Primeiro Herói
               </button>
               <label className="px-8 py-4 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold uppercase tracking-widest text-sm transition-all hover:bg-emerald-500/20 active:scale-95 cursor-pointer flex items-center gap-2">
@@ -205,7 +261,7 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
 
         {characters.length > 0 && (
           <div className="flex flex-wrap justify-center gap-4">
-             <button onClick={onNew} className="group relative flex items-center gap-4 px-12 py-5 rounded-full bg-white text-gray-950 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 overflow-hidden">
+             <button onClick={() => setShowSystemSelector(true)} className="group relative flex items-center gap-4 px-12 py-5 rounded-full bg-white text-gray-950 font-black uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-400 to-amber-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <span className="relative z-10 text-xl">+</span>
                 <span className="relative z-10">Criar Novo Herói</span>

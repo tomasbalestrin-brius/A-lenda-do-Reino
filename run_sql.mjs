@@ -4,13 +4,14 @@ import path from 'path';
 
 // ─── Quais scripts rodar (em ordem) ──────────────────────────────────────────
 const SQL_FILES = [
+  'supabase_setup.sql',
   'supabase_vtt.sql',
   'supabase_migration_v2.sql',
   'supabase_production_rls.sql',
 ];
 
 const CONNECTION_STRING =
-  'postgresql://postgres:Gaianobria0797%40@db.ujdynisiywzpezpcusxl.supabase.co:5432/postgres';
+  'postgresql://postgres.ujdynisiywzpezpcusxl:Gaianobria0797@aws-1-us-east-1.pooler.supabase.com:6543/postgres';
 
 async function run() {
   console.log('\n🔌 Conectando ao Supabase...');

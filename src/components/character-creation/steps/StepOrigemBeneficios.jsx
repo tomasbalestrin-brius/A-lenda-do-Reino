@@ -1,22 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ORIGENS } from '../../../data/origins';
+import { ORIGENS as ORIGENS_T20 } from '../../../data/t20/origins';
+import { ORIGINS_DND5E } from '../../../data/dnd5e/origins';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 
 export function StepOrigemBeneficios({ stats }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
-  const origem = ORIGENS[char.origem];
+  
+  const isDND = char.system === 'dnd5e';
+  const origem = isDND ? ORIGINS_DND5E[char.origem] : ORIGENS_T20[char.origem];
   
   if (!origem) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-3xl border border-white/5">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;
 
   const periciasOrigem = origem.pericias || [];
   const poderesOrigem = origem.poderes || [];
   const totalAvailable = periciasOrigem.length + poderesOrigem.length;
-  const max = Math.min(2, totalAvailable);
+  
+  // No D&D 5e o antecedente concede todas as proficiências e características listadas
+  const max = isDND ? totalAvailable : Math.min(2, totalAvailable);
   const choices = char.origemBeneficios || [];
 
+  useEffect(() => {
+    if (isDND) {
+      const allBenefits = [...periciasOrigem, ...poderesOrigem];
+      if (JSON.stringify(choices) !== JSON.stringify(allBenefits)) {
+        updateChar({ origemBeneficios: allBenefits });
+      }
+    }
+  }, [isDND, periciasOrigem, poderesOrigem, choices, updateChar]);
+
   function toggle(benefit) {
+    if (isDND) return; // Em D&D, os benefícios são fixos
     const has = choices.includes(benefit);
     let next = [...choices];
 

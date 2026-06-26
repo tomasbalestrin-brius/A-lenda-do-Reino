@@ -1,8 +1,10 @@
 import { create } from 'zustand';
-import { ORIGENS } from '../data/origins';
+import { ORIGENS } from '../data/t20/origins';
 
 // Estado inicial isolado para poder ser "resetado"
 const getInitialCharState = () => ({
+  system: 't20', // Sistema escolhido (t20 ou dnd5e)
+  
   modalRace: null,
   modalClass: null,
   modalOrigin: null,
@@ -112,7 +114,7 @@ export const useCharacterStore = create((set, get) => ({
   }),
 
   // Método auxiliar para resetar todo o criador
-  resetChar: () => set({ char: getInitialCharState() }),
+  resetChar: (system = 't20') => set({ char: { ...getInitialCharState(), system } }),
   
   // Método auxiliar para carregar um personagem existente (útil para edição futura)
   loadChar: (existingChar) => set({ char: existingChar })

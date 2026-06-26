@@ -159,7 +159,6 @@ export function MonsterSheet({ monster, onRoll }) {
             ))}
           </div>
         </div>
-      </div>
       )}
 
       {/* Action Tracker */}

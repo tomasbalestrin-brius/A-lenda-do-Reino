@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import CLASSES from '../../data/classes';
-import RACES from '../../data/races';
-import { ORIGENS } from '../../data/origins';
-import { ITENS } from '../../data/items';
+import CLASSES from '../../data/t20/classes';
+import RACES from '../../data/t20/races';
+import { ORIGENS } from '../../data/t20/origins';
+import { ITENS } from '../../data/t20/items';
 import { getAllTrainedSkills } from '../../utils/rules/characterStats';
 
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];

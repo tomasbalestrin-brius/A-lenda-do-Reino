@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import SPELLS from '../../../data/spellsData';
-import CLASSES from '../../../data/classes';
+import SPELLS from '../../../data/t20/spellsData';
+import CLASSES from '../../../data/t20/classes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';

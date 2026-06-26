@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CLASSES from '../../../data/classes';
+import CLASSES from '../../../data/t20/classes';
 
 export function LevelUpModal({ isOpen, onClose, char, stats, onConfirm }) {
   if (!isOpen) return null;

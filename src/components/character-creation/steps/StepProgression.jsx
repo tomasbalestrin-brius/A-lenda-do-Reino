@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CLASSES from '../../../data/classes';
-import GENERAL_POWERS from '../../../data/powers';
-import SPELLS from '../../../data/spellsData';
+import CLASSES from '../../../data/t20/classes';
+import GENERAL_POWERS from '../../../data/t20/powers';
+import SPELLS from '../../../data/t20/spellsData';
 import { checkPowerEligibility, checkClassEligibility } from '../../../utils/rules/prerequisites';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';

@@ -1,5 +1,5 @@
 import React from 'react';
-import CLASSES from '../../../data/classes';
+import CLASSES from '../../../data/t20/classes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 

@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ITENS } from '../../../data/items';
-import { ORIGENS } from '../../../data/origins';
-import { CLASSES } from '../../../data/classes';
-import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../data/modificacoes';
-import { ACESSORIOS, ARMAS_MAGICAS, ARMADURAS_MAGICAS } from '../../../data/magicItems';
+import { ITENS } from '../../../data/t20/items';
+import { ORIGENS } from '../../../data/t20/origins';
+import { CLASSES } from '../../../data/t20/classes';
+import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../data/t20/modificacoes';
+import { ACESSORIOS, ARMAS_MAGICAS, ARMADURAS_MAGICAS } from '../../../data/t20/magicItems';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { computeStats } from '../../../utils/rules/characterStats';

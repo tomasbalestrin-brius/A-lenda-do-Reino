@@ -128,8 +128,8 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
     setView('creation');
   }
 
-  function handleNewCharacter() {
-    resetChar();
+  function handleNewCharacter(system = 't20') {
+    resetChar(system);
     setStep(0);
     setView('creation');
   }

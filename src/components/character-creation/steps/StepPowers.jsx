@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import GENERAL_POWERS from '../../../data/powers';
-import { divindades as DEUSES } from '../../../data/gods';
+import GENERAL_POWERS from '../../../data/t20/powers';
+import { divindades as DEUSES } from '../../../data/t20/gods';
 import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';

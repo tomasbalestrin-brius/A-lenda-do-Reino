@@ -10,3 +10,6 @@ export function rollDice(formula) {
   if (modifier) total += parseInt(modifier, 10);
   return total;
 }
+export function roll(sides) {
+  return Math.floor(Math.random() * sides) + 1;
+}

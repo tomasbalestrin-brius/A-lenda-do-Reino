@@ -3,9 +3,6 @@ import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 
-const POINT_POOL = 10;
-const ATTR_MIN = -1;
-const ATTR_MAX = 4;
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 const ATTR_TRANSLATION = {
   FOR: 'Força', DES: 'Destreza', CON: 'Constituição',
@@ -16,17 +13,34 @@ const PM_ATTR_MAP = {
   arcanista: 'INT', bardo: 'CAR', clerigo: 'SAB', druida: 'SAB', inventor: 'INT', paladino: 'CAR'
 };
 
-function rollAttribute() {
+function getSystemAttrConfig(isDND) {
+  if (isDND) {
+    return { POINT_POOL: 27, ATTR_MIN: 8, ATTR_MAX: 15, defaultBase: 8 };
+  }
+  return { POINT_POOL: 10, ATTR_MIN: -1, ATTR_MAX: 4, defaultBase: 0 };
+}
+
+function rollAttribute(isDND) {
   let rolls = [];
   for (let i = 0; i < 4; i++) rolls.push(Math.floor(Math.random() * 6) + 1);
   rolls.sort((a, b) => b - a);
   let kept = rolls.slice(0, 3);
   let total = kept.reduce((a, b) => a + b, 0);
-  let modifier = Math.floor((total - 10) / 2);
+  // No D&D o valor bruto (3-18) é o atributo, o modificador é derivado depois.
+  // Mas para não quebrar a lógica de UI base do T20 que guarda tudo como "modificador",
+  // vamos armazenar o valor BRUTO no modifier se for D&D, e o mod real se for T20.
+  let modifier = isDND ? total : Math.floor((total - 10) / 2);
   return { rolls, kept, diceTotal: total, modifier, assignedTo: null };
 }
 
-function costToIncrease(currentValue) {
+function costToIncrease(currentValue, isDND) {
+  if (isDND) {
+    if (currentValue < 8) return 1;
+    if (currentValue >= 8 && currentValue <= 12) return 1;
+    if (currentValue === 13) return 2;
+    if (currentValue === 14) return 2;
+    return Infinity;
+  }
   if (currentValue < 0) return 1;
   if (currentValue === 0) return 1;
   if (currentValue === 1) return 1;
@@ -35,8 +49,9 @@ function costToIncrease(currentValue) {
   return Infinity;
 }
 
-function signStr(num) {
-  return num > 0 ? `+${num}` : num;
+function signStr(num, forceSign = true) {
+  if (num === 0) return forceSign ? '+0' : '0';
+  return num > 0 && forceSign ? `+${num}` : num;
 }
 
 const AttributeRow = React.memo(({ 
@@ -48,7 +63,10 @@ const AttributeRow = React.memo(({
   isBuy, 
   char, 
   assignRoll, 
-  onChange 
+  onChange,
+  isDND,
+  ATTR_MIN,
+  ATTR_MAX
 }) => {
   const ATTR_TRANSLATION = {
     FOR: 'Força', DES: 'Destreza', CON: 'Constituição',
@@ -59,21 +77,12 @@ const AttributeRow = React.memo(({
     arcanista: 'INT', bardo: 'CAR', clerigo: 'SAB', druida: 'SAB', inventor: 'INT', paladino: 'CAR'
   };
 
-  const ATTR_MIN = -1;
-  const ATTR_MAX = 4;
-
-  const costToIncrease = (currentValue) => {
-    if (currentValue < 0) return 1;
-    if (currentValue === 0) return 1;
-    if (currentValue === 1) return 1;
-    if (currentValue === 2) return 2;
-    if (currentValue === 3) return 3;
-    return Infinity;
+  const signStr = (num, forceSign = true) => {
+    if (num === 0) return forceSign ? '+0' : '0';
+    return num > 0 && forceSign ? `+${num}` : num;
   };
 
-  const signStr = (num) => num > 0 ? `+${num}` : num;
-
-  const increaseCost = costToIncrease(base);
+  const increaseCost = costToIncrease(base, isDND);
   const canIncrease = isBuy && base < ATTR_MAX && increaseCost <= remaining;
   const canDecrease = isBuy && base > ATTR_MIN;
   const isPmAttr = PM_ATTR_MAP[char.classe] === attrKey;
@@ -139,8 +148,8 @@ const AttributeRow = React.memo(({
                 }`}
               >-</button>
               <div className="w-14 h-14 rounded-2xl bg-gray-900 border border-white/5 flex items-center justify-center shadow-inner">
-                <span className={`text-2xl font-black ${base > 0 ? 'text-amber-500' : base < 0 ? 'text-red-500' : 'text-white'}`}>
-                  {signStr(base)}
+                <span className={`text-2xl font-black ${base > (isDND ? 10 : 0) ? 'text-amber-500' : base < (isDND ? 10 : 0) ? 'text-red-500' : 'text-white'}`}>
+                  {isDND ? base : signStr(base)}
                 </span>
               </div>
               <button
@@ -191,27 +200,30 @@ const AttributeRow = React.memo(({
 
 export function StepAttributes({ stats }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
+  const isDND = char.system === 'dnd5e';
+  const { POINT_POOL, ATTR_MIN, ATTR_MAX, defaultBase } = getSystemAttrConfig(isDND);
+  
   const [rolling, setRolling] = useState(false);
   const remaining = stats.pontosDisponiveis || 0;
   const isBuy = (char.attrMethod || 'buy') === 'buy';
 
   const handleChange = React.useCallback((key, delta) => {
     if (!isBuy) return;
-    const current = char.atributos[key] || 0;
+    const current = char.atributos[key] !== undefined ? char.atributos[key] : defaultBase;
     const next = current + delta;
     if (next < ATTR_MIN || next > ATTR_MAX) return;
-    if (delta > 0 && costToIncrease(current) > remaining) return;
+    if (delta > 0 && costToIncrease(current, isDND) > remaining) return;
     updateChar({ atributos: { ...char.atributos, [key]: next } });
-  }, [char.atributos, char.attrMethod, remaining, updateChar]);
+  }, [char.atributos, char.attrMethod, remaining, updateChar, isDND, ATTR_MIN, ATTR_MAX, defaultBase]);
 
   const handleRoll = React.useCallback(() => {
     setRolling(true);
     const newRolls = [];
     for (let i = 0; i < 6; i++) {
-        newRolls.push(rollAttribute());
+        newRolls.push(rollAttribute(isDND));
     }
     setTimeout(() => {
-        updateChar({ rolagens: newRolls, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 } });
+        updateChar({ rolagens: newRolls, atributos: { FOR: defaultBase, DES: defaultBase, CON: defaultBase, INT: defaultBase, SAB: defaultBase, CAR: defaultBase } });
         setRolling(false);
     }, 800);
   }, [updateChar]);
@@ -255,7 +267,7 @@ export function StepAttributes({ stats }) {
            {['buy', 'roll'].map(m => (
              <button
                key={m}
-               onClick={() => updateChar({ attrMethod: m, atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 }, rolagens: [] })}
+               onClick={() => updateChar({ attrMethod: m, atributos: { FOR: defaultBase, DES: defaultBase, CON: defaultBase, INT: defaultBase, SAB: defaultBase, CAR: defaultBase }, rolagens: [] })}
                className={`px-5 md:px-8 py-3 md:py-4 rounded-[1.5rem] font-black text-xs uppercase tracking-[0.2em] transition-all ${
                  char.attrMethod === m
                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-gray-950 shadow-xl shadow-amber-900/20'
@@ -397,7 +409,7 @@ export function StepAttributes({ stats }) {
           <AttributeRow
             key={key}
             attrKey={key}
-            base={char.atributos[key] || 0}
+            base={char.atributos[key] !== undefined ? char.atributos[key] : defaultBase}
             bonus={stats.raceBonus[key] || 0}
             total={stats.attrs[key]}
             remaining={remaining}
@@ -405,6 +417,9 @@ export function StepAttributes({ stats }) {
             char={char}
             assignRoll={assignRoll}
             onChange={handleChange}
+            isDND={isDND}
+            ATTR_MIN={ATTR_MIN}
+            ATTR_MAX={ATTR_MAX}
           />
         ))}
       </div>

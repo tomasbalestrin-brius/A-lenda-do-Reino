@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import CLASSES from '../../../data/classes';
+import CLASSES from '../../../data/t20/classes';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',

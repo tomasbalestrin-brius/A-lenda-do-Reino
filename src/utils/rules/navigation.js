@@ -1,12 +1,80 @@
-import CLASSES from '../../data/classes';
-import { ORIGENS } from '../../data/origins';
-import RACES from '../../data/races';
+import CLASSES from '../../data/t20/classes';
+import { ORIGENS } from '../../data/t20/origins';
+import RACES from '../../data/t20/races';
+
+export function canGoNext(step, char, stats) {
+  if (char.system === 'dnd5e') return canGoNextDND(step, char, stats);
+  return canGoNextT20(step, char, stats);
+}
+
+export function shouldSkipStep(step, char, stats) {
+  if (char.system === 'dnd5e') return shouldSkipStepDND(step, char, stats);
+  return shouldSkipStepT20(step, char, stats);
+}
+
+function canGoNextDND(step, char, stats) {
+  switch (step) {
+    case 0: // Raça
+      return { ok: !!char.raca, reason: char.raca ? null : 'Selecione uma raça para continuar.' };
+    case 2: // Classe
+      return { ok: !!char.classe, reason: char.classe ? null : 'Selecione uma classe para continuar.' };
+    case 3: // Identidade
+      return { ok: true, reason: null };
+    case 5: // Origem (Background)
+      return { ok: !!char.origem, reason: char.origem ? null : 'Selecione um antecedente (background).' };
+    case 8: // Nível
+      return { ok: true, reason: null };
+    case 9: { // Magias
+      // TODO: Limitar magias baseadas em slots e cantrips do D&D, por hora liberado.
+      return { ok: true, reason: null };
+    }
+    case 10: { // Atributos
+      if (char.attrMethod === 'buy') {
+        const ok = (stats.pontosDisponiveis || 0) >= 0;
+        return { ok, reason: ok ? null : 'Você gastou mais pontos do que o permitido.' };
+      }
+      const ok = (char.rolagens || []).length === 6 && char.rolagens.every(r => r.assignedTo);
+      return { ok, reason: ok ? null : 'Distribua todos os valores nos atributos.' };
+    }
+    case 13: // Equipamento
+      return { ok: true, reason: null };
+    default:
+      return { ok: true, reason: null };
+  }
+}
+
+function shouldSkipStepDND(step, char, stats) {
+  // Etapas de D&D que vamos pular da interface do T20
+  const stepsToSkip = [
+    1,  // Herança (Racial do T20)
+    4,  // Especialização de Classe (T20)
+    6,  // Benefícios de Origem (T20)
+    7,  // Divindade (T20 obriga clérigos/paladinos, D&D não tem mecânica base aqui)
+    11, // Perícias de Classe (Ainda usaremos a aba skills pronta na PlaySheet por hora)
+    12, // Perícias de Inteligência (Exclusivo T20)
+    14, // Poderes Iniciais (T20)
+    15, // Progressão de Nível (T20 poderes)
+    16  // Aliados (T20)
+  ];
+
+  if (stepsToSkip.includes(step)) return true;
+
+  // Magias só aparece para quem casta
+  if (step === 9) {
+    const cls = char.classe?.toLowerCase();
+    // Exemplo: Bárbaro, Guerreiro, Ladino, Monge não conjuram no nível 1 (exceto arquétipos depois)
+    const nonCasters = ['barbaro', 'guerreiro', 'ladino', 'monge'];
+    if (nonCasters.includes(cls)) return true;
+  }
+
+  return false;
+}
 
 /**
- * Verifica se o personagem pode avançar para o próximo passo da criação.
+ * Verifica se o personagem pode avançar para o próximo passo da criação (T20).
  * Retorna { ok: boolean, reason: string | null }
  */
-export function canGoNext(step, char, stats) {
+function canGoNextT20(step, char, stats) {
   switch (step) {
     case 0: // Raça
       return {
@@ -182,9 +250,9 @@ export function canGoNext(step, char, stats) {
 }
 
 /**
- * Determina se um passo deve ser pulado.
+ * Determina se um passo deve ser pulado (T20).
  */
-export function shouldSkipStep(step, char, stats) {
+function shouldSkipStepT20(step, char, stats) {
   const r = char.raca?.toLowerCase();
   const cls = char.classe?.toLowerCase();
 

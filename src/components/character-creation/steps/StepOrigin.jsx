@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ORIGENS } from '../../../data/origins';
+import { ORIGENS as ORIGENS_T20 } from '../../../data/t20/origins';
+import { ORIGINS_DND5E } from '../../../data/dnd5e/origins';
 import { OriginModal } from '../modals/OriginModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
@@ -13,11 +14,13 @@ const ORIGIN_ICONS = {
   sacerdote: '🙏', selvagem: '🐾', soldado: '🛡️', eremita: '🧘',
   arauto: '📯', artesao: '🔨', artesão: '🔨', artista: '🎨',
   atleta: '💪', charlatao: '🎩', charlatão: '🎩', servo: '🧹',
+  acolito: '🙏', heroi_povo: '🦸', orfao: '🏚️', sabio: '📚'
 };
 
 export function StepOrigin({ onNext }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [hoveredId, setHoveredId] = useState(null);
+  const ORIGENS = char.system === 'dnd5e' ? ORIGINS_DND5E : ORIGENS_T20;
   const origins = Object.entries(ORIGENS);
 
   return (
@@ -94,7 +97,7 @@ export function StepOrigin({ onNext }) {
       </div>
 
       <OriginModal 
-        origin={ORIGENS[char.modalOrigin]}
+        origin={char.modalOrigin ? ORIGENS[char.modalOrigin] : null}
         onClose={() => updateChar({ modalOrigin: null })}
         onConfirm={() => {
           const id = char.modalOrigin;

@@ -84,6 +84,64 @@ export function StepIdentity() {
             className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-base leading-relaxed resize-none"
           />
         </div>
+
+        {/* Detalhes de D&D (Traços, Ideais, etc) */}
+        {char.system === 'dnd5e' && (
+          <div className="md:col-span-2 mt-4 space-y-6">
+             <div className="flex flex-col gap-2">
+                <label className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] ml-2">Tendência (Alignment)</label>
+                <input
+                  type="text"
+                  value={char.tendencia}
+                  onChange={(e) => handleChange('tendencia', e.target.value)}
+                  placeholder="Ex: Caótico e Bom, Leal e Neutro..."
+                  className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-bold text-base"
+                />
+             </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="flex flex-col gap-2">
+                 <label className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] ml-2">Traços de Personalidade</label>
+                 <textarea
+                   value={char.tracos}
+                   onChange={(e) => handleChange('tracos', e.target.value)}
+                   placeholder="Ex: Eu sempre tenho um plano para o que der e vier..."
+                   rows={3}
+                   className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-sm leading-relaxed resize-none"
+                 />
+               </div>
+               <div className="flex flex-col gap-2">
+                 <label className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] ml-2">Ideais</label>
+                 <textarea
+                   value={char.ideais}
+                   onChange={(e) => handleChange('ideais', e.target.value)}
+                   placeholder="Ex: Ajudar os outros é sempre a coisa certa a se fazer..."
+                   rows={3}
+                   className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-sm leading-relaxed resize-none"
+                 />
+               </div>
+               <div className="flex flex-col gap-2">
+                 <label className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] ml-2">Ligações</label>
+                 <textarea
+                   value={char.ligacoes}
+                   onChange={(e) => handleChange('ligacoes', e.target.value)}
+                   placeholder="Ex: Eu protejo aqueles que não podem se proteger..."
+                   rows={3}
+                   className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-sm leading-relaxed resize-none"
+                 />
+               </div>
+               <div className="flex flex-col gap-2">
+                 <label className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] ml-2">Defeitos</label>
+                 <textarea
+                   value={char.defeitos}
+                   onChange={(e) => handleChange('defeitos', e.target.value)}
+                   placeholder="Ex: Eu tenho um vício irracional por apostas..."
+                   rows={3}
+                   className="bg-gray-900/60 border-2 border-white/5 rounded-2xl p-4 text-white focus:border-amber-500/50 outline-none transition-all font-medium text-sm leading-relaxed resize-none"
+                 />
+               </div>
+             </div>
+          </div>
+        )}
       </div>
     </div>
   );

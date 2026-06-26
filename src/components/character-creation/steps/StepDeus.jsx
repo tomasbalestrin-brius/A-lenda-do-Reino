@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { divindades as DEUSES } from '../../../data/gods';
-import CLASSES from '../../../data/classes';
+import { divindades as DEUSES } from '../../../data/t20/gods';
+import CLASSES from '../../../data/t20/classes';
 import { DeityModal } from '../modals/DeityModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';

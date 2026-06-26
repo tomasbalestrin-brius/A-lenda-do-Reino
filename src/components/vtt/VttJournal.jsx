@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVttStore } from '../../store/useVttStore';
 import { useAuthStore } from '../../store/useAuthStore';
-import { ITENS } from '../../data/items';
-import { MAGIC_ITEMS_ALL } from '../../data/magicItems';
-import { MONSTERS } from '../../data/monsters';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../data/conditionsAndBuffs';
+import { ITENS } from '../../data/t20/items';
+import { MAGIC_ITEMS_ALL } from '../../data/t20/magicItems';
+import { MONSTERS } from '../../data/t20/monsters';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../data/t20/conditionsAndBuffs';
 import {
   magiasArcanas1, magiasArcanas2, magiasArcanas3,
   magiasDivinas1,  magiasDivinas2,
-} from '../../data/spellsData';
+} from '../../data/t20/spellsData';
 
 // ─── Dice helpers (exported for use in VttTabletop) ────────────────────────────
 function parseDiceExpression(expr) {
