@@ -95,7 +95,45 @@ class SpriteManager {
     if (!sheet) return;
 
     const img = assetLoader.getImage(sheet.imageKey);
-    if (!img) return;
+    if (!img) {
+      ctx.save();
+      ctx.translate(dx, dy);
+      const scaleVal = typeof options.scale === "number" ? options.scale : 1.0;
+      // If scaled down illustration, use nominal 32x32 size
+      const nominalW = (options.width && options.width > 200) ? 32 : (options.width || 32);
+      const nominalH = (options.height && options.height > 200) ? 32 : (options.height || 32);
+      const w = nominalW * scaleVal;
+      const h = nominalH * scaleVal;
+      const anchorX = options.anchorX !== undefined ? options.anchorX : 0.5;
+      const anchorY = options.anchorY !== undefined ? options.anchorY : 1.0;
+      
+      // Shadow
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.fillRect(-w * anchorX, -h * 0.15, w, h * 0.15);
+      
+      // Select color based on key
+      let color = "#e67e22"; // default orange
+      if (sheet.imageKey.includes("slime")) color = "#2ecc71"; // Green slime
+      else if (sheet.imageKey.includes("goblin")) color = "#e74c3c"; // Red goblin
+      else if (sheet.imageKey.includes("orc")) color = "#9b59b6"; // Purple orc
+      else if (sheet.imageKey.includes("guerreiro")) color = "#3498db"; // Blue warrior
+      else if (sheet.imageKey.includes("barbaro")) color = "#f1c40f"; // Yellow barbarian
+      else if (sheet.imageKey.includes("mago")) color = "#95a5a6"; // Gray mage
+      
+      ctx.fillStyle = color;
+      ctx.fillRect(-w * anchorX, -h * anchorY, w, h);
+      
+      // Cute eyes
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(-w * 0.25, -h * 0.7, w * 0.15, h * 0.15);
+      ctx.fillRect(w * 0.1, -h * 0.7, w * 0.15, h * 0.15);
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(options.flipX ? -w * 0.25 : -w * 0.15, -h * 0.65, w * 0.05, w * 0.05);
+      ctx.fillRect(options.flipX ? w * 0.1 : w * 0.2, -h * 0.65, w * 0.05, w * 0.05);
+      
+      ctx.restore();
+      return;
+    }
 
     const frame = this.getFrame(sheetName, frameIndex);
     if (!frame) return;
