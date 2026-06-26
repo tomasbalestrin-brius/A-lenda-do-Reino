@@ -16,6 +16,7 @@ export default function CanvasGame({ onExit }) {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showBanner, setShowBanner] = useState(true);
+  const [activeDialogue, setActiveDialogue] = useState(null);
   
   // React state to sync with active hero details for HUD rendering
   const [hudState, setHudState] = useState({
@@ -49,7 +50,24 @@ export default function CanvasGame({ onExit }) {
       nextY: 0
     },
     tileAnimationTimer: 0,
-    keys: {}
+    keys: {},
+    signposts: [
+      {
+        mapId: "village",
+        gridX: 5,
+        gridY: 3,
+        title: "PLACA DE EXPEDIÇÃO",
+        text: "BEM-VINDO À VILA INICIAL! USE AS SETAS OU W, A, S, D PARA SE MOVER. TECLAS 1, 2, 3 PARA ALTERNAR DE HERÓI. SEUS COMPANHEIROS BLOQUEIAM SEU CAMINHO, COOPERE PARA AVANÇAR!"
+      },
+      {
+        mapId: "forest",
+        gridX: 5,
+        gridY: 6,
+        title: "TRILHA PERIGOSA",
+        text: "CUIDADO: GOBLINS SELVAGENS PATRULHAM A FLORESTA! APROXIME-SE E PRESSIONE [ESPAÇO] PARA ATACAR. PROTEJA OS MAGOS NA RETAGUARDA."
+      }
+    ],
+    lastDialogueTitle: null
   });
 
   const TILE_SIZE = 32;
@@ -321,6 +339,28 @@ export default function CanvasGame({ onExit }) {
     const map = MAPS[state.currentMapId];
     if (!map) return;
 
+    // Proximity check for interactive signposts
+    const activeHero = state.heroes[state.activeHeroIndex];
+    let nearbyDialogue = null;
+    if (activeHero) {
+      const currentSignposts = state.signposts || [];
+      const sign = currentSignposts.find(s => 
+        s.mapId === state.currentMapId &&
+        Math.abs(activeHero.gridX - s.gridX) + Math.abs(activeHero.gridY - s.gridY) <= 1
+      );
+      if (sign) {
+        nearbyDialogue = {
+          title: sign.title,
+          text: sign.text
+        };
+      }
+    }
+
+    if (state.lastDialogueTitle !== (nearbyDialogue ? nearbyDialogue.title : null)) {
+      state.lastDialogueTitle = nearbyDialogue ? nearbyDialogue.title : null;
+      setActiveDialogue(nearbyDialogue);
+    }
+
     // 1. Advance tile animations (swap frames every 300ms)
     state.tileAnimationTimer += dt;
 
@@ -432,7 +472,6 @@ export default function CanvasGame({ onExit }) {
     if (fade.transitioning || fade.alpha > 0.5) return;
 
     // 3. Process Input for Active Hero
-    const activeHero = state.heroes[state.activeHeroIndex];
     if (activeHero && !activeHero.moving && activeHero.state !== "dead" && activeHero.state !== "attack") {
       let dx = 0;
       let dy = 0;
@@ -646,43 +685,71 @@ export default function CanvasGame({ onExit }) {
     }
   };
 
-  const drawUI = (ctx) => {
-    // Medieval top bar
-    ctx.fillStyle = "rgba(20, 10, 5, 0.9)";
-    ctx.strokeStyle = "#d4af37";
-    ctx.lineWidth = 3;
+  const drawWoodPlank = (ctx, x, y, w, h) => {
+    // Plank base
+    ctx.fillStyle = "#3e2723"; // Darker brown
+    ctx.fillRect(x, y, w, h);
     
-    // Draw top border bar
-    ctx.fillRect(10, 10, CANVAS_WIDTH - 20, 42);
-    ctx.strokeRect(10, 10, CANVAS_WIDTH - 20, 42);
+    // Top highlight (inner border)
+    ctx.fillStyle = "#5d4037";
+    ctx.fillRect(x, y, w, 2);
+    ctx.fillRect(x, y, 2, h);
+    
+    // Bottom shadow (inner border)
+    ctx.fillStyle = "#1a0f0a";
+    ctx.fillRect(x, y + h - 2, w, 2);
+    ctx.fillRect(x + w - 2, y, 2, h);
+    
+    // Black outline
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x, y, w, h);
+  };
 
-    ctx.fillStyle = "#fff8dc";
-    ctx.font = "bold 12px 'Courier New', monospace";
-    ctx.textAlign = "left";
+  const drawUI = (ctx) => {
+    const state = stateRef.current;
+    
+    // Draw top board
+    drawWoodPlank(ctx, 10, 10, CANVAS_WIDTH - 20, 32);
+    
+    // Text styling using Press Start 2P
+    ctx.font = "8px 'Press Start 2P'";
     ctx.textBaseline = "middle";
-    ctx.fillText("⚔️ MODO AVENTURA (COOPERATIVO)", 25, 31);
+    
+    // Left aligned title with retro text shadow
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#000";
+    ctx.fillText("⚔️ MODO AVENTURA (COOPERATIVO)", 25, 27); // shadow
+    ctx.fillStyle = "#fff8dc";
+    ctx.fillText("⚔️ MODO AVENTURA (COOPERATIVO)", 24, 26);
 
     // Right aligned map details
+    const map = MAPS[state.currentMapId];
     ctx.textAlign = "right";
-    const map = MAPS[stateRef.current.currentMapId];
-    ctx.fillText(`🗺️ Local: ${map ? map.name : "Arton"}  |  💰 Ouro: 450 PO`, CANVAS_WIDTH - 25, 31);
+    const statusText = `🗺️ LOCAL: ${map ? map.name.toUpperCase() : "ARTON"}  |  💰 OURO: 450 PO`;
+    ctx.fillStyle = "#000";
+    ctx.fillText(statusText, CANVAS_WIDTH - 25, 27); // shadow
+    ctx.fillStyle = "#ffe680"; // Gold color for status
+    ctx.fillText(statusText, CANVAS_WIDTH - 26, 26);
 
-    // Bottom controls helper bar
-    ctx.fillStyle = "rgba(20, 10, 5, 0.75)";
-    ctx.fillRect(10, CANVAS_HEIGHT - 35, CANVAS_WIDTH - 20, 25);
-    ctx.strokeRect(10, CANVAS_HEIGHT - 35, CANVAS_WIDTH - 20, 25);
+    // Draw bottom board
+    drawWoodPlank(ctx, 10, CANVAS_HEIGHT - 35, CANVAS_WIDTH - 20, 25);
     
-    ctx.fillStyle = "#fff8dc";
+    ctx.font = "7px 'Press Start 2P'";
     ctx.textAlign = "center";
-    ctx.font = "10px 'Courier New', monospace";
-    ctx.fillText("Use [1, 2, 3] ou clique nos retratos para alternar de herói. [Espaço] para ATACAR.", CANVAS_WIDTH / 2, CANVAS_HEIGHT - 22);
+    const helpText = "CONTROLES: [1, 2, 3] ou retratos para alternar herói. [ESPAÇO] para ATACAR.";
+    ctx.fillStyle = "#000";
+    ctx.fillText(helpText, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 21); // shadow
+    ctx.fillStyle = "#fff8dc";
+    ctx.fillText(helpText, CANVAS_WIDTH / 2, CANVAS_HEIGHT - 22);
   };
 
   return (
     <div
       ref={containerRef}
-      className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-4 relative overflow-hidden"
+      className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4 relative overflow-hidden"
     >
+      {/* Background ambient lighting */}
       <div className="absolute top-[-30%] left-[-20%] w-[80%] h-[80%] bg-amber-600/5 blur-[180px] rounded-full pointer-events-none" />
       <div className="absolute bottom-[-30%] right-[-20%] w-[80%] h-[80%] bg-blue-600/5 blur-[180px] rounded-full pointer-events-none" />
 
@@ -690,30 +757,38 @@ export default function CanvasGame({ onExit }) {
       <div className="absolute inset-0 pointer-events-none z-50 opacity-[0.05] bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-transparent via-transparent to-black" />
       
       {/* Title & Top controls */}
-      <div className="flex justify-between items-center w-full max-w-4xl mb-4 relative z-10">
+      <div className="flex justify-between items-center w-full max-w-5xl mb-4 relative z-10 px-4">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight uppercase">
+          <h1 className="pixel-font pixel-shadow-sm text-lg md:text-2xl text-white tracking-tight uppercase">
             Aventura Pixel
           </h1>
-          <p className="text-[10px] text-amber-500 font-bold uppercase tracking-widest">
-            Fase 3: Seleção Cooperativa & Combates
+          <p className="pixel-font text-[8px] text-amber-500 uppercase tracking-widest mt-1">
+            Fase 4: UI/UX & Sinalização
           </p>
         </div>
         <button
           onClick={onExit}
-          className="px-5 py-2 bg-red-950/40 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-white transition-all font-black text-xs uppercase tracking-widest rounded-xl shadow-lg active:scale-95"
+          className="pixel-btn-red px-5 py-2"
         >
           Sair do Jogo 🚪
         </button>
       </div>
 
       {/* Main Layout containing Portraits (left) and Canvas (right) */}
-      <div className="flex flex-col lg:flex-row gap-6 items-stretch relative z-10 w-full max-w-5xl justify-center">
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch relative z-10 w-full max-w-5xl justify-center px-4">
         
         {/* Left Side: Retro portraits/health bars HUD */}
         {!loading && (
-          <div className="flex flex-row lg:flex-col gap-4 justify-between lg:justify-start bg-gray-950/60 backdrop-blur-md border border-white/5 p-4 rounded-3xl w-full lg:w-60 shadow-2xl">
-            <h3 className="hidden lg:block text-[10px] font-black text-amber-500 uppercase tracking-widest mb-2 border-b border-white/5 pb-2">⚔️ Equipe (Heróis)</h3>
+          <div className="flex flex-row lg:flex-col gap-4 justify-between lg:justify-start pixel-border-wood medieval-wood-bg p-4 shadow-2xl w-full lg:w-60 relative">
+            {/* Metal corners decoration */}
+            <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-500 pointer-events-none" />
+            <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-500 pointer-events-none" />
+            <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-500 pointer-events-none" />
+            <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-500 pointer-events-none" />
+
+            <h3 className="hidden lg:block pixel-font text-[9px] text-amber-500 uppercase tracking-wider mb-2 border-b-2 border-black pb-2 pixel-shadow-sm">
+              ⚔️ Equipe (Heróis)
+            </h3>
             {hudState.heroesNames.map((name, idx) => {
               const active = hudState.activeHeroIndex === idx;
               const hp = hudState.heroesHp[idx];
@@ -721,48 +796,51 @@ export default function CanvasGame({ onExit }) {
               const isDead = hp <= 0;
               const pct = hp / maxHp;
 
-              // Color based on active hero class
-              const activeColor = idx === 0 ? "border-sky-500 shadow-sky-500/10" : idx === 1 ? "border-yellow-500 shadow-yellow-500/10" : "border-gray-500 shadow-gray-500/10";
               const classLetter = idx === 0 ? "⚔️" : idx === 1 ? "🛡️" : "🔮";
+
+              // HP Segment blocks calculation
+              const maxBlocks = 10;
+              const filledBlocks = Math.ceil(pct * maxBlocks);
+              const healthColor = pct > 0.5 ? "full" : pct > 0.2 ? "medium" : "low";
 
               return (
                 <button
                   key={idx}
                   onClick={() => !isDead && switchHero(idx)}
                   disabled={isDead}
-                  className={`flex items-center gap-3 w-full p-2.5 rounded-xl border text-left transition-all ${
+                  className={`flex items-center gap-3 w-full p-2.5 transition-all relative ${
                     isDead 
-                      ? "bg-red-950/10 border-red-950/20 opacity-40 cursor-not-allowed" 
+                      ? "opacity-30 cursor-not-allowed pixel-border-stone bg-stone-900" 
                       : active
-                        ? `bg-gray-900 border-2 ${activeColor} shadow-xl scale-102` 
-                        : "bg-gray-900/30 border-white/5 hover:border-white/10 hover:bg-gray-900/50"
+                        ? "pixel-border-gold border-amber-400 scale-[1.02] shadow-xl z-10" 
+                        : "pixel-border-stone bg-stone-700/50 hover:bg-stone-700/70"
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
-                    active ? "bg-amber-500/20 text-amber-400" : "bg-gray-800 text-slate-400"
+                  <div className={`w-10 h-10 pixel-border-gold flex items-center justify-center text-lg ${
+                    active ? "bg-amber-300 text-black border-amber-400" : "bg-amber-950 text-amber-400"
                   }`}>
                     {classLetter}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-[10px] font-black truncate uppercase ${active ? "text-amber-400" : "text-slate-300"}`}>
+                    <p className={`pixel-font text-[8px] truncate uppercase pixel-shadow-sm ${active ? "text-amber-300" : "text-[#fff8dc]"}`}>
                       {name.split(" ")[0]}
                     </p>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase truncate">
+                    <p className="pixel-font text-[6px] text-slate-400 uppercase truncate mt-1">
                       {idx === 0 ? "Guerreiro" : idx === 1 ? "Bárbaro" : "Mago"}
                     </p>
                     
-                    {/* Tiny Health bar */}
-                    <div className="w-full h-1.5 bg-gray-950 rounded-full mt-1.5 overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-300 ${
-                          pct > 0.5 ? "bg-emerald-500" : pct > 0.2 ? "bg-amber-500" : "bg-red-500"
-                        }`}
-                        style={{ width: `${pct * 100}%` }}
-                      />
+                    {/* Discrete Segmented HP blocks */}
+                    <div className="flex items-center gap-0.5 mt-2">
+                      {Array.from({ length: maxBlocks }).map((_, bIdx) => (
+                        <div 
+                          key={bIdx} 
+                          className={`pixel-health-block ${bIdx < filledBlocks ? healthColor : "empty"}`} 
+                        />
+                      ))}
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className={`text-[9px] font-bold ${isDead ? "text-red-500" : "text-slate-400"}`}>
+                    <span className={`pixel-font text-[7px] ${isDead ? "text-red-500 font-bold" : "text-slate-300"}`}>
                       {isDead ? "MORTO" : `${hp}/${maxHp}`}
                     </span>
                   </div>
@@ -773,19 +851,19 @@ export default function CanvasGame({ onExit }) {
         )}
 
         {/* Right Side: Game canvas */}
-        <div className="relative border-4 border-[#d4af37] bg-black rounded-3xl shadow-2xl overflow-hidden group">
+        <div className="relative pixel-border-stone bg-black shadow-2xl overflow-hidden group">
           {/* CRT effect */}
           <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,_rgba(0,0,0,0.25)_50%),_linear-gradient(90deg,_rgba(255,0,0,0.06),_rgba(0,255,0,0.02),_rgba(0,0,255,0.06))] bg-[size:100%_4px,_6px_100%]" />
 
           {loading ? (
             <div className="w-[960px] h-[540px] max-w-full flex flex-col items-center justify-center bg-gray-950 p-6 text-center">
               <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6" />
-              <h3 className="text-amber-500 font-black uppercase tracking-widest text-sm animate-pulse">
+              <h3 className="pixel-font text-amber-500 text-[10px] animate-pulse uppercase">
                 Carregando Aventura...
               </h3>
-              <div className="w-64 h-2 bg-gray-900 rounded-full overflow-hidden border border-white/5 mt-4">
+              <div className="w-64 h-4 pixel-border-stone bg-stone-900 mt-6 overflow-hidden">
                 <div
-                  className="h-full bg-amber-500 transition-all duration-200"
+                  className="h-full bg-emerald-500 shadow-[inset_-2px_-2px_0_0_#047857]"
                   style={{ width: `${loadingProgress}%` }}
                 />
               </div>
@@ -809,11 +887,14 @@ export default function CanvasGame({ onExit }) {
                     exit={{ opacity: 0, y: -20 }}
                     className="absolute inset-x-0 top-20 flex justify-center pointer-events-none z-30"
                   >
-                    <div className="bg-amber-950/90 border-2 border-[#d4af37] px-8 py-3 rounded-2xl shadow-2xl backdrop-blur-md">
-                      <h2 className="text-[#fff8dc] text-lg font-black uppercase tracking-[0.25em] text-center">
-                        {MAPS[currentMapId]?.name}
+                    <div className="pixel-border-gold medieval-wood-bg px-8 py-3 shadow-2xl relative">
+                      <div className="absolute top-1 left-1 w-2 h-2 bg-amber-400 border border-black" />
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-amber-400 border border-black" />
+                      
+                      <h2 className="pixel-font pixel-shadow-sm text-[#fff8dc] text-[8px] text-center tracking-widest">
+                        {MAPS[currentMapId]?.name.toUpperCase()}
                       </h2>
-                      <p className="text-[9px] text-amber-500 font-bold uppercase tracking-widest text-center mt-1">
+                      <p className="pixel-font text-[7px] text-amber-500 text-center mt-2.5 tracking-wider uppercase">
                         {currentMapId === "village"
                           ? "Vila Inicial dos Humanos"
                           : currentMapId === "forest"
@@ -824,13 +905,47 @@ export default function CanvasGame({ onExit }) {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Dialogue Overlay */}
+              <AnimatePresence>
+                {activeDialogue && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 50 }}
+                    className="absolute inset-x-0 bottom-12 mx-auto w-full max-w-2xl px-4 z-40"
+                  >
+                    <div className="pixel-border-stone bg-stone-900 p-4 text-[#fff8dc] shadow-2xl relative">
+                      {/* Metal rivet corners */}
+                      <div className="absolute top-1 left-1 w-2 h-2 bg-stone-400 border border-black" />
+                      <div className="absolute top-1 right-1 w-2 h-2 bg-stone-400 border border-black" />
+                      <div className="absolute bottom-1 left-1 w-2 h-2 bg-stone-400 border border-black" />
+                      <div className="absolute bottom-1 right-1 w-2 h-2 bg-stone-400 border border-black" />
+
+                      <div className="flex gap-4 items-start pt-2">
+                        <div className="pixel-border-gold w-12 h-12 flex-shrink-0 flex items-center justify-center text-2xl bg-amber-950/40">
+                          📜
+                        </div>
+                        <div>
+                          <h4 className="pixel-font text-[9px] text-amber-500 uppercase tracking-widest mb-2 pixel-shadow-sm">
+                            {activeDialogue.title}
+                          </h4>
+                          <p className="pixel-font text-[8px] leading-relaxed text-slate-300">
+                            {activeDialogue.text}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </>
           )}
         </div>
       </div>
 
-      <div className="mt-6 text-slate-500 text-[10px] font-black uppercase tracking-widest max-w-3xl text-center leading-relaxed relative z-10">
-        Troque de herói livremente no painel esquerdo ou teclas [1, 2, 3]. Seus companheiros bloqueiam o seu caminho, exigindo coordenação e cooperação para atravessar obstáculos!
+      <div className="mt-6 pixel-font text-[8px] text-slate-500 tracking-wider max-w-3xl text-center leading-relaxed relative z-10 px-4">
+        TROQUE DE HERÓI LIVREMENTE NO PAINEL ESQUERDO OU TECLAS [1, 2, 3]. SEUS COMPANHEIROS BLOQUEIAM O SEU CAMINHO, EXIGINDO COOPERAÇÃO PARA ATRAVESSAR OBSTÁCULOS!
       </div>
     </div>
   );

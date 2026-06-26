@@ -34,60 +34,123 @@ const LandingPage = ({ onSelect }) => (
   <motion.div 
     initial={{ opacity: 0 }} 
     animate={{ opacity: 1 }} 
-    className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 relative overflow-hidden"
+    className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-6 relative overflow-hidden"
   >
-    {/* Background Effects */}
-    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-amber-600/5 blur-[150px] rounded-full" />
-    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/5 blur-[150px] rounded-full" />
+    {/* CRT scanlines effect for retro feeling */}
+    <div className="absolute inset-0 pointer-events-none z-50 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,_rgba(0,0,0,0.25)_50%),_linear-gradient(90deg,_rgba(255,0,0,0.06),_rgba(0,255,0,0.02),_rgba(0,0,255,0.06))] bg-[size:100%_4px,_6px_100%]" />
+    
+    {/* Background ambient lighting */}
+    <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-amber-600/5 blur-[150px] rounded-full pointer-events-none" />
+    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-600/5 blur-[150px] rounded-full pointer-events-none" />
 
     <div className="text-center mb-16 relative z-10">
       <motion.h1 
         initial={{ y: -20 }}
         animate={{ y: 0 }}
-        className="text-5xl md:text-7xl font-black text-white tracking-tighter mb-4"
+        className="pixel-font pixel-shadow-md text-3xl md:text-5xl font-black text-amber-500 tracking-tight mb-4"
       >
         A LENDA DO REINO
       </motion.h1>
       <div className="flex items-center justify-center gap-3">
-        <div className="h-px w-12 bg-gradient-to-r from-transparent to-amber-500/50" />
-        <p className="text-amber-500 text-xs md:text-sm font-black uppercase tracking-[0.4em]">Tormenta20 RPG</p>
-        <div className="h-px w-12 bg-gradient-to-l from-transparent to-amber-500/50" />
+        <div className="h-1.5 w-12 bg-amber-500 border-b-2 border-black" />
+        <p className="pixel-font text-[9px] md:text-[11px] text-[#fff8dc] tracking-widest">Tormenta20 RPG</p>
+        <div className="h-1.5 w-12 bg-amber-500 border-b-2 border-black" />
       </div>
     </div>
 
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-6xl relative z-10">
-      <button 
-        onClick={() => onSelect('creator')}
-        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-6xl relative z-10 px-4">
+      {/* CARD 1: A TAVERNA */}
+      <div 
+        className="pixel-border-wood medieval-wood-bg flex flex-col justify-between p-6 h-[340px] shadow-2xl relative group"
       >
-        <div className="text-4xl mb-6 bg-amber-500/10 w-16 h-16 rounded-2xl flex items-center justify-center border border-amber-500/20 group-hover:bg-amber-500 group-hover:text-gray-950 transition-all">🏰</div>
-        <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">A Taverna</h3>
-        <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Crie, gerencie e evolua seus heróis com o guia completo de regras do Jogo do Ano.</p>
-        <span className="text-amber-500 text-[10px] font-black uppercase tracking-widest">Acessar Heróis →</span>
-      </button>
+        {/* Metal corners decoration */}
+        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-400" />
+        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-400" />
+        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-400" />
+        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-400" />
 
-      <button 
-        onClick={() => onSelect('vtt')}
-        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-pink-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
-      >
-        <div className="text-4xl mb-6 bg-pink-500/10 w-16 h-16 rounded-2xl flex items-center justify-center border border-pink-500/20 group-hover:bg-pink-500 group-hover:text-white transition-all">🎲</div>
-        <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Mesa Virtual</h3>
-        <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Jogue online com seus amigos em tempo real com grid tático, chat e dados sincronizados.</p>
-        <span className="text-pink-500 text-[10px] font-black uppercase tracking-widest">Entrar na Arena →</span>
-      </button>
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="pixel-border-gold w-12 h-12 flex items-center justify-center text-2xl bg-amber-500/10 border-amber-500/20">
+              🏰
+            </div>
+            <span className="pixel-font text-[8px] text-amber-500">HERÓIS</span>
+          </div>
+          <h3 className="pixel-font pixel-shadow-sm text-sm text-[#fff8dc] mb-3 uppercase">A Taverna</h3>
+          <p className="text-slate-300 text-[11px] leading-relaxed font-medium">
+            Crie, gerencie e evolua seus heróis com o guia completo de regras do Tormenta20 Jogo do Ano.
+          </p>
+        </div>
+        <button 
+          onClick={() => onSelect('creator')}
+          className="pixel-btn-gold w-full py-2.5 rounded-none font-bold uppercase tracking-wider text-[10px]"
+        >
+          Acessar Heróis 🏰
+        </button>
+      </div>
 
-      <button 
-        onClick={() => onSelect('adventure')}
-        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-[#d4af37]/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
+      {/* CARD 2: MESA VIRTUAL */}
+      <div 
+        className="pixel-border-wood medieval-wood-bg flex flex-col justify-between p-6 h-[340px] shadow-2xl relative group"
       >
-        <div className="text-4xl mb-6 bg-amber-500/10 w-16 h-16 rounded-2xl flex items-center justify-center border border-amber-500/20 group-hover:bg-[#d4af37] group-hover:text-gray-950 transition-all">⚔️</div>
-        <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Aventura</h3>
-        <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Explore Arton em tempo real em um mini-RPG pixel-art 16-bit com colisão e câmera.</p>
-        <span className="text-[#d4af37] text-[10px] font-black uppercase tracking-widest">Entrar na Jornada →</span>
-      </button>
+        {/* Metal corners decoration */}
+        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-400" />
+        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-400" />
+        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-400" />
+        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-400" />
+
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="pixel-border-gold w-12 h-12 flex items-center justify-center text-2xl bg-pink-500/20 border-pink-500/50">
+              🎲
+            </div>
+            <span className="pixel-font text-[8px] text-pink-500">TACTICAL VTT</span>
+          </div>
+          <h3 className="pixel-font pixel-shadow-sm text-sm text-[#fff8dc] mb-3 uppercase">Mesa Virtual</h3>
+          <p className="text-slate-300 text-[11px] leading-relaxed font-medium">
+            Jogue online com seus amigos em tempo real com grid tático de batalha, chat integrado e dados sincronizados.
+          </p>
+        </div>
+        <button 
+          onClick={() => onSelect('vtt')}
+          className="pixel-btn-gold w-full py-2.5 rounded-none font-bold uppercase tracking-wider text-[10px] bg-pink-500 hover:bg-pink-400 text-white border-black shadow-[inset_-4px_-4px_0_0_#9d174d,inset_4px_4px_0_0_#fbcfe8,0_4px_0_0_#000] active:shadow-[inset_4px_4px_0_0_#9d174d,inset_-4px_-4px_0_0_#fbcfe8]"
+        >
+          Entrar na Arena 🎲
+        </button>
+      </div>
+
+      {/* CARD 3: AVENTURA PIXEL */}
+      <div 
+        className="pixel-border-wood medieval-wood-bg flex flex-col justify-between p-6 h-[340px] shadow-2xl relative group"
+      >
+        {/* Metal corners decoration */}
+        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-400" />
+        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-400" />
+        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-400" />
+        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-400" />
+
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="pixel-border-gold w-12 h-12 flex items-center justify-center text-2xl bg-amber-500/20 border-amber-500/50">
+              ⚔️
+            </div>
+            <span className="pixel-font text-[8px] text-yellow-500">16-BIT MINI RPG</span>
+          </div>
+          <h3 className="pixel-font pixel-shadow-sm text-sm text-[#fff8dc] mb-3 uppercase">Aventura</h3>
+          <p className="text-slate-300 text-[11px] leading-relaxed font-medium">
+            Explore Arton em tempo real em um mini-RPG pixel-art 16-bit com movimentação suave, câmera e combate cooperativo.
+          </p>
+        </div>
+        <button 
+          onClick={() => onSelect('adventure')}
+          className="pixel-btn-gold w-full py-2.5 rounded-none font-bold uppercase tracking-wider text-[10px]"
+        >
+          Entrar na Jornada ⚔️
+        </button>
+      </div>
     </div>
 
-    <div className="mt-16 text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] opacity-40">
+    <div className="mt-16 pixel-font text-[8px] text-slate-500 tracking-wider">
       Desenvolvido para aventureiros de Arton
     </div>
   </motion.div>
