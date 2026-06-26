@@ -6,6 +6,7 @@ import { PWAUpdateToast } from "./components/PWAUpdateToast";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { LandscapeWarning } from "./components/LandscapeWarning";
 import "./index.css";
+import CanvasGame from "./canvas/CanvasGame";
 
 const CharacterCreation = lazy(() => import("./components/CharacterCreation"));
 
@@ -54,7 +55,7 @@ const LandingPage = ({ onSelect }) => (
       </div>
     </div>
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl relative z-10">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-6xl relative z-10">
       <button 
         onClick={() => onSelect('creator')}
         className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
@@ -73,6 +74,16 @@ const LandingPage = ({ onSelect }) => (
         <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Mesa Virtual</h3>
         <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Jogue online com seus amigos em tempo real com grid tático, chat e dados sincronizados.</p>
         <span className="text-pink-500 text-[10px] font-black uppercase tracking-widest">Entrar na Arena →</span>
+      </button>
+
+      <button 
+        onClick={() => onSelect('adventure')}
+        className="group relative bg-gray-900/40 backdrop-blur-md border border-white/5 rounded-3xl p-8 text-left hover:border-[#d4af37]/50 transition-all hover:bg-gray-900/60 shadow-2xl active:scale-95"
+      >
+        <div className="text-4xl mb-6 bg-amber-500/10 w-16 h-16 rounded-2xl flex items-center justify-center border border-amber-500/20 group-hover:bg-[#d4af37] group-hover:text-gray-950 transition-all">⚔️</div>
+        <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">Aventura</h3>
+        <p className="text-slate-300 text-sm leading-relaxed mb-6 font-medium">Explore Arton em tempo real em um mini-RPG pixel-art 16-bit com colisão e câmera.</p>
+        <span className="text-[#d4af37] text-[10px] font-black uppercase tracking-widest">Entrar na Jornada →</span>
       </button>
     </div>
 
@@ -95,6 +106,10 @@ export default function App() {
 
   if (appMode === 'landing') {
     return <LandingPage onSelect={setAppMode} />;
+  }
+
+  if (appMode === 'adventure') {
+    return <CanvasGame onExit={() => setAppMode('landing')} />;
   }
 
   return (
