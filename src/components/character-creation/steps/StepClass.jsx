@@ -39,10 +39,10 @@ const CLASS_IMAGES = {
   lutador: '/assets/images/classes/lutador.png',
   nobre: '/assets/images/classes/nobre.png',
   paladino: '/assets/images/classes/paladino.png',
-  bruxo: '/assets/images/classes/arcanista.png',
-  feiticeiro: '/assets/images/classes/arcanista.png',
-  mago: '/assets/images/classes/arcanista.png',
-  monge: '/assets/images/classes/lutador.png',
+  bruxo: '/assets/images/classes/bruxo.png',
+  feiticeiro: '/assets/images/classes/feiticeiro.png',
+  mago: '/assets/images/classes/mago.png',
+  monge: '/assets/images/classes/monge.png',
   patrulheiro: '/assets/images/classes/cacador.png'
 };
 

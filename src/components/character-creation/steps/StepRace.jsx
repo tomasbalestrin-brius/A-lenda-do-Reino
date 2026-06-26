@@ -51,6 +51,12 @@ const RACE_IMAGES = {
   silfide: '/assets/images/races/silfide.webp',
   golem: '/assets/images/races/golem.png',
   moreau: '/assets/images/races/moreau.png',
+  draconato: '/assets/images/races/draconato.png',
+  meio_orc: '/assets/images/races/meio_orc.png',
+  tiefling: '/assets/images/races/tiefling.png',
+  meio_elfo: '/assets/images/races/meio_elfo.png',
+  gnomo: '/assets/images/races/gnomo.png',
+  halfling: '/assets/images/races/halfling.png',
 };
 
 export function StepRace({ onNext }) {
