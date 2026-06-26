@@ -6,6 +6,7 @@ import AnimationController from "../core/animationController";
 import { MAPS } from "../data/maps";
 import { isWalkable } from "../core/tilemap";
 import { Character } from "../core/character";
+import ParticleSystem from "../core/particleSystem";
 
 export default function CanvasGame({ onExit }) {
   const canvasRef = useRef(null);
@@ -67,7 +68,13 @@ export default function CanvasGame({ onExit }) {
         text: "CUIDADO: GOBLINS SELVAGENS PATRULHAM A FLORESTA! APROXIME-SE E PRESSIONE [ESPAÇO] PARA ATACAR. PROTEJA OS MAGOS NA RETAGUARDA."
       }
     ],
-    lastDialogueTitle: null
+    lastDialogueTitle: null,
+    particles: new ParticleSystem(),
+    shake: {
+      timer: 0,
+      intensity: 0
+    },
+    ambientParticleTimer: 0
   });
 
   const TILE_SIZE = 32;
@@ -330,6 +337,27 @@ export default function CanvasGame({ onExit }) {
     if (targetEnemy) {
       // Inflict damage
       targetEnemy.takeDamage(25);
+
+      // Trigger screen shake
+      state.shake.timer = 200;
+      state.shake.intensity = 5;
+
+      // Spawn hit particles (gold/white sparks)
+      const px = targetEnemy.gridX * TILE_SIZE + TILE_SIZE / 2;
+      const py = targetEnemy.gridY * TILE_SIZE + TILE_SIZE / 2;
+      state.particles.spawn(px, py, 15, {
+        vxMin: -0.15,
+        vxMax: 0.15,
+        vyMin: -0.15,
+        vyMax: 0.15,
+        colors: ["#ffe680", "#d4af37", "#ffffff"],
+        sizeMin: 2,
+        sizeMax: 5,
+        lifeMin: 200,
+        lifeMax: 400,
+        gravity: 0.0003,
+        drag: 0.99
+      });
     }
   };
 
@@ -363,6 +391,57 @@ export default function CanvasGame({ onExit }) {
 
     // 1. Advance tile animations (swap frames every 300ms)
     state.tileAnimationTimer += dt;
+
+    // Update Particle System
+    state.particles.update(dt);
+
+    // Update Screen Shake Timer
+    if (state.shake.timer > 0) {
+      state.shake.timer -= dt;
+      if (state.shake.timer <= 0) {
+        state.shake.timer = 0;
+        state.shake.intensity = 0;
+      }
+    }
+
+    // Spawn ambient particles based on map
+    state.ambientParticleTimer += dt;
+    if (state.ambientParticleTimer >= 200) {
+      state.ambientParticleTimer = 0;
+      if (state.currentMapId === "forest") {
+        const spawnX = Math.random() * CANVAS_WIDTH + state.camera.x;
+        const spawnY = state.camera.y - 10;
+        state.particles.spawn(spawnX, spawnY, 1, {
+          vxMin: -0.05,
+          vxMax: 0.02,
+          vyMin: 0.04,
+          vyMax: 0.08,
+          colors: ["#2ecc71", "#27ae60", "#1abc9c"],
+          sizeMin: 3,
+          sizeMax: 6,
+          lifeMin: 3000,
+          lifeMax: 6000,
+          gravity: 0.00001,
+          drag: 0.99
+        });
+      } else if (state.currentMapId === "cave") {
+        const spawnX = Math.random() * CANVAS_WIDTH + state.camera.x;
+        const spawnY = state.camera.y + CANVAS_HEIGHT + 10;
+        state.particles.spawn(spawnX, spawnY, 2, {
+          vxMin: -0.03,
+          vxMax: 0.03,
+          vyMin: -0.06,
+          vyMax: -0.12,
+          colors: ["#e67e22", "#d35400", "#f1c40f"],
+          sizeMin: 2,
+          sizeMax: 4,
+          lifeMin: 2000,
+          lifeMax: 4000,
+          gravity: -0.00002,
+          drag: 0.99
+        });
+      }
+    }
 
     // 2. Handle Fade Transitions
     const fade = state.fade;
@@ -464,6 +543,27 @@ export default function CanvasGame({ onExit }) {
         if (activeHero.hurtTimer === 0 && activeHero.state !== "hurt") {
           activeHero.takeDamage(10);
           syncHudState();
+
+          // Trigger screen shake (stronger shake for player damage)
+          state.shake.timer = 300;
+          state.shake.intensity = 7;
+
+          // Spawn hurt particles (red/white sparks)
+          const px = activeHero.gridX * TILE_SIZE + TILE_SIZE / 2;
+          const py = activeHero.gridY * TILE_SIZE + TILE_SIZE / 2;
+          state.particles.spawn(px, py, 20, {
+            vxMin: -0.2,
+            vxMax: 0.2,
+            vyMin: -0.2,
+            vyMax: 0.2,
+            colors: ["#ef4444", "#fca5a5", "#ffffff"],
+            sizeMin: 3,
+            sizeMax: 6,
+            lifeMin: 300,
+            lifeMax: 500,
+            gravity: 0.0005,
+            drag: 0.98
+          });
         }
       }
     });
@@ -555,7 +655,17 @@ export default function CanvasGame({ onExit }) {
 
     // Save camera translation state
     ctx.save();
-    ctx.translate(-Math.floor(state.camera.x), -Math.floor(state.camera.y));
+
+    // Calculate screen shake offsets
+    let shakeX = 0;
+    let shakeY = 0;
+    if (state.shake.timer > 0) {
+      const intensity = state.shake.intensity;
+      shakeX = (Math.random() * intensity * 2) - intensity;
+      shakeY = (Math.random() * intensity * 2) - intensity;
+    }
+
+    ctx.translate(-Math.floor(state.camera.x) + shakeX, -Math.floor(state.camera.y) + shakeY);
 
     // Get current tile animations frame offset
     const animOffset = Math.floor(state.tileAnimationTimer / 300);
@@ -657,8 +767,40 @@ export default function CanvasGame({ onExit }) {
       }
     }
 
+    // Draw active particles in world space
+    state.particles.draw(ctx, { x: 0, y: 0 });
+
     // Restore camera translation
     ctx.restore();
+
+    // Cavern dynamic torchlight lighting mask
+    const activeHero = state.heroes[state.activeHeroIndex];
+    if (state.currentMapId === "cave" && activeHero) {
+      ctx.save();
+      
+      // Draw dark mask
+      ctx.fillStyle = "rgba(4, 4, 8, 0.92)";
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+      
+      // Calculate hero screen position
+      const hx = activeHero.drawX + TILE_SIZE / 2 - state.camera.x;
+      const hy = activeHero.drawY + TILE_SIZE / 2 - state.camera.y;
+      
+      // Cut circular light area
+      ctx.globalCompositeOperation = "destination-out";
+      
+      const lightGrad = ctx.createRadialGradient(hx, hy, 16, hx, hy, 120);
+      lightGrad.addColorStop(0, "rgba(0, 0, 0, 1.0)");
+      lightGrad.addColorStop(0.3, "rgba(0, 0, 0, 0.85)");
+      lightGrad.addColorStop(1, "rgba(0, 0, 0, 0.0)");
+      
+      ctx.fillStyle = lightGrad;
+      ctx.beginPath();
+      ctx.arc(hx, hy, 120, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.restore();
+    }
 
     // 5. Draw Vignette effect
     const vignette = ctx.createRadialGradient(
