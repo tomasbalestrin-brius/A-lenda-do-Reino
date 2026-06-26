@@ -7,6 +7,7 @@ import { CONDICOES_DATA, BUFFS_DATA } from '../../data/t20/conditionsAndBuffs';
  */
 export const IMPACT_HANDLERS = {
   bonus_estatico: (imp, power, registry, context) => {
+    if (imp.condicao) return; // Conditional static bonuses are processed manually in stats calculations
     const { level } = context;
     if (imp.pv_por_nivel) registry.add('pv', imp.pv_por_nivel * level, power.nome);
     if (imp.pm_por_nivel) registry.add('pm', Math.floor(imp.pm_por_nivel * level), power.nome);

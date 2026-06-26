@@ -1190,15 +1190,15 @@ export function calculateDetailedAttacks(char, { attrs, halfLevel, level, regist
     if (weapon.melhoriasData?.some(m => m.id === 'macica')) critMult += 1;
 
     // Special situational labels
-    let atkLabel = `${currentAtk}`;
+    let bonusAtk = currentAtk;
     if (char.classe?.toLowerCase() === 'paladino') {
-      atkLabel = `${currentAtk} (+${attrs.CAR || 0} se Golpe Divino)`;
+      bonusAtk = `${currentAtk} (+${attrs.CAR || 0} se Golpe Divino)`;
     }
 
     return {
       uid: weapon.uid || weapon.id,
       nome: base.nome,
-      bonusAtk: atkLabel,
+      bonusAtk: bonusAtk,
       dano: `${damage}${damageBonus !== 0 ? (damageBonus > 0 ? '+' : '') + damageBonus : ''}`,
       critico: `${critMargin}/x${critMult}`,
       alcance: base.alcance ? `${base.alcance}m` : 'Corpo a Corpo',

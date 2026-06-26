@@ -341,8 +341,8 @@ describe('computeStats — Multiclasse', () => {
     });
     const stats = computeStats(char);
     expect(stats.pv).toBe(22);
-    // Guerreiro (1) + Arcanista (6) = 7 PM.
-    expect(stats.pm).toBe(7);
+    // Guerreiro (3) + Arcanista (6) = 9 PM.
+    expect(stats.pm).toBe(9);
   });
 
   it('Arcanista 1 / Guerreiro 1 com INT 3: PM = 6 (Arc) + 1 (Gue) + 3 (INT) = 10', () => {
