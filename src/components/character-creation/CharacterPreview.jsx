@@ -1,9 +1,6 @@
 import React, { useMemo } from 'react';
-import CLASSES from '../../data/t20/classes';
-import RACES from '../../data/t20/races';
-import { ORIGENS } from '../../data/t20/origins';
-import { ITENS } from '../../data/t20/items';
 import { getAllTrainedSkills } from '../../utils/rules/characterStats';
+import { getSystem } from '../../systems/registry';
 
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 
@@ -69,28 +66,32 @@ function StatBar({ label, value, max, color }) {
 }
 
 const STEP_FOCUS = {
-  0:  { label: 'Raça',              hint: 'Bônus Raciais',        icon: '🧬' },
-  1:  { label: 'Herança',           hint: 'Bônus Raciais',        icon: '🧬' },
-  2:  { label: 'Classe',            hint: 'PV & PM da Classe',    icon: '⚔️' },
-  3:  { label: 'Identidade',        hint: 'Nome & Aparência',     icon: '🪪' },
-  4:  { label: 'Especialização',    hint: 'PV & PM da Classe',    icon: '✨' },
-  5:  { label: 'Origem',            hint: 'Perícias & Poderes',   icon: '🌍' },
-  6:  { label: 'Benefícios',        hint: 'Perícias & Poderes',   icon: '🌍' },
-  7:  { label: 'Divindade',         hint: 'Crenças & Bônus',      icon: '🙏' },
-  8:  { label: 'Nível',             hint: 'PV & PM Totais',       icon: '⭐' },
-  9:  { label: 'Magias',            hint: 'Magias de Classe',     icon: '📖' },
-  10: { label: 'Atributos',         hint: 'Todos os Atributos',   icon: '📊' },
-  11: { label: 'Perícias de Classe',hint: 'Perícias Treinadas',   icon: '🎯' },
-  12: { label: 'Perícias de INT',   hint: 'Perícias Treinadas',   icon: '🎯' },
-  13: { label: 'Equipamento',       hint: 'Inventário & Dinheiro',icon: '🎒' },
-  14: { label: 'Poderes',           hint: 'Poderes & Dons',       icon: '💥' },
-  15: { label: 'Aliados',           hint: 'Aliados',              icon: '🤝' },
-  16: { label: 'Progressão',        hint: 'Poderes & Dons',       icon: '💥' },
-  17: { label: 'Revisão',           hint: null,                   icon: '✅' },
+  'Raça':              { hint: 'Bônus Raciais',        icon: '🧬' },
+  'Herança':           { hint: 'Bônus Raciais',        icon: '🧬' },
+  'Classe':            { hint: 'PV & PM da Classe',    icon: '⚔️' },
+  'Identidade':        { hint: 'Nome & Aparência',     icon: '🪪' },
+  'Especialização':    { hint: 'PV & PM da Classe',    icon: '✨' },
+  'Subclasse':         { hint: 'PV & PM da Classe',    icon: '✨' },
+  'Origem':            { hint: 'Perícias & Poderes',   icon: '🌍' },
+  'Antecedente':       { hint: 'Perícias & Poderes',   icon: '🌍' },
+  'Benefícios':        { hint: 'Perícias & Poderes',   icon: '🌍' },
+  'Divindade':         { hint: 'Crenças & Bônus',      icon: '🙏' },
+  'Nível':             { hint: 'PV & PM Totais',       icon: '⭐' },
+  'Magias':            { hint: 'Magias de Classe',     icon: '📖' },
+  'Atributos':         { hint: 'Todos os Atributos',   icon: '📊' },
+  'Perícias (Classe)': { hint: 'Perícias Treinadas',   icon: '🎯' },
+  'Perícias (Int)':    { hint: 'Perícias Treinadas',   icon: '🎯' },
+  'Equipamento':       { hint: 'Inventário & Dinheiro',icon: '🎒' },
+  'Poderes':           { hint: 'Poderes & Dons',       icon: '💥' },
+  'Aliados':           { hint: 'Aliados',              icon: '🤝' },
+  'Progressão':        { hint: 'Poderes & Dons',       icon: '💥' },
+  'Revisão':           { hint: null,                   icon: '✅' },
 };
 
 function StepFocusPanel({ currentStep, char, stats }) {
-  const focus = STEP_FOCUS[currentStep];
+  const system = getSystem(char.system || 't20');
+  const stepLabel = system.steps[currentStep]?.label;
+  const focus = STEP_FOCUS[stepLabel];
   // Memoize no topo do componente — getAllTrainedSkills é caro, não recalcular a cada render
   const _allPericias = useMemo(
     () => Array.from(getAllTrainedSkills(char)),
@@ -104,7 +105,8 @@ function StepFocusPanel({ currentStep, char, stats }) {
 
   const renderContent = () => {
     if (hint === 'Bônus Raciais') {
-      const raceData = RACES[char.raca?.toLowerCase()];
+      const system = getSystem(char.system || 't20');
+      const raceData = system.races[char.raca?.toLowerCase()];
       if (!raceData) return <p className="text-xs text-gray-500 italic">Selecione uma raça.</p>;
       const attrBonuses = Object.entries(stats.raceBonus || {}).filter(([, v]) => v !== 0);
       return (
@@ -212,7 +214,7 @@ function StepFocusPanel({ currentStep, char, stats }) {
   return (
     <div className="bg-amber-950/20 rounded-xl border border-amber-700/30 p-3 mb-1">
       <p className="text-[10px] text-amber-500 uppercase tracking-widest mb-2 font-black flex items-center gap-1.5">
-        <span>{focus.icon}</span> Passo atual · {focus.label}
+        <span>{focus.icon}</span> Passo atual · {stepLabel}
       </p>
       {content}
     </div>
@@ -220,16 +222,17 @@ function StepFocusPanel({ currentStep, char, stats }) {
 }
 
 export const CharacterPreview = React.memo(function CharacterPreview({ char, stats, currentStep }) {
-  const cls = CLASSES[char.classe?.toLowerCase()];
-  const race = RACES[char.raca?.toLowerCase()];
+  const system = getSystem(char.system || 't20');
+  const cls = system.classes[char.classe?.toLowerCase()];
+  const race = system.races[char.raca?.toLowerCase()];
   const spriteKey = `${char.raca}_${char.classe}`;
   const sprite = SPRITE_MAP[spriteKey] || SPRITE_MAP[`humano_${char.classe}`] || null;
 
   const chosenOriginBenefits = char.origemBeneficios || [];
   const originPericias = useMemo(
-    () => (ORIGENS[char.origem?.toLowerCase()]?.pericias || []).filter(p => chosenOriginBenefits.includes(p)),
+    () => (system.origins[char.origem?.toLowerCase()]?.pericias || []).filter(p => chosenOriginBenefits.includes(p)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [char.origem, char.origemBeneficios]
+    [char.origem, char.origemBeneficios, system]
   );
   const allPericias = useMemo(
     () => [...new Set([...originPericias, ...(char.pericias || [])])],

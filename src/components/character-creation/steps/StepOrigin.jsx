@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { ORIGENS as ORIGENS_T20 } from '../../../data/t20/origins';
-import { ORIGINS_DND5E } from '../../../data/dnd5e/origins';
 import { OriginModal } from '../modals/OriginModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { getSystem } from '../../../systems/registry';
 import { useShallow } from 'zustand/react/shallow';
 
 const ORIGIN_ICONS = {
@@ -20,7 +19,7 @@ const ORIGIN_ICONS = {
 export function StepOrigin({ onNext }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const [hoveredId, setHoveredId] = useState(null);
-  const ORIGENS = char.system === 'dnd5e' ? ORIGINS_DND5E : ORIGENS_T20;
+  const ORIGENS = getSystem(char.system || 't20').origins;
   const origins = Object.entries(ORIGENS);
 
   return (

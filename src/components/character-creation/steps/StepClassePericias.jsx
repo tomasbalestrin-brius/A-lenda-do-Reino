@@ -6,6 +6,7 @@ import { ORIGENS as ORIGENS_T20 } from '../../../data/t20/origins';
 import { ORIGINS_DND5E } from '../../../data/dnd5e/origins';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
+import { getSystem } from '../../../systems/registry';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -63,8 +64,8 @@ const ALL_DND_SKILLS = [
 export function StepClassePericias() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   
-  const isDND = char.system === 'dnd5e';
-  const cls = isDND ? CLASSES_DND5E[char.classe] : CLASSES_T20[char.classe];
+  const isDND = getSystem(char.system || 't20').id === 'dnd5e';
+  const cls = isDND ? CLASSES_DND5E[char.classe?.toLowerCase()] : CLASSES_T20[char.classe?.toLowerCase()];
   
   if (!cls) return <div className="text-gray-500 italic p-12 text-center">Selecione uma classe no passo anterior.</div>;
 
@@ -74,7 +75,9 @@ export function StepClassePericias() {
   const obrigEscolhas = char.periciasObrigEscolha || {};
 
   const ORIGENS = isDND ? ORIGINS_DND5E : ORIGENS_T20;
-  const originSkills = (char.origemBeneficios || []).filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
+  const originSkills = isDND
+    ? (ORIGENS[char.origem?.toLowerCase()]?.pericias || [])
+    : (char.origemBeneficios || []).filter(b => ORIGENS[char.origem?.toLowerCase()]?.pericias?.includes(b));
   
   // T20: Se já tem perícia da origem, ganha escolha extra da classe. D&D não tem isso de base.
   const skillOverlaps = isDND ? 0 : fixedObrig.filter(s => originSkills.includes(s)).length;
@@ -103,7 +106,7 @@ export function StepClassePericias() {
     if (JSON.stringify(char.pericias) !== JSON.stringify(nextPericias)) {
         updateChar({ pericias: nextPericias });
     }
-  }, [char.classe, char.origemBeneficios, char.periciasClasseEscolha, char.periciasObrigEscolha]);
+  }, [char.classe, char.origem, char.origemBeneficios, char.periciasClasseEscolha, char.periciasObrigEscolha]);
 
   return (
     <div className="flex flex-col gap-10">

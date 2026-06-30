@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CLASSES from '../../data/t20/classes';
-import RACES from '../../data/t20/races';
+import { getSystem } from '../../systems/registry';
 import { VELOX_PRESET } from '../../data/t20/presets/velox';
 
 const CLASS_ICONS = {
@@ -15,8 +14,9 @@ const EXAMPLE_CHARS = [VELOX_PRESET];
 
 function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
   const char = item.data || item;
-  const cls = CLASSES[char.classe] || {};
-  const race = RACES[char.raca] || {};
+  const system = getSystem(char.system || 't20');
+  const cls = system.classes[char.classe] || {};
+  const race = system.races[char.raca] || {};
   const s = char.stats || {};
   return (
     <div className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-3xl p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative">
@@ -25,7 +25,7 @@ function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
       </div>
       {isExample && (
         <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-amber-900/50 border border-amber-500/40 text-amber-400 text-[9px] font-black uppercase tracking-widest">
-          Exemplo {char.raca && RACES[char.raca]?.dlc ? `· ${RACES[char.raca].dlc}` : ''}
+          Exemplo {char.raca && system.races[char.raca]?.dlc ? `· ${system.races[char.raca].dlc}` : ''}
         </div>
       )}
 
@@ -242,8 +242,9 @@ export function CharacterLibrary({ characters, onLoad, onDelete, onNew, onCompen
               if (!search.trim()) return true;
               const q = search.toLowerCase();
               const char = item.data || item;
-              const race = RACES[char.raca]?.nome || char.raca || '';
-              const cls = CLASSES[char.classe]?.nome || char.classe || '';
+              const system = getSystem(char.system || 't20');
+              const race = system.races[char.raca]?.nome || char.raca || '';
+              const cls = system.classes[char.classe]?.nome || char.classe || '';
               return (char.nome || '').toLowerCase().includes(q)
                 || race.toLowerCase().includes(q)
                 || cls.toLowerCase().includes(q);

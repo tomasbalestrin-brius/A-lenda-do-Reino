@@ -1,9 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import CLASSES_T20 from '../../../data/t20/classes';
-import CLASSES_DND5E from '../../../data/dnd5e/classes';
 import { ClassModal } from '../modals/ClassModal';
 import { useCharacterStore } from '../../../store/useCharacterStore';
+import { getSystem } from '../../../systems/registry';
 import { useShallow } from 'zustand/react/shallow';
 import { STANDARD_KIT_ITEMS } from '../../../utils/rules/constants';
 
@@ -56,7 +55,7 @@ const ROLE_GROUPS = {
 
 export function StepClass({ onNext }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
-  const CLASSES = char.system === 'dnd5e' ? CLASSES_DND5E : CLASSES_T20;
+  const CLASSES = getSystem(char.system || 't20').classes;
   const [roleFilter, setRoleFilter] = React.useState('Todos');
   const allClasses = Object.entries(CLASSES);
   const classes = roleFilter === 'Todos'

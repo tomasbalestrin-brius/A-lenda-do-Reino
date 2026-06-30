@@ -2,6 +2,7 @@ import React from 'react';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
+import { getSystem } from '../../../systems/registry';
 
 export function StepIdentity() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
@@ -86,7 +87,7 @@ export function StepIdentity() {
         </div>
 
         {/* Detalhes de D&D (Traços, Ideais, etc) */}
-        {char.system === 'dnd5e' && (
+        {getSystem(char.system || 't20').id === 'dnd5e' && (
           <div className="md:col-span-2 mt-4 space-y-6">
              <div className="flex flex-col gap-2">
                 <label className="text-[10px] uppercase font-black text-slate-500 tracking-[0.2em] ml-2">Tendência (Alignment)</label>

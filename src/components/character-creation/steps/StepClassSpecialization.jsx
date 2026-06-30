@@ -1,7 +1,7 @@
 import React from 'react';
-import CLASSES from '../../../data/t20/classes';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
+import { getSystem } from '../../../systems/registry';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -18,10 +18,69 @@ const MAGIAS_ESCOLAS = [
 export function StepClassSpecialization() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const { classe } = char;
-  const cls = CLASSES[classe];
+  
+  const system = getSystem(char.system || 't20');
+  const CLASSES = system.classes;
+  const isDND = system.id === 'dnd5e';
+  const cls = CLASSES[classe?.toLowerCase()];
   
   if (!cls) return <div className="text-gray-500 italic p-12 text-center">Selecione uma classe no passo anterior.</div>;
 
+  // D&D Subclass Selection
+  if (isDND) {
+    const subclasses = cls.subclasses || [];
+    const chosenSubclass = char.subclasse;
+    
+    return (
+      <div className="flex flex-col gap-6">
+        {/* Header */}
+        <div className="bg-amber-950/20 p-8 rounded-[2.5rem] border border-amber-500/10 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-6 opacity-10 text-7xl">⚔️</div>
+          <h2 className="text-3xl font-black text-white tracking-tight mb-2">
+            <span className="text-amber-500 mr-2">V.</span> Escolha sua Subclasse
+          </h2>
+          <p className="text-slate-400 text-sm font-medium">
+            Seu nível como {cls.nome} permite que você escolha uma especialização (subclasse) para guiar seus poderes.
+          </p>
+        </div>
+
+        {/* Subclass cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {subclasses.map(sub => {
+            const isSubSelected = chosenSubclass === sub.id;
+            return (
+              <button
+                key={sub.id}
+                onClick={() => updateChar({ subclasse: sub.id })}
+                className={`p-6 rounded-[2.5rem] border-2 text-left transition-all flex flex-col gap-3 group relative overflow-hidden ${
+                  isSubSelected
+                    ? 'border-amber-500 bg-amber-900/20'
+                    : 'border-white/5 bg-white/[0.02] hover:border-white/20'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full relative z-10">
+                  <span className={`font-black text-base uppercase tracking-wider ${isSubSelected ? 'text-amber-400' : 'text-slate-100'}`}>
+                    {sub.nome}
+                  </span>
+                  {isSubSelected && (
+                    <span className="w-3 h-3 rounded-full bg-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.8)]" />
+                  )}
+                </div>
+                <p className="text-slate-400 text-xs leading-relaxed font-medium relative z-10">
+                  {sub.descricao}
+                </p>
+                {isSubSelected && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent pointer-events-none" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Tormenta20 Specialization logic
   const isArcanista = classe === 'arcanista';
   const isBardo = classe === 'bardo';
   const isDruida = classe === 'druida';

@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ORIGENS as ORIGENS_T20 } from '../../../data/t20/origins';
-import { ORIGINS_DND5E } from '../../../data/dnd5e/origins';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
+import { getSystem } from '../../../systems/registry';
 
 export function StepOrigemBeneficios({ stats }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   
-  const isDND = char.system === 'dnd5e';
-  const origem = isDND ? ORIGINS_DND5E[char.origem] : ORIGENS_T20[char.origem];
+  const system = getSystem(char.system || 't20');
+  const isDND = system.id === 'dnd5e';
+  const origem = system.origins[char.origem?.toLowerCase()];
   
   if (!origem) return <div className="text-gray-500 italic p-12 text-center bg-gray-900/40 rounded-3xl border border-white/5">Selecione uma Origem no passo anterior para definir seus benefícios.</div>;
 

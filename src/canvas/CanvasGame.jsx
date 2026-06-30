@@ -161,7 +161,8 @@ export default function CanvasGame({ onExit }) {
       { key: "tileset_cave", src: "./assets/tilesets/cave.png" },
       { key: "hero_guerreiro_idle", src: "./assets/sprites/heroes/humano_guerreiro_idle.png" },
       { key: "hero_barbaro_idle", src: "./assets/sprites/heroes/humano_barbaro_idle.png" },
-      { key: "hero_mago_idle", src: "./assets/sprites/heroes/humano_arcanista_idle.png" }
+      { key: "hero_mago_idle", src: "./assets/sprites/heroes/humano_arcanista_idle.png" },
+      { key: "enemy_slime", src: "./assets/sprites/enemies/slime.png" }
     ];
 
     assetLoader
@@ -202,8 +203,8 @@ export default function CanvasGame({ onExit }) {
           });
         });
 
-        // Register dummy sheets for enemies so procedural fallback draws correct key colors
-        spriteManager.defineSpriteSheet("enemy_slime", { imageKey: "enemy_slime", frameWidth: 32, frameHeight: 32 });
+        // Register sheets for enemies
+        spriteManager.defineSpriteSheet("enemy_slime", { imageKey: "enemy_slime", frameWidth: 96, frameHeight: 96 });
         spriteManager.defineSpriteSheet("enemy_goblin", { imageKey: "enemy_goblin", frameWidth: 32, frameHeight: 32 });
         spriteManager.defineSpriteSheet("enemy_orc", { imageKey: "enemy_orc", frameWidth: 32, frameHeight: 32 });
 

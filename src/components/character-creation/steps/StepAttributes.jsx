@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useCharacterStore } from '../../../store/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
+import { getSystem } from '../../../systems/registry';
 
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 const ATTR_TRANSLATION = {
@@ -200,7 +201,7 @@ const AttributeRow = React.memo(({
 
 export function StepAttributes({ stats }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
-  const isDND = char.system === 'dnd5e';
+  const isDND = getSystem(char.system || 't20').id === 'dnd5e';
   const { POINT_POOL, ATTR_MIN, ATTR_MAX, defaultBase } = getSystemAttrConfig(isDND);
   
   const [rolling, setRolling] = useState(false);

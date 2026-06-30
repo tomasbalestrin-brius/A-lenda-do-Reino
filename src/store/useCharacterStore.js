@@ -1,120 +1,63 @@
 import { create } from 'zustand';
-import { ORIGENS } from '../data/t20/origins';
+import { getSystem, hasSystem } from '../systems/registry';
 
-// Estado inicial isolado para poder ser "resetado"
-const getInitialCharState = () => ({
-  system: 't20', // Sistema escolhido (t20 ou dnd5e)
-  
-  modalRace: null,
-  modalClass: null,
-  modalOrigin: null,
-  modalDeus: null,
+// ─── Initial State ────────────────────────────────────────────────────────────
+// Delegates to the registered system's getInitialCharState().
+// Falls back to a minimal default if systems aren't loaded yet.
 
-  raca: null,
-  racaEscolha: [], // For classes like human that choose +1 in 3 stats
-  racaVariante: null, // For Suraggel/Lefou
-  
-  classe: null,
-  classes: [], // [{ name: string, level: number }]
-  pericias: [],
-  periciasObrigEscolha: {},
-  classSpells: [],
-  racialSpells: [],
-  
-  origem: null,
-  origemBeneficios: [],
-  
-  deus: null,
-  crencasBeneficios: [],
-  
-  level: 1,
-  attrMethod: 'buy',
-  atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
-  rolagens: [],
-  poderesGerais: [],
-  aliado: null,
-  idiomas: ['Comum'],
-  dinheiro: 0,
-  equipamento: [],
-  portrait: null,
-  
-  // Identidade
-  nome: '',
-  idade: '',
-  genero: '',
-  aparencia: '',
-  historia: '',
-  
-  levelChoices: {}, // Stores choices per level: { 2: { type: 'power', id: '...' }, 3: ... }
-  spellEnhancements: {}, // Stores extra PM costs for spells: { 'bola_de_fogo': { pm: 2, desc: 'Aumenta dano' } }
-  choices: {},
+function getInitialCharState(system = 't20') {
+  if (hasSystem(system)) {
+    return getSystem(system).getInitialCharState();
+  }
+  // Fallback for boot time / tests where systems may not be registered yet
+  return { system, raca: null, classe: null, level: 1, nome: '', atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 } };
+}
 
-  // Combat Dashboard State
-  pvAtual: null,
-  pmAtual: null,
-  pvTemp: 0,
-  condicoesAtivas: [], // Array of condition IDs (e.g. 'cego', 'caido')
-  beneficiosAtivos: [], // Array of spell/power IDs (e.g. 'furia', 'benção')
-  logRecursos: [] // Array of activity strings: ['Usou 2 PM em Ataque Especial', ...]
-});
+// ─── Reset Rule Application ──────────────────────────────────────────────────
+// Applies system-specific reset rules when key fields change.
+
+function applyResetRules(updates, newChar, oldChar) {
+  const systemId = newChar.system || 't20';
+  if (!hasSystem(systemId)) return;
+
+  const rules = getSystem(systemId).getResetRules();
+  if (!rules) return;
+
+  if (updates.raca && updates.raca !== oldChar.raca && rules.onRaceChange) {
+    rules.onRaceChange(newChar, oldChar);
+  }
+  if (updates.classe && updates.classe !== oldChar.classe && rules.onClassChange) {
+    rules.onClassChange(newChar, oldChar);
+  }
+  if (updates.level !== undefined && updates.level !== oldChar.level && rules.onLevelChange) {
+    rules.onLevelChange(newChar, oldChar);
+  }
+  if (updates.origem && updates.origem !== oldChar.origem && rules.onOriginChange) {
+    rules.onOriginChange(newChar, oldChar);
+  }
+  if (updates.deus && updates.deus !== oldChar.deus && rules.onDeityChange) {
+    rules.onDeityChange(newChar, oldChar);
+  }
+}
+
+// ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useCharacterStore = create((set, get) => ({
   // O estado atual do personagem
   char: getInitialCharState(),
 
-  // Método unificado para atualizar o personagem (substitui o antigo updateChar)
+  // Método unificado para atualizar o personagem
   updateChar: (updates) => set((state) => {
     const newChar = { ...state.char, ...updates };
     
-    // Regras de Reset: Isoladas no Store!
-    // Se a raça mudou, limpa escolhas raciais e variantes
-    if (updates.raca && updates.raca !== state.char.raca) {
-      newChar.racaEscolha = [];
-      newChar.racaVariante = null;
-      newChar.racialSpells = [];
-      newChar.choices = {}; // Limpa escolhas de herança (Humano, etc)
-    }
-
-    // Se a classe mudou, limpa perícias e magias
-    if (updates.classe && updates.classe !== state.char.classe) {
-      newChar.pericias = [];
-      newChar.periciasObrigEscolha = {};
-      newChar.periciasClasseEscolha = [];
-      newChar.classSpells = [];
-      newChar.poderesGerais = [];
-      newChar.levelChoices = {};
-      newChar.classes = updates.classe ? [{ name: updates.classe, level: state.char.level }] : [];
-    }
-
-    // Se o nível mudou, limpa magias iniciais (círculos acessíveis podem mudar)
-    if (updates.level !== undefined && updates.level !== state.char.level) {
-      newChar.classSpells = [];
-      // Sincroniza o nível da classe primária se não houver multiclasse ainda
-      if (newChar.classes.length === 1) {
-        newChar.classes[0].level = updates.level;
-      }
-    }
-    
-    // Se a origem mudou, limpa benefícios e remove APENAS as perícias que eram benefícios da origem anterior
-    if (updates.origem && updates.origem !== state.char.origem) {
-      const oldOrigem = ORIGENS[state.char.origem?.toLowerCase()];
-      const oldBenefits = state.char.origemBeneficios || [];
-      const skillsToRemove = oldBenefits.filter(b => oldOrigem?.pericias?.includes(b));
-      
-      newChar.origemBeneficios = [];
-      newChar.pericias = (state.char.pericias || []).filter(s => !skillsToRemove.includes(s));
-    }
-
-    // Se o deus mudou, limpa benefícios de crença
-    if (updates.deus && updates.deus !== state.char.deus) {
-      newChar.crencasBeneficios = [];
-    }
+    // Delega as regras de reset ao sistema registrado
+    applyResetRules(updates, newChar, state.char);
 
     return { char: newChar };
   }),
 
   // Método auxiliar para resetar todo o criador
-  resetChar: (system = 't20') => set({ char: { ...getInitialCharState(), system } }),
+  resetChar: (system = 't20') => set({ char: getInitialCharState(system) }),
   
   // Método auxiliar para carregar um personagem existente (útil para edição futura)
   loadChar: (existingChar) => set({ char: existingChar })

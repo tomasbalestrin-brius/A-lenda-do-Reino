@@ -10,7 +10,12 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Adestrar Animais", "Atletismo", "Intimidação", "Natureza", "Percepção", "Sobrevivência"],
     equipamentoInicial: ["machado_batalha", "machadinha", "pacote_explorador", "azagaia"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "berserker", nome: "Caminho do Berserker", descricao: "Fúria violenta e ataques adicionais ao custo de exaustão." },
+      { id: "totemico", nome: "Caminho do Guerreiro Totêmico", descricao: "Conexão espiritual com espíritos animais que concedem resistência e utilidade." }
+    ]
   },
   bardo: {
     nome: "Bardo",
@@ -23,7 +28,12 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 3,
     opcoesPericias: ["Qualquer"],
     equipamentoInicial: ["rapieira", "pacote_artista", "alaude", "armadura_couro", "adaga"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "conhecimento", nome: "Colégio do Conhecimento", descricao: "Segredos mágicos e perícias extras." },
+      { id: "bravura", nome: "Colégio da Bravura", descricao: "Proficiências marciais adicionais e inspiração inspirando combate." }
+    ]
   },
   bruxo: {
     nome: "Bruxo",
@@ -36,7 +46,13 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Arcanismo", "Enganação", "História", "Intimidação", "Investigação", "Natureza", "Religião"],
     equipamentoInicial: ["besta_leve", "foco_arcano", "pacote_estudioso", "armadura_couro", "adaga"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 1,
+    subclasses: [
+      { id: "feerica", nome: "A Mente Feérica", descricao: "Truques de ilusão, encanto e presença mágica." },
+      { id: "corruptor", nome: "O Corruptor", descricao: "Chamas do inferno, resiliência sombria e bênçãos do patrono." },
+      { id: "grande_antigo", nome: "O Grande Antigo", descricao: "Telepatia e controle da mente de outras criaturas." }
+    ]
   },
   clerigo: {
     nome: "Clérigo",
@@ -49,7 +65,14 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["História", "Intuição", "Medicina", "Persuasão", "Religião"],
     equipamentoInicial: ["maca", "cota_malha", "besta_leve", "pacote_sacerdote", "escudo", "simbolo_sagrado"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 1,
+    subclasses: [
+      { id: "vida", nome: "Domínio da Vida", descricao: "Curandeiro divino proficiente em armaduras pesadas." },
+      { id: "luz", nome: "Domínio da Luz", descricao: "Magia purificadora e rajadas de luz divina." },
+      { id: "tempestade", nome: "Domínio da Tempestade", descricao: "Magia de trovão, raio e combate tático." },
+      { id: "guerra", nome: "Domínio da Guerra", descricao: "Ataques bônus de armas e bênçãos marciais." }
+    ]
   },
   druida: {
     nome: "Druida",
@@ -62,7 +85,12 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Arcanismo", "Adestrar Animais", "Intuição", "Medicina", "Natureza", "Percepção", "Religião", "Sobrevivência"],
     equipamentoInicial: ["escudo_madeira", "cimitarra", "armadura_couro", "pacote_explorador", "foco_druidico"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 2,
+    subclasses: [
+      { id: "terra", nome: "Círculo da Terra", descricao: "Magia de terreno e recuperação de slots de magia." },
+      { id: "lua", nome: "Círculo da Lua", descricao: "Transformações de fera aprimoradas para combate direto." }
+    ]
   },
   feiticeiro: {
     nome: "Feiticeiro",
@@ -75,7 +103,12 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Arcanismo", "Enganação", "Intuição", "Intimidação", "Persuasão", "Religião"],
     equipamentoInicial: ["besta_leve", "foco_arcano", "pacote_explorador", "adaga"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 1,
+    subclasses: [
+      { id: "draconica", nome: "Linhagem Dracônica", descricao: "Resistência ao dano elemental do dragão e armadura natural." },
+      { id: "selvagem", nome: "Magia Selvagem", descricao: "Caos e sorte manipulando as rolagens e surtos de magia." }
+    ]
   },
   guerreiro: {
     nome: "Guerreiro",
@@ -88,7 +121,13 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Acrobacia", "Adestrar Animais", "Atletismo", "História", "Intuição", "Intimidação", "Percepção", "Sobrevivência"],
     equipamentoInicial: ["cota_malha", "espada_longa", "escudo", "besta_leve", "pacote_explorador"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "campeao", nome: "Campeão", descricao: "Crítico aprimorado e proezas físicas extraordinárias." },
+      { id: "mestre_batalha", nome: "Mestre de Batalha", descricao: "Manobras de combate avançadas alimentadas por dados de superioridade." },
+      { id: "cavaleiro_arcano", nome: "Cavaleiro Arcano", descricao: "Conjuração de magias de mago combinada com perícia marcial." }
+    ]
   },
   ladino: {
     nome: "Ladino",
@@ -101,7 +140,13 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 4,
     opcoesPericias: ["Acrobacia", "Atletismo", "Atuação", "Enganação", "Furtividade", "Intimidação", "Intuição", "Investigação", "Percepção", "Persuasão", "Prestidigitação"],
     equipamentoInicial: ["rapieira", "arco_curto", "pacote_assaltante", "armadura_couro", "adaga", "ferramentas_ladrao"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "assassino", nome: "Assassino", descricao: "Ataques furtivos mortais e disfarces perfeitos." },
+      { id: "ladrao", nome: "Ladrão", descricao: "Uso rápido de objetos, escalada rápida e furtividade aprimorada." },
+      { id: "trapaceiro_arcano", nome: "Trapaceiro Arcano", descricao: "Ilusões e truques com magias de mago e mão de mago invisível." }
+    ]
   },
   mago: {
     nome: "Mago",
@@ -114,7 +159,13 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Arcanismo", "História", "Intuição", "Investigação", "Medicina", "Religião"],
     equipamentoInicial: ["bordao", "foco_arcano", "pacote_estudioso", "grimorio"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 2,
+    subclasses: [
+      { id: "evocacao", nome: "Escola de Evocação", descricao: "Esculpir feitiços explosivos e causar dano máximo." },
+      { id: "abjuracao", nome: "Escola de Abjuração", descricao: "Criação de alaúdes protetores e proteção mágica." },
+      { id: "ilusao", nome: "Escola de Ilusão", descricao: "Ilusões convincentes e modificação sensorial." }
+    ]
   },
   monge: {
     nome: "Monge",
@@ -127,7 +178,13 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Acrobacia", "Atletismo", "Furtividade", "História", "Intuição", "Religião"],
     equipamentoInicial: ["espada_curta", "pacote_explorador", "dardos"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "mao_aberta", nome: "Caminho da Mão Aberta", descricao: "Controle de combate desarmado, derrubar e empurrar inimigos." },
+      { id: "sombras", nome: "Caminho das Sombras", descricao: "Furtividade, teletransporte na escuridão e truques ninja." },
+      { id: "quatro_elementos", nome: "Caminho dos Quatro Elementos", descricao: "Uso do Chi para lançar magias elementais." }
+    ]
   },
   paladino: {
     nome: "Paladino",
@@ -140,7 +197,13 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 2,
     opcoesPericias: ["Atletismo", "Intimidação", "Intuição", "Medicina", "Persuasão", "Religião"],
     equipamentoInicial: ["espada_longa", "escudo", "azagaia", "pacote_sacerdote", "cota_malha", "simbolo_sagrado"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "devocao", nome: "Juramento da Devoção", descricao: "Arma sagrada, imunidade a medo e aura de proteção purificadora." },
+      { id: "ancioes", nome: "Juramento dos Anciões", descricao: "Cólera da natureza, resistência a feitiços e proteção à luz." },
+      { id: "vinganca", nome: "Juramento da Vingança", descricao: "Juramento de inimigo, rastreamento implacável e combatente letal." }
+    ]
   },
   patrulheiro: {
     nome: "Patrulheiro",
@@ -153,7 +216,12 @@ const CLASSES_DND5E = {
     periciasEscolhidas: 3,
     opcoesPericias: ["Adestrar Animais", "Atletismo", "Furtividade", "Intuição", "Investigação", "Natureza", "Percepção", "Sobrevivência"],
     equipamentoInicial: ["brunea", "espada_curta", "pacote_explorador", "arco_longo"],
-    pm: 0
+    pm: 0,
+    subclassLevel: 3,
+    subclasses: [
+      { id: "cacador", nome: "Caçador", descricao: "Defesa e ataque contra grupos ou inimigos gigantes." },
+      { id: "mestre_bestas", nome: "Mestre das Bestas", descricao: "Companheiro animal que luta ao seu lado." }
+    ]
   }
 };
 

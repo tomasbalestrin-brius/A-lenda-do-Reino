@@ -5,9 +5,9 @@ import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '../store/useAuthStore';
 import { computeStats } from '../utils/rules/characterStats';
 import { useCharacterPersistence } from '../hooks/useCharacterPersistence';
-import { useCreationNavigation, STEP_LABELS, MAX_STEPS } from '../hooks/useCreationNavigation';
-import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
+import { useCreationNavigation } from '../hooks/useCreationNavigation';
 import { ErrorBoundary } from './ErrorBoundary';
+import { getSystem } from '../systems/registry';
 
 // ─── Lazy: carregados sob demanda ────────────────────────────────────────────
 const PDFCompendium = React.lazy(() => import('./compendium/PDFCompendium').then(m => ({ default: m.PDFCompendium })));
@@ -18,27 +18,7 @@ const ClassModal  = React.lazy(() => import('./character-creation/modals/ClassMo
 const OriginModal = React.lazy(() => import('./character-creation/modals/OriginModal').then(m => ({ default: m.OriginModal })));
 const DeityModal  = React.lazy(() => import('./character-creation/modals/DeityModal').then(m => ({ default: m.DeityModal })));
 
-// Steps 0-3: eager (visíveis imediatamente ou logo no início)
-import { StepRace }     from './character-creation/steps/StepRace';
-import { StepHeritage } from './character-creation/steps/StepHeritage';
-import { StepClass }    from './character-creation/steps/StepClass';
-import { StepIdentity } from './character-creation/steps/StepIdentity';
 
-// Steps 4+: lazy (carregam conforme o usuário avança)
-const StepClassSpecialization = React.lazy(() => import('./character-creation/steps/StepClassSpecialization').then(m => ({ default: m.StepClassSpecialization })));
-const StepOrigin              = React.lazy(() => import('./character-creation/steps/StepOrigin').then(m => ({ default: m.StepOrigin })));
-const StepOrigemBeneficios    = React.lazy(() => import('./character-creation/steps/StepOrigemBeneficios').then(m => ({ default: m.StepOrigemBeneficios })));
-const StepDeus                = React.lazy(() => import('./character-creation/steps/StepDeus').then(m => ({ default: m.StepDeus })));
-const StepLevel               = React.lazy(() => import('./character-creation/steps/StepLevel').then(m => ({ default: m.StepLevel })));
-const StepSpells              = React.lazy(() => import('./character-creation/steps/StepSpells').then(m => ({ default: m.StepSpells })));
-const StepAttributes          = React.lazy(() => import('./character-creation/steps/StepAttributes').then(m => ({ default: m.StepAttributes })));
-const StepClassePericias      = React.lazy(() => import('./character-creation/steps/StepClassePericias').then(m => ({ default: m.StepClassePericias })));
-const StepIntPericias         = React.lazy(() => import('./character-creation/steps/StepIntPericias').then(m => ({ default: m.StepIntPericias })));
-const StepEquipment           = React.lazy(() => import('./character-creation/steps/StepEquipment').then(m => ({ default: m.StepEquipment })));
-const StepPowers              = React.lazy(() => import('./character-creation/steps/StepPowers').then(m => ({ default: m.StepPowers })));
-const StepProgression         = React.lazy(() => import('./character-creation/steps/StepProgression').then(m => ({ default: m.StepProgression })));
-const StepAllies              = React.lazy(() => import('./character-creation/steps/StepAllies').then(m => ({ default: m.StepAllies })));
-const StepReview              = React.lazy(() => import('./character-creation/steps/StepReview').then(m => ({ default: m.StepReview })));
 
 import { CharacterLibrary } from './character-creation/CharacterLibrary';
 import { CharacterPreview } from './character-creation/CharacterPreview';
@@ -157,7 +137,9 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
   };
 
   if (view === 'play') {
-    return <PlaySheet char={char} onBack={handleExit} onVtt={() => setView('vtt')} />;
+    const SystemClass = getSystem(char.system || 't20');
+    const PlaySheetComponent = SystemClass.PlaySheetComponent || PlaySheet;
+    return <PlaySheetComponent char={char} updateChar={useCharacterStore.getState().updateChar} onBack={handleExit} onVtt={() => setView('vtt')} />;
   }
 
   if (view === 'compendium') {
@@ -216,7 +198,7 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
     );
   }
 
-  const { ok: canAdvance, reason: blockReason } = canGoNext(step, char, stats);
+  const { ok: canAdvance, reason: blockReason } = getSystem(char.system || 't20').canGoNext(step, char, stats);
 
   return (
     <div className="flex h-[100dvh] bg-[#020617] text-slate-300 font-sans overflow-hidden">
@@ -253,9 +235,9 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
         </div>
       )}
       
-      {/* ─── MOBILE HEADER BAR (hidden on md+) ─── */}
       {(() => {
-        const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+        const system = getSystem(char.system || 't20');
+        const visibleSteps = system.steps.map((s, i) => i).filter(i => !system.shouldSkipStep(i, char, stats));
         const currentVisibleIndex = visibleSteps.indexOf(step) + 1;
         const totalVisible = visibleSteps.length;
         const pct = Math.round(((currentVisibleIndex - 1) / (totalVisible - 1 || 1)) * 100);
@@ -277,7 +259,7 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
             </button>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs font-black text-white truncate">{STEP_LABELS[step]}</span>
+                <span className="text-xs font-black text-white truncate">{system.steps[step]?.label}</span>
                 <span className="text-[10px] font-black text-slate-500 ml-2 shrink-0">{currentVisibleIndex} / {totalVisible}</span>
               </div>
               <div className="h-1 bg-gray-900 rounded-full overflow-hidden">
@@ -355,11 +337,12 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
               </button>
               <div className="flex-1 flex flex-col gap-0.5 px-3 pb-4 overflow-y-auto mt-2" style={{ scrollbarWidth: 'none' }}>
                 {(() => {
-                  const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+                  const system = getSystem(char.system || 't20');
+                  const visibleSteps = system.steps.map((s, i) => i).filter(i => !system.shouldSkipStep(i, char, stats));
                   return visibleSteps.map((i, idx) => {
                     const isCurrent = i === step;
                     const isCompleted = i < step;
-                    const label = STEP_LABELS[i];
+                    const label = system.steps[i].label;
                     return (
                       <button
                         key={i}
@@ -415,7 +398,8 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
         <div className="flex-1 flex flex-col gap-1 px-3 lg:px-6 pb-6">
           <div className="hidden lg:flex flex-col gap-1.5 mb-4 px-1">
             {(() => {
-              const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+              const system = getSystem(char.system || 't20');
+              const visibleSteps = system.steps.map((s, i) => i).filter(i => !system.shouldSkipStep(i, char, stats));
               const currentVisibleIndex = visibleSteps.indexOf(step) + 1;
               const totalVisible = visibleSteps.length;
               const pct = Math.round(((currentVisibleIndex - 1) / (totalVisible - 1 || 1)) * 100);
@@ -431,11 +415,12 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
             })()}
           </div>
           {(() => {
-            const visibleSteps = STEP_LABELS.map((label, i) => i).filter(i => !shouldSkipStep(i, char, stats));
+            const system = getSystem(char.system || 't20');
+            const visibleSteps = system.steps.map((s, i) => i).filter(i => !system.shouldSkipStep(i, char, stats));
             return visibleSteps.map((i, idx) => {
               const isCurrent = i === step;
               const isCompleted = i < step;
-              const label = STEP_LABELS[i];
+              const label = system.steps[i].label;
               return (
                 <button
                   key={i}
@@ -515,34 +500,24 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
                   }>
                     {(() => {
                       const stepProps = { onNext: handleNext, stats };
-                      switch (step) {
-                        case 0: return <StepRace {...stepProps} />;
-                        case 1: return <StepHeritage />;
-                        case 2: return <StepClass {...stepProps} />;
-                        case 3: return <StepIdentity />;
-                        case 4: return <StepClassSpecialization />;
-                        case 5: return <StepOrigin {...stepProps} />;
-                        case 6: return <StepOrigemBeneficios {...stepProps} />;
-                        case 7: return <StepDeus />;
-                        case 8: return <StepLevel />;
-                        case 9: return <StepSpells {...stepProps} />;
-                        case 10: return <StepAttributes {...stepProps} />;
-                        case 11: return <StepClassePericias />;
-                        case 12: return <StepIntPericias {...stepProps} />;
-                        case 13: return <StepEquipment />;
-                        case 14: return <StepPowers {...stepProps} />;
-                        case 15: return <StepProgression {...stepProps} />;
-                        case 16: return <StepAllies />;
-                        case 17: return (
-                          <StepReview
+                      const SystemClass = getSystem(char.system || 't20');
+                      const StepComponent = SystemClass.steps[step]?.component;
+                      
+                      if (!StepComponent) return null;
+
+                      // O último passo (Revisão) precisa de props específicas
+                      if (step === SystemClass.steps.length - 1) {
+                        return (
+                          <StepComponent
                             stats={stats}
                             onSave={handleSave}
                             onPlay={() => setView('play')}
                             onNavigate={setStep}
                           />
                         );
-                        default: return null;
                       }
+                      
+                      return <StepComponent {...stepProps} />;
                     })()}
                   </React.Suspense>
                 </motion.div>
@@ -574,23 +549,33 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
                      {blockReason || 'Finalize as escolhas pendentes.'}
                    </motion.div>
                  )}
-                 {step === MAX_STEPS - 1 && (
-                   <span className="text-[10px] uppercase font-black tracking-[0.4em] text-amber-500/70">Criação Completa</span>
-                 )}
+                 {(() => {
+                   const system = getSystem(char.system || 't20');
+                   const maxSteps = system.steps.length;
+                   return step === maxSteps - 1 ? (
+                     <span className="text-[10px] uppercase font-black tracking-[0.4em] text-amber-500/70">Criação Completa</span>
+                   ) : null;
+                 })()}
               </div>
               
-              <motion.button
-                onClick={handleNext}
-                whileTap={canAdvance ? { scale: 0.95 } : { x: [0, -4, 4, -4, 4, 0] }}
-                className={`px-6 md:px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 md:gap-3 group ${
-                  canAdvance 
-                    ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500' 
-                    : 'bg-rose-950/20 border border-rose-500/30 text-rose-500 shadow-inner'
-                } ${step === MAX_STEPS - 1 ? 'invisible pointer-events-none' : ''}`}
-              >
-                <span className="hidden xs:inline">{canAdvance ? 'Avançar' : 'Pendente'}</span>
-                <span className="text-xl group-hover:translate-x-1 transition-transform">{canAdvance ? '→' : '⚠️'}</span>
-              </motion.button>
+              {(() => {
+                const system = getSystem(char.system || 't20');
+                const maxSteps = system.steps.length;
+                return (
+                  <motion.button
+                    onClick={handleNext}
+                    whileTap={canAdvance ? { scale: 0.95 } : { x: [0, -4, 4, -4, 4, 0] }}
+                    className={`px-6 md:px-10 py-4 rounded-2xl font-bold uppercase tracking-widest text-[10px] md:text-xs transition-all flex items-center justify-center gap-2 md:gap-3 group ${
+                      canAdvance 
+                        ? 'bg-amber-600 text-gray-950 shadow-lg shadow-amber-900/40 hover:bg-amber-500' 
+                        : 'bg-rose-950/20 border border-rose-500/30 text-rose-500 shadow-inner'
+                    } ${step === maxSteps - 1 ? 'invisible pointer-events-none' : ''}`}
+                  >
+                    <span className="hidden xs:inline">{canAdvance ? 'Avançar' : 'Pendente'}</span>
+                    <span className="text-xl group-hover:translate-x-1 transition-transform">{canAdvance ? '→' : '⚠️'}</span>
+                  </motion.button>
+                );
+              })()}
            </div>
         </div>
       </div>

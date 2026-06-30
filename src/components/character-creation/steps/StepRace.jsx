@@ -1,9 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import RACES_T20 from '../../../data/t20/races';
-import RACES_DND5E from '../../../data/dnd5e/races';
-import { RaceModal } from '../modals/RaceModal';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { getSystem } from '../../../systems/registry';
 import { useShallow } from 'zustand/react/shallow';
 
 function attrBonusDisplay(race) {
@@ -62,7 +59,9 @@ const RACE_IMAGES = {
 export function StepRace({ onNext }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   
-  const RACES = char.system === 'dnd5e' ? RACES_DND5E : RACES_T20;
+  const system = getSystem(char.system || 't20');
+  const RACES = system.races;
+  const isDND = system.id === 'dnd5e';
   const races = Object.entries(RACES);
   const selectedRace = RACES[char.raca];
   const hasEscolha = selectedRace?.atributos?.escolha;
@@ -77,7 +76,7 @@ export function StepRace({ onNext }) {
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
         {races.map(([id, race]) => {
           const isSelected = char.raca === id;
-          const needsModal = !!race.atributos?.escolha;
+          const needsModal = !!race.atributos?.escolha || (isDND && !!race.subracas);
           return (
             <motion.div
               key={id}
@@ -96,7 +95,7 @@ export function StepRace({ onNext }) {
                 if (needsModal) {
                   updateChar({ modalRace: id });
                 } else {
-                  updateChar({ raca: id, racaEscolha: [], modalRace: null });
+                  updateChar({ raca: id, racaEscolha: [], modalRace: null, subraca: null });
                   if (!isSelected && onNext) onNext();
                 }
               }}
@@ -144,8 +143,9 @@ export function StepRace({ onNext }) {
         onConfirm={() => {
           const id = char.modalRace;
           const hasEscolhaRule = RACES[id]?.atributos?.escolha;
+          const needsSubraceRule = isDND && RACES[id]?.subracas && !char.subraca;
           updateChar({ raca: id, modalRace: null, racaEscolha: [] });
-          if (!hasEscolhaRule && onNext) onNext();
+          if (!hasEscolhaRule && !needsSubraceRule && onNext) onNext();
         }}
         isSelected={char.raca === char.modalRace}
       />

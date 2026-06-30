@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import CLASSES from '../../../data/t20/classes';
-import RACES from '../../../data/t20/races';
+import { getSystem } from '../../../systems/registry';
 import { ORIGENS } from '../../../data/t20/origins';
 import { divindades as DEUSES } from '../../../data/t20/gods';
 import { ITENS } from '../../../data/t20/items';
@@ -22,7 +21,8 @@ const RACE_ICONS = {
   goblin: '👺', lefou: '💀', qareen: '💎', minotauro: '🐂',
   hynne: '🎯', golem: '⚙️', osteon: '☠️', trog: '🦎',
   kliren: '🔬', medusa: '🐍', sereia: '🌊', silfide: '🦋', suraggel: '⚡',
-  moreau: '🦊',
+  moreau: '🦊', draconato: '🐉', meio_orc: '👹', tiefling: '😈',
+  meio_elfo: '🧝', gnomo: '🧝', halfling: '🎯'
 };
 
 const RACE_IMAGES = {
@@ -44,6 +44,12 @@ const RACE_IMAGES = {
   silfide: '/assets/images/races/silfide.webp',
   suraggel: '/assets/images/races/suraggel_aggelus.webp',
   moreau: '/assets/images/races/moreau.png',
+  draconato: '/assets/images/races/draconato.png',
+  meio_orc: '/assets/images/races/meio_orc.png',
+  tiefling: '/assets/images/races/tiefling.png',
+  meio_elfo: '/assets/images/races/meio_elfo.png',
+  gnomo: '/assets/images/races/gnomo.png',
+  halfling: '/assets/images/races/halfling.png',
 };
 
 const CLASS_ICONS = {
@@ -137,10 +143,14 @@ const ALLY_LEVEL_LABELS = { iniciante: 'Iniciante', veterano: 'Veterano', mestre
 
 export function StepReview({ stats, onSave, onPlay, onNavigate }) {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
-  const cls = CLASSES[char.classe] || {};
-  const race = RACES[char.raca] || {};
-  const orig = ORIGENS[char.origem] || {};
-  const deus = DEUSES[char.deus] || {};
+  const system = getSystem(char.system || 't20');
+  const CLASSES = system.classes;
+  const RACES = system.races;
+  const isDND = system.id === 'dnd5e';
+  const cls = CLASSES[char.classe?.toLowerCase()] || {};
+  const race = RACES[char.raca?.toLowerCase()] || {};
+  const orig = ORIGENS[char.origem?.toLowerCase()] || {};
+  const deus = DEUSES[char.deus?.toLowerCase()] || {};
 
   const specLabel = (() => {
     const c = char.choices || {};
@@ -299,9 +309,25 @@ export function StepReview({ stats, onSave, onPlay, onNavigate }) {
               {char.nome?.trim() || <span className="text-slate-600 text-2xl">Sem nome ainda...</span>}
             </h1>
             <p className="text-slate-400 font-bold mt-2 flex items-center justify-center md:justify-start gap-2 flex-wrap">
-              {char.raca && <span className="text-blue-300">{RACE_ICONS[char.raca]} {RACES[char.raca]?.nome || char.raca}</span>}
+              {char.raca && (() => {
+                const subraceData = isDND && char.subraca && race?.subracas?.find(s => s.id === char.subraca);
+                return (
+                  <span className="text-blue-300">
+                    {RACE_ICONS[char.raca] || '👤'} {race?.nome || char.raca}
+                    {subraceData ? ` (${subraceData.nome})` : ''}
+                  </span>
+                );
+              })()}
               {char.raca && char.classe && <span className="text-slate-600">·</span>}
-              {char.classe && <span className="text-amber-300">{CLASS_ICONS[char.classe]} {cls?.nome || char.classe}</span>}
+              {char.classe && (() => {
+                const subclassData = isDND && char.subclasse && cls?.subclasses?.find(s => s.id === char.subclasse);
+                return (
+                  <span className="text-amber-300">
+                    {CLASS_ICONS[char.classe] || '⚔️'} {cls?.nome || char.classe}
+                    {subclassData ? ` (${subclassData.nome})` : ''}
+                  </span>
+                );
+              })()}
               {char.level > 1 && <span className="px-2 py-0.5 rounded-full bg-purple-900/40 border border-purple-500/30 text-purple-300 text-xs">Nível {char.level}</span>}
             </p>
 

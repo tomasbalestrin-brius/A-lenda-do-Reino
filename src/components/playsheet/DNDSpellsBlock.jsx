@@ -4,6 +4,23 @@ export function DNDSpellsBlock({ char, stats, doRoll }) {
   // Estado local simplificado para controlar Spell Slots apenas visualmente por sessão
   const [usedSlots, setUsedSlots] = useState({});
 
+  const DND_SPELLCASTING_ABILITY = {
+    clerigo: 'SAB',
+    druida: 'SAB',
+    patrulheiro: 'SAB',
+    mago: 'INT',
+    feiticeiro: 'CAR',
+    bruxo: 'CAR',
+    bardo: 'CAR',
+    paladino: 'CAR',
+    guerreiro: 'INT',
+    ladino: 'INT',
+  };
+
+  const clsName = char.classe?.toLowerCase();
+  const spellKey = DND_SPELLCASTING_ABILITY[clsName] || 'INT';
+  const spellMod = stats.mods[spellKey] || 0;
+
   const toggleSlot = (level, index) => {
     const key = `${level}-${index}`;
     setUsedSlots(prev => ({ ...prev, [key]: !prev[key] }));
@@ -34,17 +51,17 @@ export function DNDSpellsBlock({ char, stats, doRoll }) {
       {/* Spellcasting Ability Bar */}
       <div className="flex items-center justify-between bg-blue-900/20 border border-blue-500/20 rounded-3xl p-4 md:p-6">
         <div className="flex flex-col items-center">
-          <span className="text-2xl font-black text-blue-400">INT</span>
+          <span className="text-2xl font-black text-blue-400">{spellKey}</span>
           <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center">Habilidade<br/>Chave</span>
         </div>
         <div className="w-px h-10 bg-white/10" />
         <div className="flex flex-col items-center">
-          <span className="text-2xl font-black text-white">{8 + stats.profBonus + (stats.mods['INT'] || 0)}</span>
+          <span className="text-2xl font-black text-white">{8 + stats.profBonus + spellMod}</span>
           <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center">CD de<br/>Resistência</span>
         </div>
         <div className="w-px h-10 bg-white/10" />
         <div className="flex flex-col items-center">
-          <span className="text-2xl font-black text-white">+{stats.profBonus + (stats.mods['INT'] || 0)}</span>
+          <span className="text-2xl font-black text-white">+{stats.profBonus + spellMod}</span>
           <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 text-center">Bônus de<br/>Ataque</span>
         </div>
       </div>
@@ -92,7 +109,7 @@ export function DNDSpellsBlock({ char, stats, doRoll }) {
               <div key={idx} className="flex items-center justify-between p-4 bg-gray-950 border border-white/5 rounded-2xl">
                 <span className="font-bold text-slate-300">{spellId.replace(/_/g, ' ')}</span>
                 <button 
-                  onClick={() => doRoll(20, stats.profBonus + (stats.mods['INT'] || 0), `Ataque Mágico: ${spellId}`)}
+                  onClick={() => doRoll(20, stats.profBonus + spellMod, `Ataque Mágico: ${spellId}`)}
                   className="px-3 py-1.5 rounded-lg bg-blue-900/30 text-blue-400 text-[10px] font-black uppercase tracking-widest hover:bg-blue-900/50"
                 >
                   Conjurar

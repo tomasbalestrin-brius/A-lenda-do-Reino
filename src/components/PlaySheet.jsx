@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { computeStats, getAllTrainedSkills } from '../utils/rules/characterStats';
 import { ITENS } from '../data/t20/items';
-import CLASSES from '../data/t20/classes';
 import { RACES } from '../data/t20/races';
+import { getSystem } from '../systems/registry';
 import { CONDICOES_DATA } from '../data/t20/conditionsAndBuffs';
 import SPELLS_DATA from '../data/t20/spellsData';
 import { roll } from '../utils/dice';
@@ -228,8 +228,9 @@ export function PlaySheet({ char, updateChar, onBack, onVtt }) {
   const pmPercent = maxPM > 0 ? Math.max(0, Math.min(100, (currentPM / maxPM) * 100)) : 0;
   const pvColor = pvPercent > 50 ? 'bg-emerald-500' : pvPercent > 25 ? 'bg-yellow-500' : 'bg-red-500';
 
-  const race = RACES[char.raca?.toLowerCase()] || {};
-  const cls = CLASSES[char.classe?.toLowerCase()] || {};
+  const system = getSystem(char.system || 't20');
+  const race = system.races[char.raca?.toLowerCase()] || {};
+  const cls = system.classes[char.classe?.toLowerCase()] || {};
 
   const { combatState, isConnected: isVttConnected, updateCombatState } = useVttStore();
   
@@ -393,7 +394,7 @@ export function PlaySheet({ char, updateChar, onBack, onVtt }) {
     );
   }
 
-  const isDND = char.system === 'dnd5e';
+  const isDND = system.id === 'dnd5e';
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-300 font-sans">

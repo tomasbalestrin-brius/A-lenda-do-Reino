@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeStats } from './characterStats';
+import { computeStats } from '../../systems/t20/computeStats';
+import { canGoNext, shouldSkipStep } from '../../systems/t20/navigation';
 import { ITENS } from '../../data/t20/items';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

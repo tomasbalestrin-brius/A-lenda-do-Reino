@@ -3,14 +3,7 @@ import { useCharacterStore } from '../store/useCharacterStore';
 import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
 import { computeStats } from '../utils/rules/characterStats';
 
-export const STEP_LABELS = [
-  "Raça", "Herança", "Classe", "Identidade", "Esp. de Classe", 
-  "Origem", "Benefícios", "Divindade", "Nível", "Magias", 
-  "Atributos", "Perícias (Classe)", "Perícias (Int)", "Equipamento", 
-  "Poderes", "Progressão", "Aliados", "Revisão"
-];
-
-export const MAX_STEPS = STEP_LABELS.length;
+import { getSystem } from '../systems/registry';
 
 export function useCreationNavigation(initialView = 'library') {
   const [view, setView] = useState(initialView);
@@ -31,10 +24,12 @@ export function useCreationNavigation(initialView = 'library') {
   const handleNext = useCallback(() => {
     const { char } = useCharacterStore.getState();
     const stats = computeStats(char);
+    const system = getSystem(char.system || 't20');
+    const maxSteps = system.steps.length;
     
-    if (step < MAX_STEPS - 1 && canGoNext(step, char, stats).ok) {
+    if (step < maxSteps - 1 && canGoNext(step, char, stats).ok) {
       let nextStep = step + 1;
-      while (nextStep < MAX_STEPS - 1 && shouldSkipStep(nextStep, char, stats)) {
+      while (nextStep < maxSteps - 1 && shouldSkipStep(nextStep, char, stats)) {
         nextStep++;
       }
       setStep(nextStep);
