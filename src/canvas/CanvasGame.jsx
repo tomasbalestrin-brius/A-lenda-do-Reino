@@ -7,6 +7,8 @@ import { MAPS } from "../data/maps";
 import { isWalkable } from "../core/tilemap";
 import { Character } from "../core/character";
 import ParticleSystem from "../core/particleSystem";
+import { useCharacterStore } from "../store/useCharacterStore";
+import { computeStats } from "../utils/rules/characterStats";
 
 export default function CanvasGame({ onExit }) {
   const canvasRef = useRef(null);
@@ -18,6 +20,8 @@ export default function CanvasGame({ onExit }) {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [showBanner, setShowBanner] = useState(true);
   const [activeDialogue, setActiveDialogue] = useState(null);
+  const [followMode, setFollowMode] = useState(true);
+  const [isGameOver, setIsGameOver] = useState(false);
   
   // React state to sync with active hero details for HUD rendering
   const [hudState, setHudState] = useState({
@@ -74,7 +78,8 @@ export default function CanvasGame({ onExit }) {
       timer: 0,
       intensity: 0
     },
-    ambientParticleTimer: 0
+    ambientParticleTimer: 0,
+    followMode: true
   });
 
   const TILE_SIZE = 32;
@@ -85,22 +90,44 @@ export default function CanvasGame({ onExit }) {
   const initializeEntities = () => {
     const state = stateRef.current;
 
+    // Load custom character if available from store
+    const activeChar = useCharacterStore.getState().char;
+    let leaderName = "Erik (Guerreiro)";
+    let leaderMaxHp = 80;
+    let leaderSprite = "hero_guerreiro";
+
+    if (activeChar && activeChar.nome) {
+      const activeCharStats = computeStats(activeChar);
+      const clsName = activeChar.classe ? activeChar.classe.charAt(0).toUpperCase() + activeChar.classe.slice(1) : "Aventureiro";
+      leaderName = `${activeChar.nome} (${clsName})`;
+      leaderMaxHp = activeCharStats.pv || 80;
+      
+      const cls = (activeChar.classe || "").toLowerCase();
+      if (cls.includes("mago") || cls.includes("bruxo") || cls.includes("cler") || cls.includes("druid") || cls.includes("bard") || cls.includes("arcanista")) {
+        leaderSprite = "hero_mago";
+      } else if (cls.includes("barb") || cls.includes("luta")) {
+        leaderSprite = "hero_barbaro";
+      } else {
+        leaderSprite = "hero_guerreiro";
+      }
+    }
+
     // 1. Setup 3 Heroes (Lost Vikings Style)
-    const erik = new Character("erik", "Erik (Guerreiro)", "player", "hero_guerreiro", 4, 4, {
-      maxHp: 80,
-      speed: 0.0055, // Swift warrior
+    const erik = new Character("erik", leaderName, "player", leaderSprite, 4, 4, {
+      maxHp: leaderMaxHp,
+      speed: 0.005, // Unified walk speed for perfect follow alignment
       drawOptions: { scale: 0.08, width: 320, height: 400, anchorX: 0.5, anchorY: 1.0 }
     });
 
     const olaf = new Character("olaf", "Olaf (Bárbaro)", "player", "hero_barbaro", 3, 5, {
       maxHp: 120,
-      speed: 0.0035, // Slow, high HP barbarian
+      speed: 0.005, // Unified walk speed
       drawOptions: { scale: 0.08, width: 320, height: 400, anchorX: 0.5, anchorY: 1.0 }
     });
 
     const baleog = new Character("baleog", "Baleog (Mago)", "player", "hero_mago", 5, 5, {
       maxHp: 70,
-      speed: 0.0045, // Mage
+      speed: 0.005, // Unified walk speed
       drawOptions: { scale: 0.08, width: 320, height: 400, anchorX: 0.5, anchorY: 1.0 }
     });
 
@@ -241,6 +268,11 @@ export default function CanvasGame({ onExit }) {
       if (e.key === "2") switchHero(1);
       if (e.key === "3") switchHero(2);
 
+      // Toggle follow mode: key F
+      if (e.key === "f" || e.key === "F") {
+        toggleFollowMode();
+      }
+
       // Attack trigger: Space
       if (e.key === " " && !loading) {
         triggerActiveHeroAttack();
@@ -310,6 +342,136 @@ export default function CanvasGame({ onExit }) {
     syncHudState();
   };
 
+  const getMoveDirection = (fx, fy, tx, ty) => {
+    if (tx < fx) return "left";
+    if (tx > fx) return "right";
+    if (ty < fy) return "up";
+    if (ty > fy) return "down";
+    return null;
+  };
+
+  const moveParty = (leader, nextX, nextY, direction) => {
+    const state = stateRef.current;
+    const positions = state.heroes.map(h => ({ x: h.gridX, y: h.gridY }));
+    
+    leader.moveTo(nextX, nextY, direction);
+    
+    if (state.followMode) {
+      const leaderIdx = state.activeHeroIndex;
+      const followers = [];
+      for (let i = 1; i < state.heroes.length; i++) {
+        followers.push((leaderIdx + i) % state.heroes.length);
+      }
+      
+      const f1 = state.heroes[followers[0]];
+      const f2 = state.heroes[followers[1]];
+      
+      if (f1 && !f1.isDead) {
+        const targetX1 = positions[leaderIdx].x;
+        const targetY1 = positions[leaderIdx].y;
+        f1.speed = leader.speed;
+        const dir1 = getMoveDirection(f1.gridX, f1.gridY, targetX1, targetY1);
+        f1.moveTo(targetX1, targetY1, dir1 || direction);
+        
+        if (f2 && !f2.isDead) {
+          const targetX2 = positions[followers[0]].x;
+          const targetY2 = positions[followers[0]].y;
+          f2.speed = leader.speed;
+          const dir2 = getMoveDirection(f2.gridX, f2.gridY, targetX2, targetY2);
+          f2.moveTo(targetX2, targetY2, dir2 || dir1 || direction);
+        }
+      }
+    }
+  };
+
+  const toggleFollowMode = () => {
+    const state = stateRef.current;
+    const nextMode = !state.followMode;
+    state.followMode = nextMode;
+    setFollowMode(nextMode);
+    
+    const activeHero = state.heroes[state.activeHeroIndex];
+    if (activeHero) {
+      const px = activeHero.gridX * TILE_SIZE + TILE_SIZE / 2;
+      const py = activeHero.gridY * TILE_SIZE + TILE_SIZE / 2;
+      state.particles.spawn(px, py, 15, {
+        vxMin: -0.1,
+        vxMax: 0.1,
+        vyMin: -0.1,
+        vyMax: 0.1,
+        colors: nextMode ? ["#2ecc71", "#a3e635", "#ffffff"] : ["#ef4444", "#fca5a5", "#ffffff"],
+        sizeMin: 2,
+        sizeMax: 4,
+        lifeMin: 150,
+        lifeMax: 350,
+        gravity: 0.0,
+        drag: 0.95
+      });
+    }
+  };
+
+  const restartGame = () => {
+    const state = stateRef.current;
+    
+    // Revive all heroes and restore full HP
+    state.heroes.forEach(h => {
+      h.hp = h.maxHp;
+      h.isDead = false;
+      h.state = "idle";
+      h.animController.play("idle", { loop: true });
+    });
+    
+    // Teleport them back to the start of the current map (or village)
+    const map = MAPS[state.currentMapId] || MAPS["village"];
+    const startX = 4;
+    const startY = 4;
+    
+    state.heroes.forEach(h => {
+      h.gridX = startX;
+      h.gridY = startY;
+      h.targetGridX = startX;
+      h.targetGridY = startY;
+      h.drawX = startX * TILE_SIZE;
+      h.drawY = startY * TILE_SIZE;
+      h.moving = false;
+    });
+
+    // Reset loop time, fade and state
+    state.fade.alpha = 0;
+    state.fade.target = 0;
+    
+    setIsGameOver(false);
+    syncHudState();
+  };
+
+  const handleVirtualMoveStart = (dir) => {
+    const state = stateRef.current;
+    if (dir === "up") state.keys["ArrowUp"] = true;
+    if (dir === "down") state.keys["ArrowDown"] = true;
+    if (dir === "left") state.keys["ArrowLeft"] = true;
+    if (dir === "right") state.keys["ArrowRight"] = true;
+  };
+
+  const handleVirtualMoveEnd = () => {
+    const state = stateRef.current;
+    state.keys["ArrowUp"] = false;
+    state.keys["ArrowDown"] = false;
+    state.keys["ArrowLeft"] = false;
+    state.keys["ArrowRight"] = false;
+  };
+
+  const handleVirtualSwitchHero = () => {
+    const state = stateRef.current;
+    let nextIdx = (state.activeHeroIndex + 1) % state.heroes.length;
+    for (let i = 0; i < state.heroes.length; i++) {
+      if (!state.heroes[nextIdx].isDead) {
+        switchHero(nextIdx);
+        break;
+      }
+      nextIdx = (nextIdx + 1) % state.heroes.length;
+    }
+  };
+
   // Trigger Combat Attack
   const triggerActiveHeroAttack = () => {
     const state = stateRef.current;
@@ -318,6 +480,28 @@ export default function CanvasGame({ onExit }) {
 
     // Play attack anim
     activeHero.attack();
+
+    // Spawn swing slash particles in front of hero
+    let sx = activeHero.drawX + TILE_SIZE / 2;
+    let sy = activeHero.drawY + TILE_SIZE / 2;
+    if (activeHero.direction === "up") sy -= TILE_SIZE / 2;
+    else if (activeHero.direction === "down") sy += TILE_SIZE / 2;
+    else if (activeHero.direction === "left") sx -= TILE_SIZE / 2;
+    else if (activeHero.direction === "right") sx += TILE_SIZE / 2;
+
+    state.particles.spawn(sx, sy, 8, {
+      vxMin: -0.08,
+      vxMax: 0.08,
+      vyMin: -0.08,
+      vyMax: 0.08,
+      colors: ["#ffffff", "#e2e8f0", "#94a3b8"],
+      sizeMin: 1.5,
+      sizeMax: 3.5,
+      lifeMin: 100,
+      lifeMax: 200,
+      gravity: 0.0,
+      drag: 0.95
+    });
 
     // Determine target grid coordinate in front of character
     let tx = activeHero.gridX;
@@ -340,24 +524,24 @@ export default function CanvasGame({ onExit }) {
       targetEnemy.takeDamage(25);
 
       // Trigger screen shake
-      state.shake.timer = 200;
-      state.shake.intensity = 5;
+      state.shake.timer = 250;
+      state.shake.intensity = 6;
 
       // Spawn hit particles (gold/white sparks)
       const px = targetEnemy.gridX * TILE_SIZE + TILE_SIZE / 2;
       const py = targetEnemy.gridY * TILE_SIZE + TILE_SIZE / 2;
-      state.particles.spawn(px, py, 15, {
-        vxMin: -0.15,
-        vxMax: 0.15,
-        vyMin: -0.15,
-        vyMax: 0.15,
-        colors: ["#ffe680", "#d4af37", "#ffffff"],
-        sizeMin: 2,
-        sizeMax: 5,
-        lifeMin: 200,
-        lifeMax: 400,
+      state.particles.spawn(px, py, 20, {
+        vxMin: -0.2,
+        vxMax: 0.2,
+        vyMin: -0.2,
+        vyMax: 0.2,
+        colors: ["#ffd700", "#ffaa00", "#ffffff"],
+        sizeMin: 3,
+        sizeMax: 6,
+        lifeMin: 250,
+        lifeMax: 500,
         gravity: 0.0003,
-        drag: 0.99
+        drag: 0.97
       });
     }
   };
@@ -367,6 +551,15 @@ export default function CanvasGame({ onExit }) {
     const state = stateRef.current;
     const map = MAPS[state.currentMapId];
     if (!map) return;
+
+    // Check if all heroes are dead to trigger game over
+    const allDead = state.heroes.length > 0 && state.heroes.every(h => h.isDead);
+    if (allDead) {
+      if (!isGameOver) setIsGameOver(true);
+      return;
+    }
+
+    if (isGameOver) return;
 
     // Proximity check for interactive signposts
     const activeHero = state.heroes[state.activeHeroIndex];
@@ -537,36 +730,37 @@ export default function CanvasGame({ onExit }) {
         }
       }
 
-      // Check collision impact with active hero (apply damage)
-      const activeHero = state.heroes[state.activeHeroIndex];
-      if (!e.isDead && !activeHero.isDead && e.gridX === activeHero.gridX && e.gridY === activeHero.gridY) {
-        // Apply damage only if active hero is not currently in invincibility/hurt frames
-        if (activeHero.hurtTimer === 0 && activeHero.state !== "hurt") {
-          activeHero.takeDamage(10);
-          syncHudState();
+      // Check collision impact with any hero (apply damage)
+      state.heroes.forEach(h => {
+        if (!e.isDead && !h.isDead && e.gridX === h.gridX && e.gridY === h.gridY) {
+          // Apply damage only if hero is not currently in invincibility/hurt frames
+          if (h.hurtTimer === 0 && h.state !== "hurt") {
+            h.takeDamage(10);
+            syncHudState();
 
-          // Trigger screen shake (stronger shake for player damage)
-          state.shake.timer = 300;
-          state.shake.intensity = 7;
+            // Trigger screen shake (stronger shake for player damage)
+            state.shake.timer = 300;
+            state.shake.intensity = 7;
 
-          // Spawn hurt particles (red/white sparks)
-          const px = activeHero.gridX * TILE_SIZE + TILE_SIZE / 2;
-          const py = activeHero.gridY * TILE_SIZE + TILE_SIZE / 2;
-          state.particles.spawn(px, py, 20, {
-            vxMin: -0.2,
-            vxMax: 0.2,
-            vyMin: -0.2,
-            vyMax: 0.2,
-            colors: ["#ef4444", "#fca5a5", "#ffffff"],
-            sizeMin: 3,
-            sizeMax: 6,
-            lifeMin: 300,
-            lifeMax: 500,
-            gravity: 0.0005,
-            drag: 0.98
-          });
+            // Spawn hurt particles (red/white sparks)
+            const px = h.gridX * TILE_SIZE + TILE_SIZE / 2;
+            const py = h.gridY * TILE_SIZE + TILE_SIZE / 2;
+            state.particles.spawn(px, py, 20, {
+              vxMin: -0.2,
+              vxMax: 0.2,
+              vyMin: -0.2,
+              vyMax: 0.2,
+              colors: ["#ef4444", "#fca5a5", "#ffffff"],
+              sizeMin: 3,
+              sizeMax: 6,
+              lifeMin: 300,
+              lifeMax: 500,
+              gravity: 0.0005,
+              drag: 0.98
+            });
+          }
         }
-      }
+      });
     });
 
     // Don't process input during transition
@@ -612,10 +806,10 @@ export default function CanvasGame({ onExit }) {
         }
 
         if (!isExit && isWalkable(map, nextX, nextY)) {
-          // Verify that we are not stepping on another hero's tile (Lost Vikings style: blocking path)
-          const blockedByHero = state.heroes.some(h => h.id !== activeHero.id && !h.isDead && h.gridX === nextX && h.gridY === nextY);
+          // Verify that we are not stepping on another hero's tile (only in Split Mode)
+          const blockedByHero = !state.followMode && state.heroes.some(h => h.id !== activeHero.id && !h.isDead && h.gridX === nextX && h.gridY === nextY);
           if (!blockedByHero) {
-            activeHero.moveTo(nextX, nextY, activeHero.direction);
+            moveParty(activeHero, nextX, nextY, activeHero.direction);
           }
         }
       }
@@ -869,7 +1063,9 @@ export default function CanvasGame({ onExit }) {
     // Right aligned map details
     const map = MAPS[state.currentMapId];
     ctx.textAlign = "right";
-    const statusText = `🗺️ LOCAL: ${map ? map.name.toUpperCase() : "ARTON"}  |  💰 OURO: 450 PO`;
+    const activeChar = useCharacterStore.getState().char;
+    const gold = activeChar && activeChar.dinheiro !== undefined ? activeChar.dinheiro : 450;
+    const statusText = `🗺️ LOCAL: ${map ? map.name.toUpperCase() : "ARTON"}  |  💰 OURO: ${gold} PO`;
     ctx.fillStyle = "#000";
     ctx.fillText(statusText, CANVAS_WIDTH - 25, 27); // shadow
     ctx.fillStyle = "#ffe680"; // Gold color for status
@@ -932,6 +1128,17 @@ export default function CanvasGame({ onExit }) {
             <h3 className="hidden lg:block pixel-font text-[9px] text-amber-500 uppercase tracking-wider mb-2 border-b-2 border-black pb-2 pixel-shadow-sm">
               ⚔️ Equipe (Heróis)
             </h3>
+            
+            <button
+              onClick={toggleFollowMode}
+              className={`w-full py-2 mb-2 text-center pixel-font text-[7px] uppercase tracking-wide transition-all ${
+                followMode 
+                  ? "pixel-btn-gold border-amber-400 bg-amber-600/30" 
+                  : "pixel-border-stone bg-stone-800 text-stone-400"
+              }`}
+            >
+              {followMode ? "👥 Seguir: ON (F)" : "🚶 Seguir: OFF (F)"}
+            </button>
             {hudState.heroesNames.map((name, idx) => {
               const active = hudState.activeHeroIndex === idx;
               const hp = hudState.heroesHp[idx];
@@ -1082,13 +1289,120 @@ export default function CanvasGame({ onExit }) {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Game Over Overlay */}
+              {isGameOver && (
+                <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-50 p-6 text-center">
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="pixel-border-stone bg-stone-950 p-8 shadow-2xl relative max-w-md w-full"
+                  >
+                    <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-red-600 animate-pulse" />
+                    <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-red-600 animate-pulse" />
+                    <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-red-600 animate-pulse" />
+                    <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-red-600 animate-pulse" />
+
+                    <h2 className="pixel-font text-red-600 text-lg md:text-2xl uppercase tracking-widest pixel-shadow-sm mb-4 animate-pulse">
+                      ☠️ FIM DE JOGO ☠️
+                    </h2>
+                    <p className="pixel-font text-[8px] text-slate-400 leading-relaxed mb-8 uppercase">
+                      Sua equipe sucumbiu aos perigos de Arton. O destino do reino foi selado em trevas...
+                    </p>
+                    
+                    <button
+                      onClick={restartGame}
+                      className="pixel-btn-red px-6 py-3 w-full pixel-font text-[10px] uppercase font-black"
+                    >
+                      Tentar Novamente 🛡️
+                    </button>
+                  </motion.div>
+                </div>
+              )}
+
+              {/* Virtual Controls Overlay (Touch/Click) */}
+              <div className="absolute bottom-4 left-4 z-40 flex flex-col items-center gap-1 opacity-70 hover:opacity-100 transition-opacity md:opacity-50 select-none">
+                <button
+                  onTouchStart={() => handleVirtualMoveStart("up")}
+                  onTouchEnd={handleVirtualMoveEnd}
+                  onMouseDown={() => handleVirtualMoveStart("up")}
+                  onMouseUp={handleVirtualMoveEnd}
+                  onMouseLeave={handleVirtualMoveEnd}
+                  className="w-10 h-10 pixel-border-stone bg-stone-800 hover:bg-stone-700 active:scale-95 text-white flex items-center justify-center font-bold text-sm"
+                >
+                  ▲
+                </button>
+                <div className="flex gap-8">
+                  <button
+                    onTouchStart={() => handleVirtualMoveStart("left")}
+                    onTouchEnd={handleVirtualMoveEnd}
+                    onMouseDown={() => handleVirtualMoveStart("left")}
+                    onMouseUp={handleVirtualMoveEnd}
+                    onMouseLeave={handleVirtualMoveEnd}
+                    className="w-10 h-10 pixel-border-stone bg-stone-800 hover:bg-stone-700 active:scale-95 text-white flex items-center justify-center font-bold text-sm"
+                  >
+                    ◀
+                  </button>
+                  <button
+                    onTouchStart={() => handleVirtualMoveStart("right")}
+                    onTouchEnd={handleVirtualMoveEnd}
+                    onMouseDown={() => handleVirtualMoveStart("right")}
+                    onMouseUp={handleVirtualMoveEnd}
+                    onMouseLeave={handleVirtualMoveEnd}
+                    className="w-10 h-10 pixel-border-stone bg-stone-800 hover:bg-stone-700 active:scale-95 text-white flex items-center justify-center font-bold text-sm"
+                  >
+                    ▶
+                  </button>
+                </div>
+                <button
+                  onTouchStart={() => handleVirtualMoveStart("down")}
+                  onTouchEnd={handleVirtualMoveEnd}
+                  onMouseDown={() => handleVirtualMoveStart("down")}
+                  onMouseUp={handleVirtualMoveEnd}
+                  onMouseLeave={handleVirtualMoveEnd}
+                  className="w-10 h-10 pixel-border-stone bg-stone-800 hover:bg-stone-700 active:scale-95 text-white flex items-center justify-center font-bold text-sm"
+                >
+                  ▼
+                </button>
+              </div>
+
+              <div className="absolute bottom-4 right-4 z-40 flex items-end gap-3 opacity-70 hover:opacity-100 transition-opacity md:opacity-50 select-none">
+                <button
+                  onClick={handleVirtualSwitchHero}
+                  className="w-12 h-12 rounded-full pixel-border-gold bg-[#3e2723] hover:bg-[#5d4037] active:scale-95 text-[#fff8dc] flex flex-col items-center justify-center font-bold text-[8px]"
+                  title="Alternar Herói"
+                >
+                  🔄
+                  <span className="text-[6px] mt-0.5 font-black uppercase">Herói</span>
+                </button>
+                
+                <button
+                  onClick={toggleFollowMode}
+                  className={`w-12 h-12 rounded-full pixel-border-gold flex flex-col items-center justify-center font-bold text-[8px] active:scale-95 ${
+                    followMode ? "bg-emerald-800 text-emerald-200 border-emerald-400" : "bg-stone-800 text-stone-400 border-stone-600"
+                  }`}
+                  title="Alternar Seguir"
+                >
+                  👥
+                  <span className="text-[6px] mt-0.5 font-black uppercase">Grupo</span>
+                </button>
+
+                <button
+                  onClick={triggerActiveHeroAttack}
+                  className="w-16 h-16 rounded-full pixel-border-stone bg-rose-700 hover:bg-rose-600 active:scale-90 text-white flex flex-col items-center justify-center font-black text-xs shadow-2xl"
+                  title="Atacar"
+                >
+                  ⚔️
+                  <span className="text-[7px] font-bold uppercase tracking-wider mt-1">ATACAR</span>
+                </button>
+              </div>
             </>
           )}
         </div>
       </div>
 
       <div className="mt-6 pixel-font text-[8px] text-slate-500 tracking-wider max-w-3xl text-center leading-relaxed relative z-10 px-4">
-        TROQUE DE HERÓI LIVREMENTE NO PAINEL ESQUERDO OU TECLAS [1, 2, 3]. SEUS COMPANHEIROS BLOQUEIAM O SEU CAMINHO, EXIGINDO COOPERAÇÃO PARA ATRAVESSAR OBSTÁCULOS!
+        TROQUE DE HERÓI LIVREMENTE NO PAINEL ESQUERDO OU TECLAS [1, 2, 3]. TECLA [F] ALTERNA O MODO SEGUIR. COOPERE E COMBATA OS MONSTROS DE ARTON!
       </div>
     </div>
   );
