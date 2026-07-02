@@ -50,7 +50,10 @@ export const VIKING_LEVELS = {
     interactiveObjects: [
        { id: "elev1", type: "ELEVATOR", x: 11, y: 10, width: 4, height: 1, targetYGrid: 7 }
     ],
-    enemies: []
+    enemies: [],
+    items: [
+       { id: "item_food1", itemType: "food", x: 9, y: 7 }
+    ]
   },
   
   level2: {
@@ -109,9 +112,12 @@ export const VIKING_LEVELS = {
     ],
     enemies: [
        { id: "e1", type: "goblin", startX: 25, startY: 8 } // Inimigo patrulha antes da saída
+    ],
+    items: [
+       { id: "item_food2", itemType: "food", x: 8, y: 8 }
     ]
   },
-  
+
   level3: {
     id: "level3",
     name: "Nível 3: Escudo e Aço",

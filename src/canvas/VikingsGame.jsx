@@ -11,9 +11,38 @@ import { AudioManager } from "../core/audioManager";
 import { DialogueManager } from "../core/dialogueManager";
 import { InteractiveObject } from "../core/interactiveObject";
 import { Enemy } from "../core/enemy";
-import { TRADE_ITEM_MAX_DIST } from "../core/physics";
+import { TRADE_ITEM_MAX_DIST, checkAABB } from "../core/physics";
 import { LevelGenerator } from "../pcg/LevelGenerator";
 import { generateProceduralLevel } from "../pcg/generateLevel";
+import { getBestLevel, reportLevelCompleted, getTitleForLevel } from "../core/progression";
+
+const ITEM_ICONS = { food: "🍎", steak: "🥩", key: "🗝️" };
+const TUTORIAL_SEEN_KEY = "viking_tutorial_seen";
+
+const TILE_PALETTES = {
+  ice: { base: "#7dd3fc", dark: "#0c4a6e", accent: "#e0f2fe" },
+  fire: { base: "#7c2d12", dark: "#1c0a03", accent: "#f97316" },
+  forest: { base: "#3f6212", dark: "#1a2e05", accent: "#65a30d" },
+  default: { base: "#334155", dark: "#0f172a", accent: "#475569" },
+};
+
+// Textura procedural leve por tema (sem depender de tileset de imagem): base + bordo + marca de acento
+// determinística por tile, para não ficar um bloco de cor totalmente uniforme.
+function drawGroundTile(ctx, x, y, tileSize, theme, r, c) {
+  const palette = TILE_PALETTES[theme] || TILE_PALETTES.default;
+  ctx.fillStyle = palette.base;
+  ctx.fillRect(x, y, tileSize, tileSize);
+  ctx.strokeStyle = palette.dark;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 0.5, y + 0.5, tileSize - 1, tileSize - 1);
+
+  ctx.fillStyle = palette.accent;
+  const seed = (r * 7 + c * 13) % 5;
+  if (seed === 0) ctx.fillRect(x + 4, y + 4, 6, 6);
+  else if (seed === 1) ctx.fillRect(x + 20, y + 18, 8, 4);
+  else if (seed === 2) ctx.fillRect(x + 10, y + 22, 10, 3);
+  else if (seed === 3) ctx.fillRect(x + 22, y + 6, 5, 5);
+}
 
 export default function VikingsGame({ mode = "normal", onExit }) {
   const canvasRef = useRef(null);
@@ -23,11 +52,20 @@ export default function VikingsGame({ mode = "normal", onExit }) {
   const [pcgLevelIndex, setPcgLevelIndex] = useState(1);
   const [isGameOver, setIsGameOver] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(() => !localStorage.getItem(TUTORIAL_SEEN_KEY));
+  const [progress, setProgress] = useState(() => ({ best: getBestLevel(), isNewRecord: false }));
   // Refs espelhando o state para o game loop ler valores atuais sem stale closure
   const isGameOverRef = useRef(false);
   const isVictoryRef = useRef(false);
+  const showTutorialRef = useRef(showTutorial);
   useEffect(() => { isGameOverRef.current = isGameOver; }, [isGameOver]);
   useEffect(() => { isVictoryRef.current = isVictory; }, [isVictory]);
+  useEffect(() => { showTutorialRef.current = showTutorial; }, [showTutorial]);
+
+  const dismissTutorial = () => {
+    localStorage.setItem(TUTORIAL_SEEN_KEY, "1");
+    setShowTutorial(false);
+  };
 
   const [hudState, setHudState] = useState({
     activeIdx: 0,
@@ -56,6 +94,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
     hitStopTimer: 0,
     shake: { intensity: 0 },
     interactiveObjects: [],
+    items: [],
     levelTimer: 0,
     damageTaken: false,
   });
@@ -160,9 +199,12 @@ export default function VikingsGame({ mode = "normal", onExit }) {
           return io;
        }) : [];
        
-    state.enemies = levelData.enemies ? 
+    state.enemies = levelData.enemies ?
        levelData.enemies.map(e => new Enemy(e.id, e.type, e.startX, e.startY)) : [];
-       
+
+    state.items = levelData.items ?
+       levelData.items.map(it => ({ ...it, collected: false })) : [];
+
     state.levelTimer = 0;
     state.damageTaken = false;
     
@@ -245,6 +287,9 @@ export default function VikingsGame({ mode = "normal", onExit }) {
           });
        } else if (acao.action === "WIN_LEVEL") {
           state.audio.playSFX("win");
+          if (mode === "pcg") {
+             setProgress(reportLevelCompleted(levelIndex));
+          }
           setIsVictory(true);
        }
     };
@@ -267,6 +312,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      if (showTutorial) return;
       const state = stateRef.current;
       state.keys[e.key] = true;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
@@ -349,7 +395,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isGameOver, isVictory, currentLevelId]);
+  }, [isGameOver, isVictory, currentLevelId, showTutorial]);
 
   const switchHero = (idx) => {
     const state = stateRef.current;
@@ -390,7 +436,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
   }, [loading]);
 
   const update = (dt) => {
-    if (isGameOverRef.current || isVictoryRef.current) return;
+    if (isGameOverRef.current || isVictoryRef.current || showTutorialRef.current) return;
     const state = stateRef.current;
     
     if (state.hitStopTimer > 0) {
@@ -440,6 +486,21 @@ export default function VikingsGame({ mode = "normal", onExit }) {
        }
     });
     state.enemies.forEach(e => e.update(dt, state.map, state.heroes));
+
+    state.items.forEach(item => {
+       if (item.collected) return;
+       const itemBox = { x: item.x * 32, y: item.y * 32, w: 32, h: 32 };
+       for (const h of state.heroes) {
+          if (h.isDead) continue;
+          const hBox = { x: h.x + h.hitbox.offsetX, y: h.y + h.hitbox.offsetY, w: h.hitbox.w, h: h.hitbox.h };
+          if (checkAABB(itemBox, hBox) && h.collectItem(item.itemType)) {
+             item.collected = true;
+             state.audio.playSFX("collect");
+             syncHud();
+             break;
+          }
+       }
+    });
 
     state.heroes.forEach(h => {
        if (h !== activeHero) h.intentX = 0;
@@ -519,12 +580,9 @@ export default function VikingsGame({ mode = "normal", onExit }) {
         const y = r * TILE_SIZE;
         
         const vis = state.map.layers.visuals[r][c];
-        if (vis === 1) { 
-           ctx.fillStyle = "#334155";
-           ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
-           ctx.strokeStyle = "#0f172a";
-           ctx.strokeRect(x, y, TILE_SIZE, TILE_SIZE);
-        } else if (vis === 2) { 
+        if (vis === 1) {
+           drawGroundTile(ctx, x, y, TILE_SIZE, state.map.theme, r, c);
+        } else if (vis === 2) {
            if (state.map.layers.collision[r][c] === 1) {
               ctx.fillStyle = "#64748b"; 
               ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
@@ -563,6 +621,18 @@ export default function VikingsGame({ mode = "normal", onExit }) {
        }
     });
 
+    state.items.forEach(item => {
+       if (item.collected) return;
+       const cx = item.x * 32 + 16;
+       const cy = item.y * 32 + 16 + Math.sin(state.levelTimer * 0.006 + item.x) * 3;
+       ctx.save();
+       ctx.font = "20px sans-serif";
+       ctx.textAlign = "center";
+       ctx.textBaseline = "middle";
+       ctx.fillText(ITEM_ICONS[item.itemType] || "❔", cx, cy);
+       ctx.restore();
+    });
+
     state.interactiveObjects.forEach(obj => obj.draw(ctx, { x: 0, y: 0 }));
     state.enemies.forEach(e => e.draw(ctx, { x: 0, y: 0 }));
 
@@ -571,12 +641,26 @@ export default function VikingsGame({ mode = "normal", onExit }) {
        ctx.save();
 
        if (i === state.activeIdx) {
+          // Indicador de herói ativo: anel pulsante no chão + seta maior acima da cabeça
+          const pulse = 0.5 + 0.5 * Math.sin(state.levelTimer * 0.005);
+          ctx.save();
+          ctx.globalAlpha = 0.25 + pulse * 0.35;
           ctx.fillStyle = "#fbbf24";
           ctx.beginPath();
-          ctx.moveTo(Math.floor(h.x) + 16, Math.floor(h.y) - 10);
-          ctx.lineTo(Math.floor(h.x) + 12, Math.floor(h.y) - 16);
-          ctx.lineTo(Math.floor(h.x) + 20, Math.floor(h.y) - 16);
+          ctx.ellipse(Math.floor(h.x) + 16, Math.floor(h.y) + 30, 14, 5, 0, 0, Math.PI * 2);
           ctx.fill();
+          ctx.restore();
+
+          ctx.fillStyle = "#fbbf24";
+          ctx.strokeStyle = "#78350f";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(Math.floor(h.x) + 16, Math.floor(h.y) - 14);
+          ctx.lineTo(Math.floor(h.x) + 8, Math.floor(h.y) - 26);
+          ctx.lineTo(Math.floor(h.x) + 24, Math.floor(h.y) - 26);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
        }
 
        h.drawOptions.flipX = h.direction === "left";
@@ -661,7 +745,14 @@ export default function VikingsGame({ mode = "normal", onExit }) {
                     </button>
                 </div>
             )}
+            {mode === "pcg" && progress.best > 0 && (
+               <div className="text-right leading-tight">
+                  <span className="text-[10px] text-amber-400 font-bold block">Recorde: Nível {progress.best}</span>
+                  <span className="text-[9px] text-gray-400 block">{getTitleForLevel(progress.best)}</span>
+               </div>
+            )}
             <button onClick={() => setCurrentLevelId("pcg")} className="pixel-btn-gold px-5 py-2">Gerar Nível (PCG) 🎲</button>
+            <button onClick={() => setShowTutorial(true)} className="pixel-btn-gold px-3 py-2" title="Ver controles">❓</button>
             <button onClick={onExit} className="pixel-btn-red px-5 py-2">Sair 🚪</button>
         </div>
       </div>
@@ -678,9 +769,12 @@ export default function VikingsGame({ mode = "normal", onExit }) {
           <p className="text-[10px] text-gray-300">Teclas 1, 2, 3 para trocar.<br/>E para ação primária.<br/>Espaço para pulo/secundária.<br/>Tecla R para Reinício Rápido.</p>
           
           {hudState.names.map((name, idx) => (
-             <div key={idx} className={`p-2 border-2 ${idx === hudState.activeIdx ? 'border-amber-400 bg-stone-800' : 'border-stone-600 bg-stone-900'} cursor-pointer`} onClick={() => switchHero(idx)}>
-               <p className="pixel-font text-[8px] text-white mb-1">{name}</p>
-               
+             <div key={idx} className={`p-2 border-2 ${idx === hudState.activeIdx ? 'border-amber-400 bg-stone-800 ring-2 ring-amber-400/60' : 'border-stone-600 bg-stone-900'} cursor-pointer`} onClick={() => switchHero(idx)}>
+               <p className="pixel-font text-[8px] text-white mb-1 flex items-center gap-1">
+                 {idx === hudState.activeIdx && <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse" />}
+                 {name}
+               </p>
+
                {/* Vida (Corações) */}
                <div className="flex gap-1 mb-1">
                  {Array.from({ length: hudState.heroesMaxHp[idx] }).map((_, i) => (
@@ -696,7 +790,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
                     const item = hudState.inventories[idx] ? hudState.inventories[idx][i] : null;
                     return (
                         <div key={`inv-${i}`} className="w-6 h-6 border border-stone-500 bg-stone-800 flex items-center justify-center text-[10px]">
-                           {item === "food" ? "🍎" : item === "key" ? "🗝️" : ""}
+                           {ITEM_ICONS[item] || ""}
                         </div>
                     );
                  })}
@@ -707,7 +801,22 @@ export default function VikingsGame({ mode = "normal", onExit }) {
 
         <div className="relative border-4 border-stone-700 bg-black shadow-2xl">
           <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="w-full h-auto max-h-[80vh]" style={{ imageRendering: "pixelated" }} />
-          
+
+          {showTutorial && (
+             <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-50 p-6 text-center">
+               <h2 className="pixel-font text-amber-500 text-xl mb-4">Como Jogar</h2>
+               <ul className="text-gray-200 text-sm space-y-2 mb-6 text-left">
+                  <li><b className="text-amber-400">1 / 2 / 3</b> — trocar entre Erik, Olaf e Baleog</li>
+                  <li><b className="text-amber-400">Setas / A,D</b> — mover o viking ativo</li>
+                  <li><b className="text-amber-400">Espaço</b> — ação secundária (pulo do Erik, escudo do Olaf, corrida)</li>
+                  <li><b className="text-amber-400">E</b> — ação primária (embate do Erik, ataque à distância do Baleog)</li>
+                  <li><b className="text-amber-400">T</b> — trocar item com o viking mais próximo</li>
+                  <li><b className="text-amber-400">R</b> — reiniciar o nível rapidamente</li>
+               </ul>
+               <button onClick={dismissTutorial} className="pixel-btn-gold px-6 py-2">Começar 🛡️</button>
+             </div>
+          )}
+
           {isGameOver && (
              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center">
                <h2 className="pixel-font text-red-500 text-2xl">FALHOU</h2>
@@ -727,6 +836,9 @@ export default function VikingsGame({ mode = "normal", onExit }) {
                   <p className="text-gray-300 mb-1 text-sm">Tempo: {(stateRef.current?.levelTimer / 1000 || 0).toFixed(2)}s</p>
                   <p className="text-gray-300 mb-1 text-sm">Dano Sofrido: {stateRef.current?.damageTaken ? "Sim" : "Não"}</p>
                   {!stateRef.current?.damageTaken && <p className="text-yellow-400 font-bold text-md mt-2">🎖️ BÔNUS: No Damage Run!</p>}
+                  {mode === "pcg" && progress.isNewRecord && (
+                     <p className="text-amber-400 font-bold text-md mt-2">🏆 Novo Recorde! Título: {getTitleForLevel(progress.best)}</p>
+                  )}
                </div>
 
                <div className="flex gap-4">

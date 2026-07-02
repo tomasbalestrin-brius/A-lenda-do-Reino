@@ -92,7 +92,8 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
     const triggers = [];
     const interactiveObjects = [];
     const enemies = [];
-    
+    const items = [];
+
     // Spawn point (no Ponto Inicial gerado pelo SLE)
     const spawns = {
         erik: { x: 2, y: height - 2 },
@@ -148,6 +149,14 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
                     x: x, y: y
                 });
                 break;
+
+            case 'Chave_Vermelha':
+                items.push({
+                    id: `item_${x}_${y}`,
+                    itemType: "key",
+                    x: x, y: y
+                });
+                break;
         }
     });
 
@@ -165,6 +174,7 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
         spawns: spawns,
         triggers: triggers,
         interactiveObjects: interactiveObjects,
-        enemies: enemies
+        enemies: enemies,
+        items: items
     };
 }

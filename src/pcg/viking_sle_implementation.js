@@ -173,38 +173,50 @@ class SpatialLayoutEngine {
 
         // Percorre o grafo de dependências para posicionar os elementos
         // Esta é uma simplificação. Em um sistema real, seria mais complexo.
+        // traversedNodes evita reprocessar o mesmo nó (ex: dependências compartilhadas),
+        // mas é independente de nodePositions: o nó final já vem posicionado antes desta
+        // função rodar, e mesmo assim suas dependências precisam ser visitadas.
+        const traversedNodes = new Set();
         const processNode = (nodeId) => {
-            if (nodePositions[nodeId]) return; // Já processado
+            if (traversedNodes.has(nodeId)) return;
+            traversedNodes.add(nodeId);
 
             const node = dependencyGraph[nodeId];
-            const element = this.pel.getElementById(node.elementId);
-            if (!element) return;
+            if (!node) return;
 
-            // Tenta encontrar uma posição válida
-            let placed = false;
-            const elemWidth = element.physicalProperties.width || element.physicalProperties.minWidth || element.visualRepresentation.width;
-            const elemHeight = element.physicalProperties.height || element.physicalProperties.minHeight || element.visualRepresentation.height;
-            for (let attempts = 0; attempts < 50; attempts++) { // Limita tentativas
-                let tryX = currentX - Math.floor(Math.random() * 20) - elemWidth;
-                let tryY = currentY - Math.floor(Math.random() * 5) - elemHeight;
-                if (tryY < 2) tryY = 2; // Não colocar muito no topo
-                if (tryX < startX + startWidth + 5) tryX = startX + startWidth + 5; // Não colocar muito perto do início
+            if (!nodePositions[nodeId]) {
+                const element = this.pel.getElementById(node.elementId);
+                if (element) {
+                    // Tenta encontrar uma posição válida
+                    let placed = false;
+                    const elemWidth = element.physicalProperties.width || element.physicalProperties.minWidth || element.visualRepresentation.width;
+                    const elemHeight = element.physicalProperties.height || element.physicalProperties.minHeight || element.visualRepresentation.height;
+                    // Ancorado na linha de chão sólido garantida por _initializeTilemap (a única
+                    // certeza de solo antes de _ensurePath rodar) — sem isso, requiresGroundBelow
+                    // falha quase sempre, pois o resto do tilemap começa como ar.
+                    const floorY = this.levelHeight - 1 - elemHeight;
+                    for (let attempts = 0; attempts < 50; attempts++) { // Limita tentativas
+                        let tryX = currentX - Math.floor(Math.random() * 20) - elemWidth;
+                        let tryY = floorY;
+                        if (tryX < startX + startWidth + 5) tryX = startX + startWidth + 5; // Não colocar muito perto do início
 
-                if (this._isValidPlacement(element, tryX, tryY)) {
-                    this._placeElement(element, tryX, tryY);
-                    nodePositions[nodeId] = { x: tryX, y: tryY };
-                    placed = true;
-                    currentX = tryX; // Ajusta o ponto de referência para o próximo elemento
-                    currentY = tryY; // Ajusta o ponto de referência para o próximo elemento
-                    break;
+                        if (this._isValidPlacement(element, tryX, tryY)) {
+                            this._placeElement(element, tryX, tryY);
+                            nodePositions[nodeId] = { x: tryX, y: tryY };
+                            placed = true;
+                            currentX = tryX; // Ajusta o ponto de referência para o próximo elemento
+                            currentY = tryY; // Ajusta o ponto de referência para o próximo elemento
+                            break;
+                        }
+                    }
+                    if (!placed) {
+                        console.warn(`Não foi possível encontrar um local para o elemento ${element.id}`);
+                        // Em um sistema real, isso poderia levar a descartar o layout
+                    }
                 }
             }
-            if (!placed) {
-                console.warn(`Não foi possível encontrar um local para o elemento ${element.id}`);
-                // Em um sistema real, isso poderia levar a descartar o layout
-            }
 
-            // Processa as dependências deste nó
+            // Processa as dependências deste nó (sempre, mesmo que o nó já estivesse posicionado)
             for (const depId of node.dependencies) {
                 processNode(depId);
             }

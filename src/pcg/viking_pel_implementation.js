@@ -39,6 +39,14 @@ const EffectType = {
     OPEN_PATH: 'OPEN_PATH'
 };
 
+// Mapeia cada ConditionType para o EffectType que o satisfaz.
+// CHARACTER_PRESENT não entra aqui de propósito: é verificado em runtime pelo
+// TriggerSystem do jogo (vikings parados no EXIT), não é algo que um PuzzleElement produz.
+const CONDITION_TO_EFFECT_TYPE = {
+    [ConditionType.ELEMENT_STATE]: EffectType.CHANGE_ELEMENT_STATE,
+    [ConditionType.ITEM_COLLECTED]: EffectType.GRANT_ITEM,
+};
+
 /**
  * Classe base para um elemento de puzzle.
  * Define as propriedades lógicas e físicas de um componente de puzzle.
@@ -102,8 +110,8 @@ class PuzzleElementLibrary {
         this.addElement(new PuzzleElement(
             'Alvo_Magico_Distante',
             PuzzleElementType.SOLUCAO,
-            { tiles: [[3]], width: 1, height: 1 }, 
-            [],
+            { tiles: [[3]], width: 1, height: 1 },
+            [{ type: ConditionType.ELEMENT_STATE, targetId: 'Botao_Pressao_Chao', state: 'ATIVADO' }],
             [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Porta_Metalica_Fechada', newState: 'ABERTA' }],
             [VikingAbility.MAGO_FEITICO_ATAQUE],
             { minWidth: 1, minHeight: 1, requiresGroundBelow: false }
@@ -134,7 +142,7 @@ class PuzzleElementLibrary {
             'Botao_Pressao_Chao',
             PuzzleElementType.SOLUCAO,
             { tiles: [[20]], width: 1, height: 1 }, // Exemplo: Tile ID 20 para botão
-            [],
+            [{ type: ConditionType.ELEMENT_STATE, targetId: 'Alavanca_Puxar', state: 'PUXADA' }],
             [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Botao_Pressao_Chao', newState: 'ATIVADO' }],
             [VikingAbility.ERIK_PULO_ALTO, VikingAbility.MAGO_FEITICO_ATAQUE, VikingAbility.OLAF_ESCUDO_DEFESA], // Qualquer viking pode pisar
             { minWidth: 1, minHeight: 1, requiresGroundBelow: true }
@@ -144,7 +152,7 @@ class PuzzleElementLibrary {
             'Alavanca_Puxar',
             PuzzleElementType.SOLUCAO,
             { tiles: [[21]], width: 1, height: 2 }, // Exemplo: Tile ID 21 para alavanca
-            [],
+            [{ type: ConditionType.ITEM_COLLECTED, targetId: 'Chave_Vermelha', state: 'COLETADA' }],
             [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Alavanca_Puxar', newState: 'PUXADA' }],
             [VikingAbility.ERIK_PULO_ALTO, VikingAbility.MAGO_FEITICO_ATAQUE, VikingAbility.OLAF_ESCUDO_DEFESA], // Qualquer viking pode puxar
             { minWidth: 1, minHeight: 2, requiresGroundBelow: true }
@@ -208,7 +216,7 @@ class PuzzleElementLibrary {
             'Saida_Nivel',
             PuzzleElementType.SOLUCAO,
             { tiles: [[99]], width: 2, height: 3 }, // Exemplo: Tile ID 99 para saída
-            [{ type: ConditionType.CHARACTER_PRESENT, targetId: 'Saida_Nivel', state: 'TODOS_VIKINGS' }],
+            [{ type: ConditionType.ELEMENT_STATE, targetId: 'Porta_Metalica_Fechada', state: 'ABERTA' }],
             [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Nivel', newState: 'COMPLETO' }],
             [],
             { minWidth: 2, minHeight: 3, requiresGroundBelow: true }
@@ -227,12 +235,18 @@ class PuzzleElementLibrary {
         return Object.values(this.elements).filter(el => el.type === type);
     }
 
-    // Retorna elementos que satisfazem uma determinada pré-condição
+    // Retorna elementos que satisfazem uma determinada pré-condição.
+    // ConditionType e EffectType são enums paralelos com strings distintas
+    // (ex: ELEMENT_STATE vs CHANGE_ELEMENT_STATE) — o mapeamento abaixo traduz
+    // o tipo de condição para o tipo de efeito correspondente antes de comparar.
     getElementsSatisfyingPrecondition(condition) {
-        return Object.values(this.elements).filter(el => 
-            el.posConditions.some(effect => 
-                effect.type === condition.type && 
-                effect.targetId === condition.targetId && 
+        const expectedEffectType = CONDITION_TO_EFFECT_TYPE[condition.type];
+        if (!expectedEffectType) return []; // Ex: CHARACTER_PRESENT não tem efeito correspondente
+
+        return Object.values(this.elements).filter(el =>
+            el.posConditions.some(effect =>
+                effect.type === expectedEffectType &&
+                effect.targetId === condition.targetId &&
                 effect.newState === condition.state
             )
         );
