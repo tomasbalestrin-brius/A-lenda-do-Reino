@@ -31,3 +31,6 @@ yarn-error.log*
 # Electron
 release
 dist-electron
+
+# Instalador comercial de terceiros (não deve ser versionado/redistribuído)
+/lost-vikings-1-0-en-win/

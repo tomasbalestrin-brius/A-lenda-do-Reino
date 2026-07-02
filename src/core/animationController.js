@@ -45,6 +45,18 @@ class AnimationController {
   }
 
   /**
+   * Swaps the underlying spritesheet (e.g. pose-swap between separate idle/run/attack images).
+   * @param {string} sheetName - The sprite sheet name defined in spriteManager
+   */
+  setSheet(sheetName) {
+    if (this.sheetName !== sheetName) {
+      this.sheetName = sheetName;
+      this.currentFrameIndex = 0;
+      this.timer = 0;
+    }
+  }
+
+  /**
    * Pauses the animation.
    */
   pause() {
