@@ -2,6 +2,7 @@ import { GRAVITY_ENTITY, checkAABB } from "./physics";
 import spriteManager from "./spriteManager";
 
 const SLIME_FRAME_DURATION = 400; // ms por frame do ciclo de expressões do slime
+const SHOOTER_INTERVAL = 1800; // ms entre disparos do Inimigo_Atirador
 
 export class Enemy {
   constructor(id, type, startX, startY) {
@@ -21,6 +22,11 @@ export class Enemy {
     // Animação de spritesheet (slime.png tem 4 frames de expressão)
     this.animTimer = 0;
     this.animFrameIndex = 0;
+
+    // Inimigo_Atirador: dispara projéteis periodicamente (sinaliza via wantsToShoot,
+    // mesma convenção já usada pelas turrets em interactiveObject.js)
+    this.shootTimer = 0;
+    this.wantsToShoot = false;
   }
 
   update(dt, map, heroes) {
@@ -31,6 +37,14 @@ export class Enemy {
     if (this.animTimer >= SLIME_FRAME_DURATION) {
        this.animTimer -= SLIME_FRAME_DURATION;
        this.animFrameIndex = (this.animFrameIndex + 1) % 4;
+    }
+
+    if (this.type === "Inimigo_Atirador") {
+       this.shootTimer += dt;
+       if (this.shootTimer >= SHOOTER_INTERVAL) {
+          this.shootTimer = 0;
+          this.wantsToShoot = true;
+       }
     }
 
     // Gravity

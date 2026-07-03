@@ -173,14 +173,14 @@ export class PlatformCharacter extends Character {
           if (checkAABB(hBox, objBox)) {
              blockedX = true;
              
-             // Pushing logic
-             if (obj.type === 'PUSHABLE') {
+             // Pushing logic (BARBARO_EMPURRAR — só Olaf empurra)
+             if (obj.type === 'PUSHABLE' && this.vikingType === "olaf") {
                 if (this.vx > 0) obj.vx = 0.15; // Push right
                 if (this.vx < 0) obj.vx = -0.15; // Push left
                 blockedX = false; // Allow hero to move (they push it)
                 nextX = this.x + (this.vx * 0.5) * deltaTimeMs; // Slowed down while pushing
              }
-             
+
              // Destruction logic
              if (obj.type === 'DESTRUCTIBLE_HEADBUTT') {
                 if (this.estado === ESTADOS.EMBATE && this.vikingType === "erik") {
@@ -436,6 +436,31 @@ export class PlatformCharacter extends Character {
          for (const e of enemies) {
             if (!e.isDead && checkAABB(attackBox, {x: e.x, y: e.y, w: e.width, h: e.height})) {
                e.takeDamage(1, this.x);
+            }
+         }
+      }
+    }
+  }
+
+  // Olaf specific (BARBARO_MACHADO_QUEBRA)
+  axeBreak(interactiveObjects = []) {
+    if (this.vikingType === "olaf" && this.estado !== ESTADOS.EMBATE) {
+      this.vx = 0;
+      this.estado = ESTADOS.EMBATE;
+      this.attackTimer = 300;
+      this.animController.play("attack", { loop: false });
+
+      const attackBox = {
+         x: this.facing === "right" ? this.x + 16 : this.x - 32,
+         y: this.y, w: 32, h: 32
+      };
+
+      if (interactiveObjects) {
+         for (const obj of interactiveObjects) {
+            if (obj.type === 'DESTRUCTIBLE_AXE' && obj.active) {
+               if (checkAABB(attackBox, {x: obj.x, y: obj.y, w: obj.width, h: obj.height})) {
+                  obj.active = false;
+               }
             }
          }
       }

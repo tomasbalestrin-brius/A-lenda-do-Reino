@@ -41,11 +41,40 @@ Investigado e corrigido nesta rodada — eram três bugs empilhados, todos neces
 
 Resultado, confirmado via script de playtest (níveis 1–40, 3 temas): o grafo agora tem 5 nós reais (antes sempre 1), e a taxa de posicionamento bem-sucedido dos elementos foi de ~0% para quase 100% (`triggers=3, itens=1` na maioria dos níveis testados, vs. `triggers=1, itens=0` sempre antes). Todo o pipeline segue rápido (sub-4ms) e solucionável.
 
+## Terceira rodada (mesmo dia): expansão de conteúdo + motor visual
+
+### Motor visual (Parte A)
+
+- **Bug encontrado e corrigido**: `state.particles.emit(...)` era chamado em `VikingsGame.jsx`, mas `ParticleSystem` só expõe `spawn(x,y,count,options)` — a poeira do Olaf pousando forte lançava exceção silenciosa. Além disso, `state.particles.update(dt)`/`.draw(ctx,...)` nunca eram chamados no loop do VikingsGame (só existiam em `CanvasGame.jsx`) — o sistema de partículas nunca rodava de verdade. Corrigido.
+- **Culling de câmera**: o loop de tilemap agora só percorre os tiles dentro da viewport (+1 de margem pro shake) em vez do mapa inteiro (até 100×30) todo frame.
+- **Vinheta radial** em espaço de tela (separado da translação de câmera), mais suave que o padrão do CanvasGame (alpha final 0.55 vs 0.75 — câmera de ação precisa de cantos mais legíveis).
+- **Glow ambiente por tema** ao redor do herói ativo — deliberadamente aditivo (`globalCompositeOperation: "lighter"`), não a máscara "destination-out" tipo tocha do bioma cave do CanvasGame: os temas ice/fire/forest são exteriores/diurnos, escurecer a cena esconderia plataformas/inimigos num platformer de ação.
+- **Partículas ambientes por tema**: neve (ice), brasas subindo (fire), folhas flutuando (forest), spawn contínuo de baixo custo.
+- Verificado no navegador: sem erros de console durante a execução contínua do loop com todos os sistemas ativos; vinheta confirmada via amostragem de pixel (canto mais escuro que o centro).
+
+### Expansão de conteúdo PCG (Parte B)
+
+- **Achado maior, fora do escopo original**: o motivo real de `maxDepth` não mudar nada era mais profundo que "a PEL é rasa" — havia **3 bugs empilhados** impedindo qualquer conteúdo real de aparecer:
+  1. `getElementsSatisfyingPrecondition` comparava `ConditionType` com `EffectType` (enums com strings diferentes, nunca batiam) — corrigido com mapa `CONDITION_TO_EFFECT_TYPE` explícito.
+  2. Precondição de `Saida_Nivel` era de um tipo sem efeito correspondente (`CHARACTER_PRESENT`) — trocada para `ELEMENT_STATE`/`Porta_Metalica_Fechada`/`ABERTA`.
+  3. **Novo, encontrado nesta rodada**: `SpatialLayoutEngine.processNode` retornava cedo demais pro nó final (já posicionado antes da chamada), nunca percorrendo as dependências — corrigido separando "já posicionado" de "já percorrido".
+  4. **Novo, encontrado nesta rodada**: o `visualTilemap` era remapeado por bioma (`mapTileset`, ex. `1→11` no tema ice) mas o `render()` só reconhece os IDs genéricos (`vis===1/2/3/4/5`) — nenhum tile aparecia visualmente em nível PCG algum, em nenhum tema. Corrigido: `visualTilemap` agora mantém os IDs genéricos (o `render()` já colore por tema via `drawGroundTile`, o remapeamento nunca foi necessário para essa abordagem).
+  5. **Novo, encontrado nesta rodada**: `generateLevel.js` enviava `{x, y}` pros inimigos gerados, mas `VikingsGame.jsx` lê `{startX, startY}` — inimigos do PCG sempre nasciam em coordenadas `NaN`. Corrigido.
+- **PEL expandida**: 3 elementos novos (`Machado_Correntes`, `Estatua_Selo_Runico`, `Plataforma_Escudo_Olaf` — este último usa a habilidade órfã `OLAF_ESCUDO_PLATAFORMA`) + ~7 elementos existentes corrigidos/reforçados (typo `Botao_Chao`→`Botao_Pressao_Chao` no `Bloco_Pesado_Empurravel`, segunda pós-condição em `Botao_Alvo_Distante`, posConditions auto-referentes em `Inimigo_Patrulha`/`Inimigo_Atirador`/`Parede_Rachada_Machado`/`Barreira_Magica`, guarda exigido antes de `Chave_Vermelha`) + `Ponte_Retratil` removida (precondição órfã, sem propósito espacial até o SLE ter câmaras de verdade).
+- **DGG com escolha aleatória**: `validSolutions[Math.floor(Math.random()*n)]` no lugar de sempre `[0]` — confirmado gerando estruturas de grafo diferentes em rodadas consecutivas (de 1 a 5 nós, usando alternativas distintas).
+- **BARBARO_MACHADO_QUEBRA e BARBARO_EMPURRAR implementados de verdade**: `axeBreak()` em `platformCharacter.js` (tecla E pro Olaf, novo tipo `DESTRUCTIBLE_AXE`), e a física de `PUSHABLE` restrita a `vikingType==='olaf'` (antes qualquer viking empurrava).
+- **Inimigo_Atirador implementado**: novo comportamento real em `enemy.js` (timer de disparo, sinaliza `wantsToShoot` como as turrets já faziam), com o `ownerId` do projétil generalizado na colisão contra heróis.
+- **SLE com múltiplas câmaras — com uma ressalva de design importante**: o plano original previa variar a altura do piso entre câmaras. **Isso foi deliberadamente NÃO implementado**: só o Erik pula neste jogo (`platformCharacter.js:jump()` — "Only Erik can jump") e a colisão é AABB simples sem rampa/degrau, então qualquer câmara com piso mais alto prenderia Olaf/Baleog sem como subir — e o LSV não pegaria isso, pois não simula movimento físico real. Em vez disso, o nível foi dividido em 4 zonas de colunas e cada camada de profundidade do grafo ocupa uma zona distinta (mais perto do início conforme mais fundo na cadeia), mantendo o piso na mesma altura em todo o nível — dá estrutura real em "salas" sem o risco de travar 2 dos 3 heróis.
+- **Script de playtest comitado** em `scripts/playtest-pcg.mjs` (antes era recriado ad-hoc a cada sessão).
+
+Resultado confirmado (30 gerações, níveis 1–40, 3 temas, várias rodadas): 100% solucionável, geração sub-4ms mesmo no pior caso, elementos de verdade espalhados entre x=25 e x=62 num nível de largura 100 (antes, tudo clusterizado perto da saída), estruturas de grafo variando de 1 a 6 nós entre gerações.
+
 ## Pendente / decisões em aberto
 
-- **Verificação visual em navegador**: a sessão de teste desta rodada esbarrou numa limitação do ambiente de preview (aba em background suspende `requestAnimationFrame`/timers de forma mais agressiva que da vez anterior); tutorial, HUD e a ausência de erros de console foram confirmados, mas o desenho no canvas (textura de tile, indicador de herói, ícone de item) não foi recapturado em pixel nesta rodada — apoiado em revisão de código + no padrão que já havia funcionado numa sessão anterior.
-- **Playtesting manual mais longo**: dados de geração (script Node) cobrem 10 níveis/3 temas, mas não substitui jogar manualmente por várias fases seguidas.
-- **Conteúdo da PEL ainda é raso**: a cadeia de dependência tem sempre os mesmos 4 elementos (não há alternativas/variedade por precondição), e `maxDepth` acima de ~5 não muda nada porque não há mais conteúdo para encadear. Ampliar a PEL com mais elementos e pré-condições alternativas é o próximo passo natural para variedade real entre níveis.
+- **Playtesting manual mais longo**: dados de geração (script Node, agora comitado) cobrem 10 níveis/3 temas por rodada, mas não substitui jogar manualmente por várias fases seguidas.
+- **Elementos "abridores de porta" são só lógicos**: `Porta_Metalica_Fechada` nunca é fisicamente posicionada pelo SLE hoje (só participa do grafo como conceito abstrato) — `Alvo_Magico_Distante`/`Machado_Correntes`/`Estatua_Selo_Runico` viram um `SWITCH` decorativo (`action: "LOG_MESSAGE"`) em vez de abrir uma porta real. Construir uma porta física de verdade exigiria o SLE tratar `Porta_Metalica_Fechada` como um nó posicionável, não só um `targetId` textual — escopo maior, não atacado nesta rodada.
+- **`Barreira_Magica` segue nunca posicionada**: nada no grafo atual referencia sua derrota (`DISSIPADA`), então o DGG nunca a escolhe. Teria efeito se algo passasse a exigir esse estado — não fiz isso agora porque destruí-la à distância (o ataque real do Baleog nesse caso) exigiria colisão projétil-vs-interactiveObject, que não existe hoje (só ataque corpo-a-corpo destrói objetos).
+- **Câmaras do SLE são só distribuição horizontal**, não salas fechadas com paredes/portas físicas (ver ressalva de design acima) — é a versão segura considerando as limitações reais de pulo/colisão do jogo.
 
 ## Nota sobre `lost-vikings-1-0-en-win/`
 
@@ -54,9 +83,10 @@ Pasta não versionada contendo o instalador comercial original de *The Lost Viki
 ## Como validar
 
 ```
-npm run test         # 79 testes, cobre character/animation/tilemap/sprite/particle
-npm run build         # build de produção via Vite
+npm run test                  # 79 testes, cobre character/animation/tilemap/sprite/particle
+npm run build                  # build de produção via Vite
 node scripts/generate-audio.mjs   # regenera os 5 SFX sintetizados se apagados
+node scripts/playtest-pcg.mjs     # gera níveis 1-40 em 3 temas, reporta solucionabilidade/conteúdo/tempo
 ```
 
 Para jogar: modo "Modo Vikings" (níveis fixos) ou "Jornada Viking" (PCG) na landing page.

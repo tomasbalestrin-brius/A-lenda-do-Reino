@@ -146,7 +146,9 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
                 enemies.push({
                     id: `enemy_${x}_${y}`,
                     type: element.id,
-                    x: x, y: y
+                    // VikingsGame.jsx lê startX/startY (não x/y) ao instanciar Enemy — sem isso
+                    // os inimigos do PCG sempre nasciam em coordenadas NaN.
+                    startX: x, startY: y
                 });
                 break;
 
@@ -155,6 +157,41 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
                     id: `item_${x}_${y}`,
                     itemType: "key",
                     x: x, y: y
+                });
+                break;
+
+            case 'Bloco_Pesado_Empurravel':
+                interactiveObjects.push({
+                    id: `pushable_${x}_${y}`,
+                    type: "PUSHABLE",
+                    x: x, y: y, width: elemWidth, height: elemHeight
+                });
+                break;
+
+            case 'Parede_Rachada_Machado':
+                interactiveObjects.push({
+                    id: `axewall_${x}_${y}`,
+                    type: "DESTRUCTIBLE_AXE",
+                    x: x, y: y, width: elemWidth, height: elemHeight
+                });
+                break;
+
+            // Soluções "alcance à distância"/alternativas: sem um mecanismo físico próprio
+            // ainda (a "porta" que elas abrem é só lógica, nunca chega a ser posicionada pelo
+            // SLE hoje), viram um SWITCH decorativo — mesmo tratamento que Botao_Pressao_Chao/
+            // Alavanca_Puxar já recebiam antes desta expansão.
+            case 'Alvo_Magico_Distante':
+            case 'Machado_Correntes':
+            case 'Estatua_Selo_Runico':
+            case 'Plataforma_Escudo_Olaf':
+            case 'Botao_Alvo_Distante':
+                triggers.push({
+                    id: `switch_${x}_${y}`,
+                    type: "SWITCH",
+                    x: x, y: y,
+                    width: elemWidth, height: elemHeight,
+                    action: "LOG_MESSAGE",
+                    targetId: "msg_procedural"
                 });
                 break;
         }

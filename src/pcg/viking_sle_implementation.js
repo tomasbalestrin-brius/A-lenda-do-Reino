@@ -8,7 +8,6 @@
 
 import { pel, PuzzleElementType, VikingAbility, PuzzleElement } from './viking_pel_implementation.js';
 import { GraphNode } from './viking_dgg_implementation.js';
-import { mapTileset } from './viking_asset_mapper.js';
 
 // Constantes para o tilemap
 const TILE_AIR = 0;
@@ -163,16 +162,26 @@ class SpatialLayoutEngine {
 
         // Mapear nós do grafo para posições no tilemap
         const nodePositions = { [finalNodeId]: exitPosition };
-        let currentNode = dependencyGraph[finalNodeId];
 
-        // Iterar sobre as dependências do grafo (de trás para frente ou em ordem topológica)
-        // Para simplificar, vamos tentar colocar os elementos em uma sequência linear por enquanto
-        // Uma implementação mais robusta usaria um algoritmo de layout de grafos ou um gerador de salas
-        let currentX = exitX - 10; // Começa a colocar elementos antes da saída
-        let currentY = exitY;
+        // Múltiplas câmaras: em vez de espalhar os elementos por deriva livre (o que tendia a
+        // agrupar tudo perto da saída), o nível é dividido em zonas de colunas e cada camada de
+        // profundidade do grafo de dependências ocupa uma zona distinta, da mais próxima da saída
+        // até a mais próxima do início. O piso continua na mesma altura em todo o nível (ver nota
+        // abaixo) — só a distribuição horizontal muda.
+        //
+        // Nota de design: o piso NÃO varia de altura entre câmaras (diferente do que uma primeira
+        // versão deste plano previa). Só o Erik pula neste jogo (platformCharacter.js:jump() —
+        // "Only Erik can jump") e a colisão é AABB simples sem rampa/degrau, então qualquer câmara
+        // com piso mais alto que a anterior prenderia Olaf e Baleog ali, sem como subir — e o LSV
+        // não pegaria isso, pois não simula movimento físico real, só prova a existência lógica de
+        // uma solução. Variar só a distribuição horizontal entrega estrutura em "salas" real sem
+        // esse risco de travar 2 dos 3 heróis.
+        const CHAMBER_COUNT = 4;
+        const chamberWidth = Math.floor(this.levelWidth / CHAMBER_COUNT);
+        const minX = startX + startWidth + 5;
+        const maxX = this.levelWidth - 5;
+        let chamberIndex = CHAMBER_COUNT - 2; // começa na penúltima câmara (a última é a saída) e anda pra trás
 
-        // Percorre o grafo de dependências para posicionar os elementos
-        // Esta é uma simplificação. Em um sistema real, seria mais complexo.
         // traversedNodes evita reprocessar o mesmo nó (ex: dependências compartilhadas),
         // mas é independente de nodePositions: o nó final já vem posicionado antes desta
         // função rodar, e mesmo assim suas dependências precisam ser visitadas.
@@ -195,17 +204,20 @@ class SpatialLayoutEngine {
                     // certeza de solo antes de _ensurePath rodar) — sem isso, requiresGroundBelow
                     // falha quase sempre, pois o resto do tilemap começa como ar.
                     const floorY = this.levelHeight - 1 - elemHeight;
+
+                    const chamberStart = Math.max(minX, chamberIndex * chamberWidth);
+                    const chamberEnd = Math.min(maxX, (chamberIndex + 1) * chamberWidth);
+                    const chamberSpan = Math.max(1, chamberEnd - chamberStart - elemWidth);
+
                     for (let attempts = 0; attempts < 50; attempts++) { // Limita tentativas
-                        let tryX = currentX - Math.floor(Math.random() * 20) - elemWidth;
+                        let tryX = chamberStart + Math.floor(Math.random() * chamberSpan);
                         let tryY = floorY;
-                        if (tryX < startX + startWidth + 5) tryX = startX + startWidth + 5; // Não colocar muito perto do início
+                        if (tryX < minX) tryX = minX; // Não colocar muito perto do início
 
                         if (this._isValidPlacement(element, tryX, tryY)) {
                             this._placeElement(element, tryX, tryY);
                             nodePositions[nodeId] = { x: tryX, y: tryY };
                             placed = true;
-                            currentX = tryX; // Ajusta o ponto de referência para o próximo elemento
-                            currentY = tryY; // Ajusta o ponto de referência para o próximo elemento
                             break;
                         }
                     }
@@ -213,6 +225,9 @@ class SpatialLayoutEngine {
                         console.warn(`Não foi possível encontrar um local para o elemento ${element.id}`);
                         // Em um sistema real, isso poderia levar a descartar o layout
                     }
+
+                    // Próxima camada de profundidade ocupa a câmara anterior (mais perto do início)
+                    chamberIndex = Math.max(1, chamberIndex - 1);
                 }
             }
 
@@ -244,11 +259,11 @@ class SpatialLayoutEngine {
             }
         }
 
-        // Mapear IDs genéricos para IDs visuais do bioma (apenas para desenho, não para física)
-        const visualMapping = mapTileset(theme);
-        const visualTilemap = this.tilemap.map(row =>
-            row.map(tile => visualMapping[tile] !== undefined ? visualMapping[tile] : tile)
-        );
+        // visualTilemap mantém os IDs genéricos (0-5): o render() do VikingsGame já colore
+        // por tema (theme) diretamente via drawGroundTile, então remapear os IDs aqui
+        // (via mapTileset) só faria os `vis === 1/2/3/4/5` do render() nunca baterem —
+        // era um bug real: nenhum tile aparecia visualmente em níveis PCG (ice/fire/forest).
+        const visualTilemap = this.tilemap.map(row => row.slice());
 
         // collisionTilemap preserva os IDs físicos puros usados por isWalkablePlatform/LSV
         const collisionTilemap = this.tilemap.map(row => row.slice());

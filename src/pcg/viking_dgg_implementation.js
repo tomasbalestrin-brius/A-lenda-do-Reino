@@ -90,9 +90,10 @@ class DependencyGraphGenerator {
             );
 
             if (validSolutions.length > 0) {
-                // Escolher uma solução (pode ser aleatório, ou baseado em complexidade/habilidades)
-                // Para este exemplo, pegamos a primeira solução válida
-                const chosenSolution = validSolutions[0];
+                // Escolha aleatória entre as soluções válidas — dá variedade real de nível a
+                // nível quando a PEL tem mais de uma alternativa por precondição (antes disso
+                // era sempre validSolutions[0], determinístico, mesmo com várias opções na PEL).
+                const chosenSolution = validSolutions[Math.floor(Math.random() * validSolutions.length)];
 
                 const solutionNodeId = this._generateNodeId();
                 this.graph[solutionNodeId] = new GraphNode(chosenSolution.id, 'solution', chosenSolution.requiredAbilities);

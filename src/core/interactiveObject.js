@@ -157,7 +157,7 @@ export class InteractiveObject {
        ctx.lineTo(this.x - camera.x, this.y - camera.y + this.height);
        ctx.stroke();
     } else if (this.type.includes('DESTRUCTIBLE')) {
-       ctx.fillStyle = this.type === 'DESTRUCTIBLE_HEADBUTT' ? '#94a3b8' : '#78716c'; // Different colors
+       ctx.fillStyle = this.type === 'DESTRUCTIBLE_HEADBUTT' ? '#94a3b8' : this.type === 'DESTRUCTIBLE_AXE' ? '#57534e' : '#78716c'; // Different colors
        ctx.fillRect(this.x - camera.x, this.y - camera.y, this.width, this.height);
        ctx.strokeStyle = '#000';
        ctx.strokeRect(this.x - camera.x, this.y - camera.y, this.width, this.height);

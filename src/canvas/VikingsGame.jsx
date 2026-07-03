@@ -44,6 +44,95 @@ function drawGroundTile(ctx, x, y, tileSize, theme, r, c) {
   else if (seed === 3) ctx.fillRect(x + 22, y + 6, 5, 5);
 }
 
+// Vinheta em espaço de tela — mais suave que o padrão usado no CanvasGame (0.75),
+// pois aqui a câmera acompanha ação rápida de plataforma e cantos escuros demais
+// atrapalham reagir a inimigos vindo pela borda.
+function drawVignette(ctx, canvasWidth, canvasHeight) {
+  const vignette = ctx.createRadialGradient(
+    canvasWidth / 2, canvasHeight / 2, canvasHeight / 2,
+    canvasWidth / 2, canvasHeight / 2, canvasWidth / 1.2
+  );
+  vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+  vignette.addColorStop(1, "rgba(0, 0, 0, 0.55)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+}
+
+const AMBIENT_GLOW_BY_THEME = {
+  ice: { color: "224, 242, 254", radius: 200, alpha: 0.10 },
+  fire: { color: "249, 115, 22", radius: 120, alpha: 0.10 },
+  forest: { color: "101, 163, 13", radius: 150, alpha: 0.09 },
+};
+
+// Glow aditivo (nunca escurece) ao redor do herói ativo, cor/intensidade por tema.
+// Deliberadamente NÃO é uma máscara "destination-out" tipo tocha (como no bioma
+// cave do CanvasGame): os temas daqui são exteriores/diurnos, escurecer a cena
+// esconderia plataformas e inimigos num platformer de ação.
+function drawAmbientGlow(ctx, state, canvasWidth, canvasHeight) {
+  const theme = state.map?.theme;
+  const config = AMBIENT_GLOW_BY_THEME[theme];
+  const activeHero = state.heroes[state.activeIdx];
+  if (!config || !activeHero || activeHero.isDead) return;
+
+  const hx = activeHero.x + 16 - state.camera.x;
+  const hy = activeHero.y + 16 - state.camera.y;
+
+  let alpha = config.alpha;
+  if (theme === "fire") {
+    alpha = 0.10 + 0.05 * Math.sin(state.levelTimer * 0.004);
+  }
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, config.radius);
+  glow.addColorStop(0, `rgba(${config.color}, ${alpha})`);
+  glow.addColorStop(1, `rgba(${config.color}, 0)`);
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  ctx.restore();
+}
+
+const AMBIENT_PARTICLE_INTERVAL = 200; // ms entre spawns de partícula ambiente
+
+// Partículas ambientes contínuas por tema: neve (ice), brasas (fire), folhas (forest).
+// Nascem perto da viewport atual e morrem sozinhas (life curto), sem pool customizado.
+function spawnAmbientParticles(state, dt, canvasWidth, canvasHeight) {
+  const theme = state.map?.theme;
+  if (!theme) return;
+
+  state.ambientParticleTimer += dt;
+  if (state.ambientParticleTimer < AMBIENT_PARTICLE_INTERVAL) return;
+  state.ambientParticleTimer = 0;
+
+  const spawnX = Math.random() * canvasWidth + state.camera.x;
+
+  if (theme === "ice") {
+    // Neve: nasce no topo, cai devagar
+    state.particles.spawn(spawnX, state.camera.y - 10, 1, {
+      vxMin: -0.03, vxMax: 0.03, vyMin: 0.03, vyMax: 0.06,
+      colors: ["#ffffff", "#e0f2fe", "#bae6fd"],
+      sizeMin: 2, sizeMax: 4, lifeMin: 4000, lifeMax: 7000,
+      gravity: 0, drag: 0.999
+    });
+  } else if (theme === "fire") {
+    // Brasas: nascem embaixo, sobem
+    state.particles.spawn(spawnX, state.camera.y + canvasHeight + 10, 1, {
+      vxMin: -0.04, vxMax: 0.04, vyMin: -0.08, vyMax: -0.04,
+      colors: ["#f97316", "#fbbf24", "#fb923c"],
+      sizeMin: 2, sizeMax: 4, lifeMin: 2000, lifeMax: 4000,
+      gravity: -0.00003, drag: 0.99
+    });
+  } else if (theme === "forest") {
+    // Folhas: nascem no topo, oscilam mais lateralmente
+    state.particles.spawn(spawnX, state.camera.y - 10, 1, {
+      vxMin: -0.08, vxMax: 0.08, vyMin: 0.02, vyMax: 0.05,
+      colors: ["#65a30d", "#3f6212", "#84cc16"],
+      sizeMin: 4, sizeMax: 6, lifeMin: 3000, lifeMax: 5000,
+      gravity: 0, drag: 0.995, shape: "rect"
+    });
+  }
+}
+
 export default function VikingsGame({ mode = "normal", onExit }) {
   const canvasRef = useRef(null);
   
@@ -97,6 +186,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
     items: [],
     levelTimer: 0,
     damageTaken: false,
+    ambientParticleTimer: 0,
   });
 
   const TILE_SIZE = 32;
@@ -361,6 +451,10 @@ export default function VikingsGame({ mode = "normal", onExit }) {
             activeHero.headbutt();
             state.shake.intensity = 10;
          }
+         if (activeHero.vikingType === "olaf") {
+            activeHero.axeBreak(state.interactiveObjects);
+            state.shake.intensity = 10;
+         }
       }
 
       if (e.key === "t" || e.key === "T") {
@@ -445,14 +539,21 @@ export default function VikingsGame({ mode = "normal", onExit }) {
     }
     
     state.levelTimer += dt;
-    
+    state.particles.update(dt);
+    spawnAmbientParticles(state, dt, CANVAS_WIDTH, CANVAS_HEIGHT);
+
     const activeHero = state.heroes[state.activeIdx];
-    
+
     state.heroes.forEach(h => {
        if (h.hp < h.maxHp) state.damageTaken = true;
        if (h.vikingType === 'olaf' && h.justLandedHard) {
          state.shake.intensity = 15; // Tremor de impacto
-         state.particles.emit("dust", h.x, h.y + 16, 15);
+         state.particles.spawn(h.x, h.y + 16, 15, {
+            vxMin: -0.1, vxMax: 0.1, vyMin: -0.15, vyMax: -0.02,
+            colors: ["#a8a29e", "#78716c", "#d6d3d1"],
+            sizeMin: 2, sizeMax: 4, lifeMin: 300, lifeMax: 600,
+            gravity: 0.0004
+         });
          state.audio.playSFX("hit");
        }
     });
@@ -485,7 +586,22 @@ export default function VikingsGame({ mode = "normal", onExit }) {
           ));
        }
     });
-    state.enemies.forEach(e => e.update(dt, state.map, state.heroes));
+    state.enemies.forEach(e => {
+       e.update(dt, state.map, state.heroes);
+       if (e.wantsToShoot) {
+          e.wantsToShoot = false;
+          const dir = e.direction === 1 ? "right" : "left";
+          state.projectiles.push(new Projectile(
+             dir === "right" ? e.x + e.width : e.x - 16,
+             e.y + e.height / 2,
+             dir === "right" ? 0.2 : -0.2,
+             0,
+             20,
+             "enemy",
+             dir
+          ));
+       }
+    });
 
     state.items.forEach(item => {
        if (item.collected) return;
@@ -518,7 +634,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
              }
           });
        }
-       if (p.ownerId === "turret" && p.active) {
+       if ((p.ownerId === "turret" || p.ownerId === "enemy") && p.active) {
            state.heroes.forEach(h => {
                if (!h.isDead && pBox.x < h.x + h.hitbox.offsetX + h.hitbox.w && pBox.x + pBox.w > h.x + h.hitbox.offsetX && pBox.y < h.y + h.hitbox.offsetY + h.hitbox.h && pBox.y + pBox.h > h.y + h.hitbox.offsetY) {
                    h.takeDamage(1, p.x, p.y, 0.2);
@@ -574,8 +690,15 @@ export default function VikingsGame({ mode = "normal", onExit }) {
     ctx.translate(-Math.floor(state.camera.x) + shakeX, -Math.floor(state.camera.y) + shakeY);
 
     if (!state.map.layers || !state.map.layers.visuals) return;
-    for (let r = 0; r < state.map.height; r++) {
-      for (let c = 0; c < state.map.width; c++) {
+
+    // Culling: só percorre os tiles dentro (+1 de margem, por causa do shake) da viewport atual
+    const startRow = Math.max(0, Math.floor(state.camera.y / TILE_SIZE) - 1);
+    const endRow = Math.min(state.map.height, Math.ceil((state.camera.y + CANVAS_HEIGHT) / TILE_SIZE) + 1);
+    const startCol = Math.max(0, Math.floor(state.camera.x / TILE_SIZE) - 1);
+    const endCol = Math.min(state.map.width, Math.ceil((state.camera.x + CANVAS_WIDTH) / TILE_SIZE) + 1);
+
+    for (let r = startRow; r < endRow; r++) {
+      for (let c = startCol; c < endCol; c++) {
         const x = c * TILE_SIZE;
         const y = r * TILE_SIZE;
         
@@ -709,7 +832,15 @@ export default function VikingsGame({ mode = "normal", onExit }) {
 
     state.projectiles.forEach(p => p.draw(ctx, {x: 0, y: 0}));
 
-    ctx.restore();
+    // Partículas (poeira de impacto + ambientes) são objetos de mundo, desenhadas
+    // ainda dentro da translação de câmera.
+    state.particles.draw(ctx, { x: 0, y: 0 });
+
+    ctx.restore(); // fim do espaço de mundo/câmera
+
+    // A partir daqui, tudo é em espaço de tela fixo (não se move com a câmera/shake).
+    drawAmbientGlow(ctx, state, CANVAS_WIDTH, CANVAS_HEIGHT);
+    drawVignette(ctx, CANVAS_WIDTH, CANVAS_HEIGHT);
   };
 
   if (loading) return <div>Carregando...</div>;

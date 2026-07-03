@@ -102,7 +102,9 @@ class PuzzleElementLibrary {
             PuzzleElementType.OBSTACULO,
             { tiles: [[1,1,1],[1,1,1],[1,1,1],[1,1,1]], width: 3, height: 4 },
             [{ type: ConditionType.ELEMENT_STATE, targetId: 'Parede_Rachada_Machado', state: 'REMOVIDA' }],
-            [],
+            // Auto-referente: quando resolvido em jogo (Olaf quebra com o machado), o próprio
+            // elemento satisfaz sua precondição — mesmo padrão de Botao_Pressao_Chao/Alavanca_Puxar.
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Parede_Rachada_Machado', newState: 'REMOVIDA' }],
             [VikingAbility.BARBARO_MACHADO_QUEBRA],
             { minWidth: 3, minHeight: 4, requiresGroundBelow: true }
         ));
@@ -117,12 +119,35 @@ class PuzzleElementLibrary {
             { minWidth: 1, minHeight: 1, requiresGroundBelow: false }
         ));
 
+        // Alternativa a Alvo_Magico_Distante: abre a mesma porta, mas exige o machado do Olaf
+        // em vez de magia — dá ao DGG uma segunda opção real de habilidade para esta precondição.
+        this.addElement(new PuzzleElement(
+            'Machado_Correntes',
+            PuzzleElementType.SOLUCAO,
+            { tiles: [[23]], width: 1, height: 2 },
+            [],
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Porta_Metalica_Fechada', newState: 'ABERTA' }],
+            [VikingAbility.BARBARO_MACHADO_QUEBRA],
+            { minWidth: 1, minHeight: 2, requiresGroundBelow: true }
+        ));
+
+        // Terceira alternativa: Erik derruba um selo rúnico com o embate, também abrindo a porta.
+        this.addElement(new PuzzleElement(
+            'Estatua_Selo_Runico',
+            PuzzleElementType.SOLUCAO,
+            { tiles: [[24,24],[24,24]], width: 2, height: 2 },
+            [],
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Porta_Metalica_Fechada', newState: 'ABERTA' }],
+            [VikingAbility.ERIK_EMBATE],
+            { minWidth: 2, minHeight: 2, requiresGroundBelow: true }
+        ));
+
         this.addElement(new PuzzleElement(
             'Barreira_Magica',
             PuzzleElementType.OBSTACULO,
             { tiles: [[1],[1],[1]], width: 1, height: 3 },
             [{ type: ConditionType.ELEMENT_STATE, targetId: 'Barreira_Magica', state: 'DISSIPADA' }],
-            [],
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Barreira_Magica', newState: 'DISSIPADA' }],
             [VikingAbility.MAGO_FEITICO_ATAQUE],
             { minWidth: 1, minHeight: 3, requiresGroundBelow: true }
         ));
@@ -132,9 +157,24 @@ class PuzzleElementLibrary {
             PuzzleElementType.SOLUCAO,
             { tiles: [[1,1],[1,1]], width: 2, height: 2 },
             [],
-            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Botao_Chao', newState: 'PRESSIONADO' }], // Ou bloqueio de laser
+            // Corrigido: apontava para 'Botao_Chao' (typo, nunca existiu), o alvo real é
+            // 'Botao_Pressao_Chao' com o mesmo estado 'ATIVADO' que o botão produz — agora
+            // é uma segunda solução real e alternativa (BARBARO_EMPURRAR em vez de pisar).
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Botao_Pressao_Chao', newState: 'ATIVADO' }],
             [VikingAbility.BARBARO_EMPURRAR],
             { minWidth: 2, minHeight: 2, requiresGroundBelow: true }
+        ));
+
+        // Usa a habilidade órfã OLAF_ESCUDO_PLATAFORMA: Olaf serve de plataforma pra alcançar
+        // a alavanca, alternativa a puxá-la diretamente.
+        this.addElement(new PuzzleElement(
+            'Plataforma_Escudo_Olaf',
+            PuzzleElementType.SOLUCAO,
+            { tiles: [[25]], width: 1, height: 1 },
+            [],
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Alavanca_Puxar', newState: 'PUXADA' }],
+            [VikingAbility.OLAF_ESCUDO_PLATAFORMA],
+            { minWidth: 1, minHeight: 1, requiresGroundBelow: true }
         ));
 
         // --- Soluções ---
@@ -163,28 +203,24 @@ class PuzzleElementLibrary {
             PuzzleElementType.SOLUCAO,
             { tiles: [[22]], width: 1, height: 1 }, // Exemplo: Tile ID 22 para botão alvo
             [],
-            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Botao_Alvo_Distante', newState: 'ATINGIDO' }],
+            // Além do próprio estado, também serve como terceira alternativa pra puxar a
+            // alavanca remotamente (Baleog acerta o botão à distância em vez de puxar na mão).
+            [
+                { type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Botao_Alvo_Distante', newState: 'ATINGIDO' },
+                { type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Alavanca_Puxar', newState: 'PUXADA' }
+            ],
             [VikingAbility.MAGO_FEITICO_ATAQUE], // Apenas Baleog com ataque à distância
             { minWidth: 1, minHeight: 1, requiresGroundBelow: false } // Pode estar em uma parede
         ));
 
-        // --- Conexões ---
-        this.addElement(new PuzzleElement(
-            'Ponte_Retratil',
-            PuzzleElementType.CONEXAO,
-            { tiles: [[30,30,30]], width: 3, height: 1 }, // Exemplo: Tile ID 30 para ponte
-            [{ type: ConditionType.ELEMENT_STATE, targetId: 'Ponte_Retratil_Controle', state: 'ATIVADO' }],
-            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Ponte_Retratil', newState: 'ESTENDIDA' }],
-            [],
-            { minWidth: 3, minHeight: 1, requiresGroundBelow: false }
-        ));
-
         // --- Itens ---
+        // Precisa derrotar o guarda (Inimigo_Patrulha) antes de coletar a chave — torna o
+        // inimigo alcançável de verdade pelo DGG (antes disso, nada referenciava sua derrota).
         this.addElement(new PuzzleElement(
             'Chave_Vermelha',
             PuzzleElementType.RECURSO,
             { tiles: [[40]], width: 1, height: 1 }, // Exemplo: Tile ID 40 para chave
-            [],
+            [{ type: ConditionType.ELEMENT_STATE, targetId: 'Inimigo_Patrulha', state: 'DERROTADO' }],
             [{ type: EffectType.GRANT_ITEM, targetId: 'Chave_Vermelha', newState: 'COLETADA' }],
             [],
             { minWidth: 1, minHeight: 1, requiresGroundBelow: true }
@@ -196,7 +232,9 @@ class PuzzleElementLibrary {
             PuzzleElementType.OBSTACULO,
             { tiles: [[50]], width: 2, height: 2 }, // Exemplo: Tile ID 50 para inimigo
             [{ type: ConditionType.ELEMENT_STATE, targetId: 'Inimigo_Patrulha', state: 'DERROTADO' }],
-            [],
+            // Auto-referente (mesmo padrão de Parede_Rachada_Machado/Barreira_Magica): ao ser
+            // derrotado em jogo, satisfaz sua própria precondição.
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Inimigo_Patrulha', newState: 'DERROTADO' }],
             [VikingAbility.MAGO_FEITICO_ATAQUE, VikingAbility.ERIK_EMBATE, VikingAbility.OLAF_ESCUDO_DEFESA], // Pode ser derrotado ou bloqueado
             { minWidth: 2, minHeight: 2, requiresGroundBelow: true }
         ));
@@ -206,7 +244,7 @@ class PuzzleElementLibrary {
             PuzzleElementType.OBSTACULO,
             { tiles: [[51]], width: 2, height: 2 }, // Exemplo: Tile ID 51 para inimigo atirador
             [{ type: ConditionType.ELEMENT_STATE, targetId: 'Inimigo_Atirador', state: 'DERROTADO' }],
-            [],
+            [{ type: EffectType.CHANGE_ELEMENT_STATE, targetId: 'Inimigo_Atirador', newState: 'DERROTADO' }],
             [VikingAbility.MAGO_FEITICO_ATAQUE, VikingAbility.OLAF_ESCUDO_DEFESA], // Ataque à distância para derrotar, escudo para bloquear projéteis
             { minWidth: 2, minHeight: 2, requiresGroundBelow: true }
         ));
