@@ -135,7 +135,25 @@ function spawnAmbientParticles(state, dt, canvasWidth, canvasHeight) {
 
 export default function VikingsGame({ mode = "normal", onExit }) {
   const canvasRef = useRef(null);
-  
+  const containerRef = useRef(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Sincroniza com o estado real do navegador — cobre tanto o clique no nosso botão
+  // quanto o usuário saindo via Esc (o navegador dispara fullscreenchange nos dois casos).
+  useEffect(() => {
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      containerRef.current?.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  };
+
   const [loading, setLoading] = useState(true);
   const [currentLevelId, setCurrentLevelId] = useState(mode === "pcg" ? "pcg" : "level1");
   const [pcgLevelIndex, setPcgLevelIndex] = useState(1);
@@ -424,6 +442,16 @@ export default function VikingsGame({ mode = "normal", onExit }) {
       if (e.key === " " && activeHero.vikingType === "erik") {
          activeHero.jump();
          state.audio.playSFX("jump");
+      }
+      // W pula com o herói ativo, seja ele qual for (aditivo — não substitui o Espaço
+      // do Erik nem as ações de Espaço do Olaf/Baleog, só dá um jeito universal de pular).
+      if (e.key === "w" || e.key === "W") {
+         activeHero.jump();
+         state.audio.playSFX("jump");
+      }
+      // S desce de propósito através de uma plataforma "de cima" (tile tipo 2).
+      if (e.key === "s" || e.key === "S") {
+         activeHero.dropThrough();
       }
       if (e.key === " ") {
          if (activeHero.vikingType === "erik") {
@@ -846,7 +874,13 @@ export default function VikingsGame({ mode = "normal", onExit }) {
   if (loading) return <div>Carregando...</div>;
 
   return (
-    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4">
+    <div
+      ref={containerRef}
+      className={isFullscreen
+        ? "w-screen h-screen bg-black flex items-center justify-center"
+        : "min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4"}
+    >
+      {!isFullscreen && (
       <div className="flex justify-between items-center w-full max-w-5xl mb-4">
         <h1 className="pixel-font text-white uppercase tracking-tight">Vikings Perdidos</h1>
         <div className="flex gap-4 items-center">
@@ -884,11 +918,14 @@ export default function VikingsGame({ mode = "normal", onExit }) {
             )}
             <button onClick={() => setCurrentLevelId("pcg")} className="pixel-btn-gold px-5 py-2">Gerar Nível (PCG) 🎲</button>
             <button onClick={() => setShowTutorial(true)} className="pixel-btn-gold px-3 py-2" title="Ver controles">❓</button>
+            <button onClick={toggleFullscreen} className="pixel-btn-gold px-3 py-2" title="Tela cheia">⛶</button>
             <button onClick={onExit} className="pixel-btn-red px-5 py-2">Sair 🚪</button>
         </div>
       </div>
+      )}
 
-      <div className="flex flex-col lg:flex-row gap-6 w-full max-w-5xl justify-center">
+      <div className={isFullscreen ? "relative w-full h-full flex items-center justify-center" : "flex flex-col lg:flex-row gap-6 w-full max-w-5xl justify-center"}>
+        {!isFullscreen && (
         <div className="flex flex-col gap-4 pixel-border-wood medieval-wood-bg p-4 w-full lg:w-60">
           <div className="flex justify-between items-center">
              <h3 className="pixel-font text-[9px] text-amber-500 uppercase">Vikings</h3>
@@ -897,7 +934,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
                 <span className="text-[10px] text-gray-300 font-bold block">{(hudState.time / 1000).toFixed(1)}s</span>
              </div>
           </div>
-          <p className="text-[10px] text-gray-300">Teclas 1, 2, 3 para trocar.<br/>E para ação primária.<br/>Espaço para pulo/secundária.<br/>Tecla R para Reinício Rápido.</p>
+          <p className="text-[10px] text-gray-300">Teclas 1, 2, 3 para trocar.<br/>WASD/Setas move e pula (W).<br/>S desce de plataformas.<br/>E ação primária, Espaço secundária.<br/>Tecla R para Reinício Rápido.</p>
           
           {hudState.names.map((name, idx) => (
              <div key={idx} className={`p-2 border-2 ${idx === hudState.activeIdx ? 'border-amber-400 bg-stone-800 ring-2 ring-amber-400/60' : 'border-stone-600 bg-stone-900'} cursor-pointer`} onClick={() => switchHero(idx)}>
@@ -929,18 +966,45 @@ export default function VikingsGame({ mode = "normal", onExit }) {
              </div>
           ))}
         </div>
+        )}
 
-        <div className="relative border-4 border-stone-700 bg-black shadow-2xl">
-          <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="w-full h-auto max-h-[80vh]" style={{ imageRendering: "pixelated" }} />
+        <div className={isFullscreen ? "relative bg-black" : "relative border-4 border-stone-700 bg-black shadow-2xl"}>
+          <canvas
+            ref={canvasRef}
+            width={CANVAS_WIDTH}
+            height={CANVAS_HEIGHT}
+            className={isFullscreen ? "" : "w-full h-auto max-h-[80vh]"}
+            style={isFullscreen
+              ? { imageRendering: "pixelated", width: "100vw", height: "100vh", objectFit: "contain" }
+              : { imageRendering: "pixelated" }}
+          />
+
+          {isFullscreen && (
+             <div className="absolute top-2 left-2 right-2 flex justify-between items-start z-40">
+                <div className="flex gap-2">
+                   {hudState.names.map((name, idx) => (
+                      <div
+                         key={idx}
+                         onClick={() => switchHero(idx)}
+                         className={`px-2 py-1 border-2 text-[9px] pixel-font cursor-pointer ${idx === hudState.activeIdx ? 'border-amber-400 bg-stone-900/90 text-amber-300' : 'border-stone-600 bg-stone-900/70 text-gray-300'}`}
+                      >
+                         {name.split(" ")[0]} {Array.from({ length: hudState.heroesMaxHp[idx] }).map((_, i) => i < hudState.heroesHp[idx] ? "❤️" : "🖤").join("")}
+                      </div>
+                   ))}
+                </div>
+                <button onClick={toggleFullscreen} className="pixel-btn-gold px-2 py-1 text-[10px]" title="Sair da tela cheia">⛶</button>
+             </div>
+          )}
 
           {showTutorial && (
              <div className="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-50 p-6 text-center">
                <h2 className="pixel-font text-amber-500 text-xl mb-4">Como Jogar</h2>
                <ul className="text-gray-200 text-sm space-y-2 mb-6 text-left">
                   <li><b className="text-amber-400">1 / 2 / 3</b> — trocar entre Erik, Olaf e Baleog</li>
-                  <li><b className="text-amber-400">Setas / A,D</b> — mover o viking ativo</li>
-                  <li><b className="text-amber-400">Espaço</b> — ação secundária (pulo do Erik, escudo do Olaf, corrida)</li>
-                  <li><b className="text-amber-400">E</b> — ação primária (embate do Erik, ataque à distância do Baleog)</li>
+                  <li><b className="text-amber-400">WASD ou Setas</b> — mover e pular (W ou Espaço) o viking ativo</li>
+                  <li><b className="text-amber-400">S</b> — descer de propósito por uma plataforma</li>
+                  <li><b className="text-amber-400">Espaço</b> — pulo (Erik) / escudo (Olaf) / ataque (Baleog)</li>
+                  <li><b className="text-amber-400">E</b> — ação primária (embate do Erik, machado do Olaf, ataque à distância do Baleog)</li>
                   <li><b className="text-amber-400">T</b> — trocar item com o viking mais próximo</li>
                   <li><b className="text-amber-400">R</b> — reiniciar o nível rapidamente</li>
                </ul>

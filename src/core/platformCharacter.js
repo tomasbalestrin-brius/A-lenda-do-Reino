@@ -1,8 +1,20 @@
 import Character from "./character";
 import { GRAVITY_HERO, checkAABB, TRADE_ITEM_MAX_DIST } from "./physics";
 
-const JUMP_FORCE = -0.55; // Ajustado para sensação 70Hz
 const TERMINAL_VELOCITY = 0.6;
+
+// Força de pulo por viking (negativo = pra cima). Cada um pula uma altura
+// diferente — mantém a identidade de personagem (Erik ágil, Olaf robusto) e
+// também é o teto de segurança pra quanto o SLE pode variar a altura das salas.
+// Alturas aproximadas (h = jumpForce² / (2*GRAVITY_HERO), GRAVITY_HERO=0.0018, tile=32px):
+//   erik:   -0.55 → ~84px  (~2.6 tiles) — valor original, já calibrado, não mudar
+//   baleog: -0.45 → ~56px  (~1.75 tiles)
+//   olaf:   -0.35 → ~34px  (~1.06 tiles) — o mais fraco, vira o teto de segurança do SLE
+const JUMP_FORCE_BY_VIKING = {
+  erik: -0.55,
+  baleog: -0.45,
+  olaf: -0.35,
+};
 
 export const ESTADOS = {
   PARADO: "PARADO",
@@ -23,6 +35,7 @@ export class PlatformCharacter extends Character {
     
     this.isGrounded = false;
     this.vikingType = options.vikingType || "erik"; // "erik", "baleog", "olaf"
+    this.jumpForce = options.jumpForce ?? JUMP_FORCE_BY_VIKING[this.vikingType] ?? JUMP_FORCE_BY_VIKING.erik;
     this.facing = "right";
     
     // FSM State
@@ -34,6 +47,7 @@ export class PlatformCharacter extends Character {
     this.coyoteTimer = 0;
     this.jumpBufferTimer = 0;
     this.squashTimer = 0; // Squash/stretch ao pousar (juice procedural, sem sprite novo)
+    this.dropThroughTimer = 0; // Enquanto ativo, ignora o "pouso" em plataformas de cima (tecla S)
 
     // Override HP to 3 Hearts/Runes system
     this.maxHp = 3;
@@ -117,6 +131,7 @@ export class PlatformCharacter extends Character {
     if (this.coyoteTimer > 0) this.coyoteTimer -= deltaTimeMs;
     if (this.jumpBufferTimer > 0) this.jumpBufferTimer -= deltaTimeMs;
     if (this.squashTimer > 0) this.squashTimer -= deltaTimeMs;
+    if (this.dropThroughTimer > 0) this.dropThroughTimer -= deltaTimeMs;
     
     const wasGrounded = this.isGrounded;
     this.justLandedHard = false;
@@ -265,8 +280,8 @@ export class PlatformCharacter extends Character {
           }
           this.vy = 0;
        } else {
-          // Check for platform tiles
-          if (this.vy > 0) {
+          // Check for platform tiles (ignorado enquanto dropThroughTimer estiver ativo — tecla S)
+          if (this.vy > 0 && this.dropThroughTimer <= 0) {
              const baseGridY = Math.floor((this.y + this.hitbox.offsetY + this.hitbox.h - 1) / 32);
              const nextBaseGridY = Math.floor((nextY + this.hitbox.offsetY + this.hitbox.h) / 32);
              
@@ -296,7 +311,7 @@ export class PlatformCharacter extends Character {
     
     // Evaluate Input Buffer (Jumping)
     if (this.jumpBufferTimer > 0 && (this.isGrounded || this.coyoteTimer > 0) && this.estado !== ESTADOS.EMBATE) {
-       this.vy = JUMP_FORCE;
+       this.vy = this.jumpForce;
        this.isGrounded = false;
        this.estado = ESTADOS.PULANDO;
        this.coyoteTimer = 0;
@@ -386,12 +401,17 @@ export class PlatformCharacter extends Character {
   }
 
   jump() {
-    // Only Erik can jump
-    if (this.vikingType === "erik" && this.estado !== ESTADOS.EMBATE && this.estado !== ESTADOS.DANO) {
+    // Os 3 vikings pulam agora, cada um com sua força (ver JUMP_FORCE_BY_VIKING).
+    if (!this.isDead && this.estado !== ESTADOS.EMBATE && this.estado !== ESTADOS.DANO && this.estado !== ESTADOS.DEFENDENDO) {
       this.jumpBufferTimer = 80; // 80ms buffer
     }
   }
   
+  // Qualquer viking: descer de propósito através de uma plataforma "de cima" (tecla S).
+  dropThrough() {
+    this.dropThroughTimer = 200;
+  }
+
   // Erik specific
   runToggle() {
     if (this.vikingType === "erik" && this.isGrounded) {
