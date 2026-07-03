@@ -100,7 +100,14 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
         baleog: { x: 3, y: height - 2 },
         olaf: { x: 4, y: height - 2 }
     };
-    
+
+    // Se o SLE trancou uma Porta_Metalica_Fechada física nesta geração (ver _lockFinalDoor),
+    // suas coordenadas viram os targetTiles do OPEN_DOOR emitido pelo abridor real abaixo.
+    const doorPlaced = placedElements.find(p => p.element.id === 'Porta_Metalica_Fechada');
+    const doorTargetTiles = doorPlaced
+        ? Array.from({ length: doorPlaced.height }, (_, i) => ({ x: doorPlaced.x, y: doorPlaced.y + i }))
+        : [];
+
     // Converte os elementos posicionados no formato de entidades interativas
     placedElements.forEach(placed => {
         const { element, x, y } = placed;
@@ -176,13 +183,42 @@ function formatLevelData(collisionTilemap, visualTilemap, placedElements, width,
                 });
                 break;
 
-            // Soluções "alcance à distância"/alternativas: sem um mecanismo físico próprio
-            // ainda (a "porta" que elas abrem é só lógica, nunca chega a ser posicionada pelo
-            // SLE hoje), viram um SWITCH decorativo — mesmo tratamento que Botao_Pressao_Chao/
-            // Alavanca_Puxar já recebiam antes desta expansão.
+            // Porta física: já é chão sólido de verdade no tilemap (ver _lockFinalDoor no SLE) —
+            // não precisa virar trigger/objeto próprio, o abridor abaixo referencia seus tiles.
+            case 'Porta_Metalica_Fechada':
+                break;
+
+            // Abridores reais da Porta_Metalica_Fechada: quando o SLE trancou uma porta nesta
+            // geração, viram um SWITCH que de fato abre a passagem (OPEN_DOOR limpa os tiles
+            // da porta). Sem porta trancada (doorTargetTiles vazio), cai no LOG_MESSAGE
+            // decorativo de antes — não deveria acontecer com a PEL atual, mas evita ficar sem
+            // efeito nenhum silenciosamente.
             case 'Alvo_Magico_Distante':
             case 'Machado_Correntes':
             case 'Estatua_Selo_Runico':
+                if (doorTargetTiles.length > 0) {
+                    triggers.push({
+                        id: `doorkey_${x}_${y}`,
+                        type: "SWITCH",
+                        x: x, y: y,
+                        width: elemWidth, height: elemHeight,
+                        action: "OPEN_DOOR",
+                        targetTiles: doorTargetTiles
+                    });
+                } else {
+                    triggers.push({
+                        id: `switch_${x}_${y}`,
+                        type: "SWITCH",
+                        x: x, y: y,
+                        width: elemWidth, height: elemHeight,
+                        action: "LOG_MESSAGE",
+                        targetId: "msg_procedural"
+                    });
+                }
+                break;
+
+            // Soluções "alcance à distância"/alternativas que não abrem porta (mexem só na
+            // Alavanca_Puxar): seguem como SWITCH decorativo, sem mecanismo físico próprio.
             case 'Plataforma_Escudo_Olaf':
             case 'Botao_Alvo_Distante':
                 triggers.push({

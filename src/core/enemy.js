@@ -1,8 +1,20 @@
 import { GRAVITY_ENTITY, checkAABB } from "./physics";
 import spriteManager from "./spriteManager";
 
-const SLIME_FRAME_DURATION = 400; // ms por frame do ciclo de expressões do slime
+const SLIME_FRAME_DURATION = 400; // ms por frame — fallback pra qualquer tipo sem sprite dedicado
 const SHOOTER_INTERVAL = 1800; // ms entre disparos do Inimigo_Atirador
+const SHOOT_ANIM_DURATION = 300; // ms que o Inimigo_Atirador fica na pose/animação de disparo
+
+// Inimigo_Patrulha (Goblin) e Inimigo_Atirador (Evil Wizard): pacotes CC0 (LuizMelo, itch.io).
+// Os dois ficam sempre "andando" visualmente (vx nunca zera de propósito — eles patrulham sem
+// parar), só o Atirador troca pra "shoot" na janela curta em volta do disparo real.
+const ENEMY_SPRITE_BY_TYPE = {
+  Inimigo_Patrulha: { walkSheet: "enemy_goblin_run", walkAnim: "walk" },
+  Inimigo_Atirador: {
+    walkSheet: "enemy_evilwizard_move", walkAnim: "walk",
+    shootSheet: "enemy_evilwizard_attack", shootAnim: "shoot",
+  },
+};
 
 export class Enemy {
   constructor(id, type, startX, startY) {
@@ -19,24 +31,53 @@ export class Enemy {
     this.isDead = false;
     this.isGrounded = false;
 
-    // Animação de spritesheet (slime.png tem 4 frames de expressão)
+    // Animação de spritesheet — nome da sheet/anim atual rastreado pra saber quando trocar
+    // (reseta frame/timer só quando muda, igual ao AnimationController dos heróis).
     this.animTimer = 0;
     this.animFrameIndex = 0;
+    this._currentAnimKey = null;
 
     // Inimigo_Atirador: dispara projéteis periodicamente (sinaliza via wantsToShoot,
     // mesma convenção já usada pelas turrets em interactiveObject.js)
     this.shootTimer = 0;
     this.wantsToShoot = false;
+    // Janela curta em que draw()/_resolveSprite() usam a animação real de conjuração
+    // (enemy_evilwizard_attack) em vez do ciclo de movimento.
+    this.shootAnimTimer = 0;
+  }
+
+  // Resolve qual sheet/animação usar agora, com base no tipo e na janela de disparo.
+  _resolveSprite() {
+    const spec = ENEMY_SPRITE_BY_TYPE[this.type];
+    if (!spec) return { sheetName: "enemy_slime", animName: "idle" };
+    if (spec.shootSheet && this.shootAnimTimer > 0) {
+       return { sheetName: spec.shootSheet, animName: spec.shootAnim };
+    }
+    return { sheetName: spec.walkSheet, animName: spec.walkAnim };
   }
 
   update(dt, map, heroes) {
     if (this.isDead) return;
 
-    // Animação
+    if (this.shootAnimTimer > 0) this.shootAnimTimer -= dt;
+
+    // Animação: avança o frame usando a duração real da animação atual (spriteManager),
+    // com fallback pro ciclo genérico do slime pra qualquer tipo sem sprite dedicado.
+    const { sheetName, animName } = this._resolveSprite();
+    const animKey = `${sheetName}:${animName}`;
+    if (this._currentAnimKey !== animKey) {
+       this._currentAnimKey = animKey;
+       this.animTimer = 0;
+       this.animFrameIndex = 0;
+    }
+    const sheet = spriteManager.getSpriteSheet(sheetName);
+    const animConfig = sheet?.animations?.[animName];
+    const frameDuration = animConfig?.frameDuration ?? SLIME_FRAME_DURATION;
+    const totalFrames = animConfig?.frames?.length || 4;
     this.animTimer += dt;
-    if (this.animTimer >= SLIME_FRAME_DURATION) {
-       this.animTimer -= SLIME_FRAME_DURATION;
-       this.animFrameIndex = (this.animFrameIndex + 1) % 4;
+    if (this.animTimer >= frameDuration) {
+       this.animTimer -= frameDuration;
+       this.animFrameIndex = (this.animFrameIndex + 1) % totalFrames;
     }
 
     if (this.type === "Inimigo_Atirador") {
@@ -44,6 +85,7 @@ export class Enemy {
        if (this.shootTimer >= SHOOTER_INTERVAL) {
           this.shootTimer = 0;
           this.wantsToShoot = true;
+          this.shootAnimTimer = SHOOT_ANIM_DURATION;
        }
     }
 
@@ -158,15 +200,19 @@ export class Enemy {
        ctx.fillStyle = '#fff';
        ctx.fillRect(this.x - camera.x + (this.direction === 1 ? 20 : 6), this.y - camera.y - 8, 6, 6);
     } else {
-       // Monstros comuns usam o spritesheet animado do slime (com fallback colorido se a imagem não carregar)
+       // Inimigo_Patrulha (Goblin) e Inimigo_Atirador (Evil Wizard) usam sprites reais
+       // dedicados (ver ENEMY_SPRITE_BY_TYPE); qualquer outro tipo sem entrada ali cai de
+       // volta pro slime genérico (com fallback colorido do spriteManager se a imagem faltar).
+       const { sheetName, animName } = this._resolveSprite();
+       const scale = ENEMY_SPRITE_BY_TYPE[this.type] ? 0.6 : 1;
        spriteManager.drawSprite(
           ctx,
-          "enemy_slime",
-          "idle",
+          sheetName,
+          animName,
           this.animFrameIndex,
           this.x - camera.x + this.width / 2,
           this.y - camera.y + this.height,
-          { anchorX: 0.5, anchorY: 1.0, flipX: this.direction === -1 }
+          { anchorX: 0.5, anchorY: 1.0, flipX: this.direction === -1, scale }
        );
     }
     ctx.restore();

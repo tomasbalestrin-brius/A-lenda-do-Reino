@@ -19,6 +19,81 @@ import { getBestLevel, reportLevelCompleted, getTitleForLevel } from "../core/pr
 const ITEM_ICONS = { food: "🍎", steak: "🥩", key: "🗝️" };
 const TUTORIAL_SEEN_KEY = "viking_tutorial_seen";
 
+// Animação real dos 3 heróis: pacotes CC0 gratuitos (LuizMelo, itch.io — Hero Knight,
+// Medieval Warrior Pack, Wizard Pack), cada pose (idle/run/jump/fall/attack/hit/death) é um
+// arquivo próprio com N quadros dispostos em tira horizontal única. `anim` é o nome que
+// platformCharacter.js pede via animController.play(...); `file` é o sufixo do PNG em
+// public/assets/sprites/heroes/{prefix}_{file}.png.
+const HERO_ANIM_SPECS = {
+  hero_erik: {
+    prefix: "hero_knight", frameWidth: 180, frameHeight: 180,
+    poses: {
+      idle: { file: "idle", anim: "idle", frames: 11, frameDuration: 130 },
+      run: { file: "run", anim: "walk", frames: 8, frameDuration: 90 },
+      jump: { file: "jump", anim: "jump", frames: 3, frameDuration: 90 },
+      fall: { file: "fall", anim: "fall", frames: 3, frameDuration: 90 },
+      attack: { file: "attack1", anim: "attack", frames: 7, frameDuration: 70 },
+      hit: { file: "hit", anim: "hit", frames: 4, frameDuration: 80 },
+      death: { file: "death", anim: "death", frames: 11, frameDuration: 130 },
+    },
+  },
+  hero_olaf: {
+    prefix: "medieval_warrior", frameWidth: 184, frameHeight: 137,
+    poses: {
+      idle: { file: "idle", anim: "idle", frames: 6, frameDuration: 150 },
+      run: { file: "run", anim: "walk", frames: 8, frameDuration: 100 },
+      jump: { file: "jump", anim: "jump", frames: 2, frameDuration: 100 },
+      fall: { file: "fall", anim: "fall", frames: 2, frameDuration: 100 },
+      attack: { file: "attack1", anim: "attack", frames: 4, frameDuration: 90 },
+      hit: { file: "hit", anim: "hit", frames: 3, frameDuration: 80 },
+      death: { file: "death", anim: "death", frames: 9, frameDuration: 130 },
+    },
+  },
+  hero_baleog: {
+    prefix: "wizard", frameWidth: 231, frameHeight: 190,
+    poses: {
+      idle: { file: "idle", anim: "idle", frames: 6, frameDuration: 150 },
+      run: { file: "run", anim: "walk", frames: 8, frameDuration: 100 },
+      jump: { file: "jump", anim: "jump", frames: 2, frameDuration: 100 },
+      fall: { file: "fall", anim: "fall", frames: 2, frameDuration: 100 },
+      attack: { file: "attack1", anim: "attack", frames: 8, frameDuration: 90 },
+      hit: { file: "hit", anim: "hit", frames: 4, frameDuration: 80 },
+      death: { file: "death", anim: "death", frames: 7, frameDuration: 130 },
+    },
+  },
+};
+
+// Tamanho em tela dos heróis (baseScale em VikingsGame usava 0.08 sobre imagens de 640px —
+// ~51px). Mantém a mesma altura aproximada em tela com os novos tamanhos de quadro reais.
+const HERO_ON_SCREEN_HEIGHT = 51;
+export const HERO_BASE_SCALE = Object.fromEntries(
+  Object.entries(HERO_ANIM_SPECS).map(([key, spec]) => [key, HERO_ON_SCREEN_HEIGHT / spec.frameHeight])
+);
+
+// Inimigos comuns: Inimigo_Patrulha (Goblin) e Inimigo_Atirador (Evil Wizard), mesmo pacote de
+// origem (Monsters Creatures Fantasy / Evil Wizard, ambos CC0 por LuizMelo). "imageKey" é o
+// nome do sheet completo (já prefixado por tipo, pra não colidir com o slime legado).
+const ENEMY_ANIM_SPECS = {
+  enemy_goblin: {
+    frameWidth: 150, frameHeight: 150,
+    poses: {
+      idle: { imageKey: "enemy_goblin_idle", file: "goblin_idle", anim: "idle", frames: 4, frameDuration: 150 },
+      run: { imageKey: "enemy_goblin_run", file: "goblin_run", anim: "walk", frames: 8, frameDuration: 100 },
+      attack: { imageKey: "enemy_goblin_attack", file: "goblin_attack", anim: "attack", frames: 8, frameDuration: 90 },
+      death: { imageKey: "enemy_goblin_death", file: "goblin_death", anim: "death", frames: 4, frameDuration: 130 },
+    },
+  },
+  enemy_evilwizard: {
+    frameWidth: 150, frameHeight: 150,
+    poses: {
+      idle: { imageKey: "enemy_evilwizard_idle", file: "evil_wizard_idle", anim: "idle", frames: 8, frameDuration: 130 },
+      move: { imageKey: "enemy_evilwizard_move", file: "evil_wizard_move", anim: "walk", frames: 8, frameDuration: 100 },
+      attack: { imageKey: "enemy_evilwizard_attack", file: "evil_wizard_attack", anim: "shoot", frames: 8, frameDuration: 90 },
+      death: { imageKey: "enemy_evilwizard_death", file: "evil_wizard_death", anim: "death", frames: 5, frameDuration: 130 },
+    },
+  },
+};
+
 const TILE_PALETTES = {
   ice: { base: "#7dd3fc", dark: "#0c4a6e", accent: "#e0f2fe" },
   fire: { base: "#7c2d12", dark: "#1c0a03", accent: "#f97316" },
@@ -213,41 +288,54 @@ export default function VikingsGame({ mode = "normal", onExit }) {
 
   useEffect(() => {
     let active = true;
-    
-    // Pre-load the existing heroes from the project (pose-swap: idle/run/attack são imagens separadas)
-    const assetsToLoad = [
-      { key: "hero_erik", src: "/assets/sprites/heroes/humano_guerreiro_idle.png" },
-      { key: "hero_erik_run", src: "/assets/sprites/heroes/humano_guerreiro_run_jump.png" },
-      { key: "hero_erik_attack", src: "/assets/sprites/heroes/humano_guerreiro_attack_dash.png" },
-      { key: "hero_olaf", src: "/assets/sprites/heroes/humano_barbaro_idle.png" },
-      { key: "hero_baleog", src: "/assets/sprites/heroes/humano_arcanista_idle.png" },
-      { key: "hero_baleog_run", src: "/assets/sprites/heroes/humano_arcanista_move_jump_cast.png" },
-      { key: "hero_baleog_attack", src: "/assets/sprites/heroes/humano_arcanista_move_jump_cast.png" },
-      { key: "enemy_slime", src: "/assets/sprites/enemies/slime.png" },
-      { key: "tileset_village", src: "/assets/tilesets/village.png" } // Optional background
-    ];
+
+    // Assets pra loadImages: cada pose (idle/run/jump/fall/attack/hit/death) é uma imagem
+    // própria, com quadros reais fatiados em grade pelo spriteManager (frameWidth/frameHeight).
+    const assetsToLoad = [];
+    Object.entries(HERO_ANIM_SPECS).forEach(([heroKey, spec]) => {
+       Object.entries(spec.poses).forEach(([poseName, pose]) => {
+          const sheetKey = poseName === "idle" ? heroKey : `${heroKey}_${poseName}`;
+          assetsToLoad.push({ key: sheetKey, src: `/assets/sprites/heroes/${spec.prefix}_${pose.file}.png` });
+       });
+    });
+    Object.entries(ENEMY_ANIM_SPECS).forEach(([, spec]) => {
+       Object.values(spec.poses).forEach((pose) => {
+          assetsToLoad.push({ key: pose.imageKey, src: `/assets/sprites/enemies/${pose.file}.png` });
+       });
+    });
+    assetsToLoad.push(
+       { key: "enemy_slime", src: "/assets/sprites/enemies/slime.png" },
+       { key: "tileset_village", src: "/assets/tilesets/village.png" } // Optional background
+    );
 
     import("../core/assetLoader").then(({ default: assetLoader }) => {
        assetLoader.loadImages(assetsToLoad).then(() => {
           if (!active) return;
 
-          // Heróis sem PNG de pose próprio (ex: Olaf não tem run/attack) caem de volta na idle
-          const poseKeys = [
-             "hero_erik", "hero_erik_run", "hero_erik_attack",
-             "hero_olaf", "hero_olaf_run", "hero_olaf_attack",
-             "hero_baleog", "hero_baleog_run", "hero_baleog_attack"
-          ];
-          poseKeys.forEach((key) => {
-             const img = assetLoader.getImage(key) || assetLoader.getImage(key.replace(/_run$|_attack$/, ""));
-             spriteManager.defineSpriteSheet(key, {
-                imageKey: assetLoader.getImage(key) ? key : key.replace(/_run$|_attack$/, ""),
-                frameWidth: img ? img.width : 32,
-                frameHeight: img ? img.height : 32,
-                animations: {
-                   idle: { frames: [0] },
-                   walk: { frames: [0] },
-                   attack: { frames: [0] }
-                }
+          Object.entries(HERO_ANIM_SPECS).forEach(([heroKey, spec]) => {
+             Object.entries(spec.poses).forEach(([poseName, pose]) => {
+                const sheetKey = poseName === "idle" ? heroKey : `${heroKey}_${poseName}`;
+                spriteManager.defineSpriteSheet(sheetKey, {
+                   imageKey: sheetKey,
+                   frameWidth: spec.frameWidth,
+                   frameHeight: spec.frameHeight,
+                   animations: {
+                      [pose.anim]: { frames: Array.from({ length: pose.frames }, (_, i) => i), frameDuration: pose.frameDuration }
+                   }
+                });
+             });
+          });
+
+          Object.entries(ENEMY_ANIM_SPECS).forEach(([, spec]) => {
+             Object.values(spec.poses).forEach((pose) => {
+                spriteManager.defineSpriteSheet(pose.imageKey, {
+                   imageKey: pose.imageKey,
+                   frameWidth: spec.frameWidth,
+                   frameHeight: spec.frameHeight,
+                   animations: {
+                      [pose.anim]: { frames: Array.from({ length: pose.frames }, (_, i) => i), frameDuration: pose.frameDuration }
+                   }
+                });
              });
           });
 
@@ -291,9 +379,9 @@ export default function VikingsGame({ mode = "normal", onExit }) {
     const state = stateRef.current;
     state.map = levelData;
     
-    const erik = new PlatformCharacter("erik", "Erik", "player", "hero_erik", levelData.spawns.erik.x, levelData.spawns.erik.y, { vikingType: "erik", speed: 0.15, drawOptions: { scale: 0.08, anchorX: 0.5, anchorY: 1.0 } });
-    const olaf = new PlatformCharacter("olaf", "Olaf", "player", "hero_olaf", levelData.spawns.olaf.x, levelData.spawns.olaf.y, { vikingType: "olaf", speed: 0.1, drawOptions: { scale: 0.08, anchorX: 0.5, anchorY: 1.0 } });
-    const baleog = new PlatformCharacter("baleog", "Baleog", "player", "hero_baleog", levelData.spawns.baleog.x, levelData.spawns.baleog.y, { vikingType: "baleog", speed: 0.12, drawOptions: { scale: 0.08, anchorX: 0.5, anchorY: 1.0 } });
+    const erik = new PlatformCharacter("erik", "Erik", "player", "hero_erik", levelData.spawns.erik.x, levelData.spawns.erik.y, { vikingType: "erik", speed: 0.15, drawOptions: { scale: HERO_BASE_SCALE.hero_erik, anchorX: 0.5, anchorY: 1.0 } });
+    const olaf = new PlatformCharacter("olaf", "Olaf", "player", "hero_olaf", levelData.spawns.olaf.x, levelData.spawns.olaf.y, { vikingType: "olaf", speed: 0.1, drawOptions: { scale: HERO_BASE_SCALE.hero_olaf, anchorX: 0.5, anchorY: 1.0 } });
+    const baleog = new PlatformCharacter("baleog", "Baleog", "player", "hero_baleog", levelData.spawns.baleog.x, levelData.spawns.baleog.y, { vikingType: "baleog", speed: 0.12, drawOptions: { scale: HERO_BASE_SCALE.hero_baleog, anchorX: 0.5, anchorY: 1.0 } });
     
     state.heroes = [erik, olaf, baleog];
     state.activeIdx = 0;
@@ -371,7 +459,12 @@ export default function VikingsGame({ mode = "normal", onExit }) {
           state.dialogue.triggerDialogue(state.heroes[state.activeIdx].id, "success");
           acao.targetTiles.forEach(tt => {
              if (state.map.layers.collision[tt.y] && state.map.layers.collision[tt.y][tt.x] !== undefined) {
-                 state.map.layers.collision[tt.y][tt.x] = 0; 
+                 state.map.layers.collision[tt.y][tt.x] = 0;
+             }
+             // Limpa o visual também — sem isso a Porta_Metalica_Fechada (vis===6) continuaria
+             // desenhada como trancada mesmo já andável, parecendo um bug gráfico.
+             if (state.map.layers.visuals[tt.y] && state.map.layers.visuals[tt.y][tt.x] !== undefined) {
+                 state.map.layers.visuals[tt.y][tt.x] = 0;
              }
           });
        } else if (acao.action === "ACTIVATE_ELEVATOR") {
@@ -757,6 +850,19 @@ export default function VikingsGame({ mode = "normal", onExit }) {
         } else if (vis === 5) {
            ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
            ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+        } else if (vis === 6) {
+           // Porta_Metalica_Fechada trancada — vão de câmara bloqueado até resolver o
+           // puzzle que a abre (ver _lockFinalDoor no SLE + action:"OPEN_DOOR" no trigger).
+           ctx.fillStyle = "#3f3f46";
+           ctx.fillRect(x, y, TILE_SIZE, TILE_SIZE);
+           ctx.strokeStyle = "#18181b";
+           ctx.lineWidth = 1;
+           ctx.strokeRect(x + 0.5, y + 0.5, TILE_SIZE - 1, TILE_SIZE - 1);
+           ctx.fillStyle = "#a1a1aa";
+           ctx.fillRect(x + 5, y, 3, TILE_SIZE);
+           ctx.fillRect(x + TILE_SIZE - 8, y, 3, TILE_SIZE);
+           ctx.fillStyle = "#eab308";
+           ctx.fillRect(x + 13, y + 14, 6, 6);
         }
       }
     }

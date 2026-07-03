@@ -340,25 +340,37 @@ export class PlatformCharacter extends Character {
     let animName = "idle";
     if (this.estado === ESTADOS.ANDANDO) animName = "walk";
     if (this.estado === ESTADOS.CORRENDO) animName = "walk";
+    if (this.estado === ESTADOS.PULANDO) animName = "jump";
+    if (this.estado === ESTADOS.CAINDO) animName = "fall";
     if (this.estado === ESTADOS.EMBATE) animName = "attack";
-    if (this.estado === ESTADOS.PULANDO || this.estado === ESTADOS.CAINDO) animName = "idle";
+    if (this.estado === ESTADOS.DANO) animName = "hit";
+    if (this.estado === ESTADOS.MORTO) animName = "death";
     if (this.estado === ESTADOS.PLANANDO) animName = "idle";
     if (this.estado === ESTADOS.DEFENDENDO) animName = "idle";
 
-    // Pose-swap: sem spritesheet de frames real, trocamos a imagem inteira por pose
-    // (idle/run_jump/attack_dash) conforme o estado da FSM.
+    // Pose-swap: cada estado da FSM tem seu próprio spritesheet dedicado (idle/run/jump/
+    // fall/attack1/hit/death — ver HERO_ANIM_SPECS em VikingsGame.jsx), cada um com quadros
+    // reais fatiados em grade pelo spriteManager.
     let poseSheet = this.spriteKey;
-    if (this.estado === ESTADOS.ANDANDO || this.estado === ESTADOS.CORRENDO || this.estado === ESTADOS.PULANDO || this.estado === ESTADOS.CAINDO) {
+    if (this.estado === ESTADOS.ANDANDO || this.estado === ESTADOS.CORRENDO) {
        poseSheet = `${this.spriteKey}_run`;
+    } else if (this.estado === ESTADOS.PULANDO) {
+       poseSheet = `${this.spriteKey}_jump`;
+    } else if (this.estado === ESTADOS.CAINDO) {
+       poseSheet = `${this.spriteKey}_fall`;
     } else if (this.estado === ESTADOS.EMBATE) {
        poseSheet = `${this.spriteKey}_attack`;
+    } else if (this.estado === ESTADOS.DANO) {
+       poseSheet = `${this.spriteKey}_hit`;
+    } else if (this.estado === ESTADOS.MORTO) {
+       poseSheet = `${this.spriteKey}_death`;
     }
     this.animController.setSheet(poseSheet);
 
     if (this.animController.currentAnimation !== animName) {
-       this.animController.play(animName, { loop: animName !== "attack" });
+       this.animController.play(animName, { loop: animName !== "attack" && animName !== "hit" && animName !== "death" });
     }
-    
+
     this.animController.speedMultiplier = this.estado === ESTADOS.CORRENDO ? 2.0 : 1.0;
     this.animController.update(deltaTimeMs);
   }

@@ -77,14 +77,17 @@ class PuzzleElementLibrary {
         // Exemplo de Elementos de Puzzle
 
         // --- Obstáculos ---
+        // Altura 2 pra bater com o vão de porta real entre câmaras que o SLE tranca
+        // (DOOR_HEIGHT_TILES em viking_sle_implementation.js) — agora é um obstáculo físico
+        // de verdade (parede sólida na fronteira de câmara), não só um conceito lógico no grafo.
         this.addElement(new PuzzleElement(
             'Porta_Metalica_Fechada',
             PuzzleElementType.OBSTACULO,
-            { tiles: [[10]], width: 1, height: 3 }, // Exemplo: Tile ID 10 para porta fechada
+            { tiles: [[10],[10]], width: 1, height: 2 },
             [{ type: ConditionType.ELEMENT_STATE, targetId: 'Porta_Metalica_Fechada', state: 'ABERTA' }],
             [],
             [],
-            { minWidth: 1, minHeight: 3, requiresGroundBelow: true }
+            { minWidth: 1, minHeight: 2, requiresGroundBelow: true }
         ));
 
         this.addElement(new PuzzleElement(

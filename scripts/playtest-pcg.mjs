@@ -14,6 +14,11 @@ const { generateProceduralLevel } = await import("../src/pcg/generateLevel.js");
 const LEVEL_INDEXES = [1, 4, 7, 10, 13, 16, 21, 26, 31, 40];
 const TILE_GROUND = 1;
 
+// Mesma constante do SLE (viking_sle_implementation.js) — usada só pra excluir as colunas de
+// fronteira de câmara do check de degrau abaixo, já que uma Porta_Metalica_Fechada trancada
+// (_lockFinalDoor) cria de propósito um "degrau" bem alto ali até o puzzle ser resolvido.
+const CHAMBER_COUNT = 4;
+
 // Degrau máximo tolerado entre colunas adjacentes da superfície andável. O SLE limita a 1
 // tile por fronteira de câmara (MAX_STEP_TILES) suavizado por uma escada de 4 colunas — 2
 // dá folga pra arredondamento da interpolação sem deixar passar um degrau real intransponível.
@@ -50,8 +55,11 @@ for (const levelIndex of LEVEL_INDEXES) {
 
   const floors = computeColumnFloors(level.layers.collision, level.height, level.width);
   const boundsOk = floors.every((f) => f > 0 && f < level.height);
+  const chamberWidth = Math.floor(level.width / CHAMBER_COUNT);
+  const chamberBoundaries = Array.from({ length: CHAMBER_COUNT - 1 }, (_, i) => (i + 1) * chamberWidth);
   let maxStep = 0;
   for (let x = 1; x < floors.length; x++) {
+    if (chamberBoundaries.includes(x - 1) || chamberBoundaries.includes(x)) continue; // porta trancada, degrau esperado
     maxStep = Math.max(maxStep, Math.abs(floors[x] - floors[x - 1]));
   }
   const walkableOk = boundsOk && maxStep <= MAX_WALKABLE_STEP;

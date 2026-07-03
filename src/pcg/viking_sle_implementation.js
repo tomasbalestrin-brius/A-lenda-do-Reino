@@ -28,6 +28,10 @@ const STAIRCASE_HALF_WIDTH = 2; // colunas de cada lado da fronteira usadas na t
 const DOOR_HEIGHT_TILES = 2; // vão livre de altura da porta entre câmaras
 const DOOR_CEILING_MARGIN = 6; // tiles acima do vão até o "teto" da parede
 
+// ID usado só no visualTilemap (nunca no collisionTilemap) pra desenhar a porta trancada
+// diferente de uma parede comum — ver render() em VikingsGame.jsx, vis===6.
+const DOOR_VISUAL_TILE = 6;
+
 class SpatialLayoutEngine {
     constructor(puzzleElementLibrary) {
         this.pel = puzzleElementLibrary;
@@ -39,6 +43,49 @@ class SpatialLayoutEngine {
         this.chamberBaseFloorY = [];
         this.chamberBoundaries = [];
         this.chamberWidth = 0;
+        this.doorTiles = []; // Coordenadas físicas da Porta_Metalica_Fechada, se trancada nesta geração
+    }
+
+    /**
+     * Tranca a última fronteira de câmara (a que antecede a câmara da saída) como uma
+     * Porta_Metalica_Fechada física de verdade, SE o grafo de dependências desta geração tiver
+     * alguma solução real pra abri-la (Alvo_Magico_Distante/Machado_Correntes/Estatua_Selo_Runico
+     * — qualquer elemento cujo posCondition mude Porta_Metalica_Fechada pra ABERTA). A solução
+     * escolhida pelo DGG sempre acaba posicionada na câmara imediatamente anterior a essa
+     * fronteira (processNode começa em chamberIndex = CHAMBER_COUNT-2 pra primeira camada de
+     * profundidade), então trancar exatamente aqui cria uma progressão natural: resolve o
+     * puzzle numa câmara, a porta abre, entra na câmara seguinte onde está a saída.
+     *
+     * Usa o mesmo ID sólido da física (TILE_GROUND) — não precisa de um ID de colisão novo,
+     * só o visualTilemap ganha um ID próprio (DOOR_VISUAL_TILE) pra render() desenhar diferente
+     * de uma parede comum.
+     */
+    _lockFinalDoor(dependencyGraph) {
+        this.doorTiles = [];
+        if (this.chamberBoundaries.length === 0) return;
+
+        const hasDoorOpener = Object.values(dependencyGraph || {}).some(node => {
+            const el = this.pel.getElementById(node.elementId);
+            return el && el.posConditions.some(c => c.targetId === 'Porta_Metalica_Fechada' && c.newState === 'ABERTA');
+        });
+        if (!hasDoorOpener) return; // nada nesta geração abre a porta — deixa o vão livre como antes
+
+        const boundaryX = this.chamberBoundaries[this.chamberBoundaries.length - 1];
+        const leftX = Math.max(0, boundaryX - 1);
+        const rightX = Math.min(this.levelWidth - 1, boundaryX + 1);
+        const higherFloorY = Math.min(this.columnToFloorY[leftX], this.columnToFloorY[rightX]);
+        const doorTop = higherFloorY - DOOR_HEIGHT_TILES;
+        const doorBottom = higherFloorY - 1;
+
+        for (let y = doorTop; y <= doorBottom; y++) {
+            this.tilemap[y][boundaryX] = TILE_GROUND;
+            this.doorTiles.push({ x: boundaryX, y });
+        }
+
+        const doorElement = this.pel.getElementById('Porta_Metalica_Fechada');
+        if (doorElement) {
+            this.placedElements.push({ element: doorElement, x: boundaryX, y: doorTop, width: 1, height: DOOR_HEIGHT_TILES });
+        }
     }
 
     /**
@@ -258,6 +305,7 @@ class SpatialLayoutEngine {
      */
     generateLayout(dependencyGraph, theme = "dungeon") {
         this._initializeTilemap();
+        this._lockFinalDoor(dependencyGraph);
 
         // Encontrar o nó final (saída) no grafo
         const finalNodeId = Object.keys(dependencyGraph).find(nodeId => dependencyGraph[nodeId].elementId === 'Saida_Nivel');
@@ -393,6 +441,12 @@ class SpatialLayoutEngine {
 
         // collisionTilemap preserva os IDs físicos puros usados por isWalkablePlatform/LSV
         const collisionTilemap = this.tilemap.map(row => row.slice());
+
+        // Porta trancada: só o visual ganha um ID próprio (DOOR_VISUAL_TILE) — a colisão
+        // continua TILE_GROUND normal, então a física não precisa reconhecer um ID novo.
+        this.doorTiles.forEach(({ x, y }) => {
+            if (visualTilemap[y]) visualTilemap[y][x] = DOOR_VISUAL_TILE;
+        });
 
         return { collisionTilemap, visualTilemap };
     }

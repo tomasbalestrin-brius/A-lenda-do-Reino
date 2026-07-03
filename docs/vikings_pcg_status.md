@@ -82,10 +82,61 @@ Avaliação honesta contra a referência (The Lost Vikings) apontou 4 gaps concr
 
 Resultado: `npm run test` (79 testes), `npm run build` e `node scripts/playtest-pcg.mjs` (0 falhas em várias rodadas) seguem verdes após as 4 mudanças.
 
+## Quinta rodada (mesmo dia): animação real de movimento/ataque (heróis + inimigos)
+
+Os 3 heróis usavam "pose-swap" de imagem única (idle/corrida/ataque, 640×640, sem quadros) —
+Olaf nem tinha arquivo de corrida/ataque próprio (sempre caía no fallback idle). Investigação
+confirmou que o motor de animação (`spriteManager`, `animationController`, FSM em
+`platformCharacter.js`) já suportava quadros múltiplos de verdade — o gap era só de arte. Sem
+ferramenta de geração de imagem disponível, busquei pacotes CC0 gratuitos (domínio público, uso
+comercial livre, sem exigência de atribuição) do mesmo autor (LuizMelo, itch.io), garantindo
+estilo visual consistente entre os 3 heróis + 2 inimigos comuns — ver
+`public/assets/sprites/CREDITS.md` pra fonte de cada um.
+
+- **Download automatizado tentado e abandonado conscientemente**: o fluxo de "gerar link de
+  download" do itch.io (csrf_token + `download_url` + `/download/{id}` + `accept_nda`) foi
+  parcialmente replicado via PowerShell, mas travou num token que só valida vindo de um
+  navegador de verdade — insistir se pareceria com burlar a proteção deles contra automação, então
+  parei e pedi pro usuário baixar manualmente (poucos cliques, sem login, "pague o quanto
+  quiser" = R$0). Os 5 ZIPs foram extraídos e os quadros copiados pra
+  `public/assets/sprites/{heroes,enemies}/`.
+- **Cada pose agora é uma tira horizontal de quadros reais** (idle/run/jump/fall/attack1/hit/death
+  por herói), com dimensões e contagens conferidas byte a byte no PNG (não confiei nos resumos de
+  busca web, que erraram a contagem de quadros em 2 dos 3 pacotes) — specs completas em
+  `HERO_ANIM_SPECS`/`ENEMY_ANIM_SPECS` (`VikingsGame.jsx`).
+- **`platformCharacter.js` ganhou 4 estados novos de animação** (antes só idle/walk/attack): jump,
+  fall, hit (DANO) e death (MORTO) — cada um com seu próprio pose-swap de sheet, mesmo padrão já
+  usado por idle/walk/attack, nenhuma mudança estrutural na FSM em si.
+- **Inimigos comuns ganharam identidade visual própria**: antes Inimigo_Patrulha e
+  Inimigo_Atirador reaproveitavam o mesmo slime genérico; agora usam Goblin (patrulha, ciclo de
+  corrida real) e Evil Wizard (atirador, ciclo de movimento + animação de conjuração real na
+  janela do disparo — substituindo o placeholder de fallback pro slime implementado na rodada
+  anterior). `enemy.js` generalizado pra ler contagem de quadros/duração reais do
+  `spriteManager` em vez do `%4`/`400ms` fixo do slime (mantido como fallback só pra tipos sem
+  sprite dedicado).
+- **Escala recalculada por herói** (`HERO_BASE_SCALE`) pra manter a altura em tela (~51px)
+  igual à das imagens antigas de 640px, agora com quadros de tamanho variável (180×180,
+  184×137, 231×190).
+- Verificado no navegador: nenhuma requisição de imagem falhou (25 PNGs novos), idle real
+  avançando quadros (frame 7/11 amostrado), troca de sheet/animação confirmada em `walk`/`fall`
+  (herói), `attack`/`EMBATE` (Olaf), e resolução de sprite/animação do inimigo confirmada via
+  instância isolada no console (`goblin→walk 8 quadros`, `evil wizard→shoot 8 quadros` na
+  janela de disparo).
+
+## Sexta rodada (mesmo dia): porta física de verdade (`Porta_Metalica_Fechada`)
+
+Investigação (agente Explore + leitura direta) corrigiu um diagnóstico errado do agente: `Porta_Metalica_Fechada` **nunca chega a ser nó do grafo de dependências** (o DGG só cria nós pra elementos que *satisfazem* uma precondição, nunca pro alvo dela) — ela é só uma string `targetId` referenciada por `Saida_Nivel` e pelos 3 abridores (`Alvo_Magico_Distante`/`Machado_Correntes`/`Estatua_Selo_Runico`). Isso mudou o design: em vez de tentar posicioná-la via `processNode` (que nunca a veria), o SLE agora tranca deliberadamente **a última fronteira de câmara antes da câmara da saída** como a porta.
+
+- **`_lockFinalDoor()`** (`viking_sle_implementation.js`, chamado logo após `_initializeTilemap()`): confirma que o grafo desta geração tem algum elemento cujo `posConditions` abre `Porta_Metalica_Fechada` (não deveria falhar nunca com a PEL atual, mas é defensivo); se sim, preenche o vão de 2 tiles da última fronteira com `TILE_GROUND` (sólido de verdade — reaproveita o ID que a física já reconhece, sem precisar de um novo) e registra a posição em `placedElements`. A solução escolhida pelo DGG sempre acaba posicionada na câmara imediatamente anterior a essa fronteira (mesma lógica de `chamberIndex` já existente), então a progressão fica natural: resolve o puzzle numa câmara → a porta abre → passa pra câmara da saída.
+- **Visual próprio sem novo ID de colisão**: `DOOR_VISUAL_TILE=6` só existe no `visualTilemap` (a colisão continua `TILE_GROUND` puro) — `render()` em `VikingsGame.jsx` ganhou um `vis===6` (porta metálica cinza com trinco dourado), sem tocar em `isWalkablePlatform`.
+- **`generateLevel.js`**: os 3 abridores agora emitem `action:"OPEN_DOOR"` com `targetTiles` apontando pros tiles reais da porta (antes: sempre `SWITCH`/`LOG_MESSAGE` decorativo, sem efeito nenhum) — fallback pro comportamento antigo preservado caso, por algum motivo, nenhuma porta tenha sido trancada nesta geração.
+- **Bug pré-existente corrigido de passagem**: o handler de `OPEN_DOOR` (já existia, usado por níveis fixos) só limpava a camada de colisão, nunca a visual — inofensivo antes porque nada gerava esse ID visualmente, mas com a porta real ficaria "andável só que ainda desenhada trancada". Agora limpa as duas camadas.
+- **`scripts/playtest-pcg.mjs` ajustado**: a coluna de fronteira de câmara agora pode ficar totalmente sólida até bem alto (a porta trancada), o que dispararia falso-positivo no check de degrau — passou a excluir as colunas de fronteira (mesma constante `CHAMBER_COUNT` do SLE) dessa medição específica.
+- Verificado: 50 gerações (5 rodadas × 10 níveis) com `collision-ok=true`; instância isolada no console confirmou porta trancada (`collision=1, visual=6`) virando andável e invisível (`collision=0, visual=0`) após disparar a ação `OPEN_DOOR` com os `targetTiles` reais do trigger gerado.
+
 ## Pendente / decisões em aberto
 
 - **Playtesting manual mais longo**: dados de geração (script Node, agora comitado) cobrem 10 níveis/3 temas por rodada, mas não substitui jogar manualmente por várias fases seguidas.
-- **Elementos "abridores de porta" são só lógicos**: `Porta_Metalica_Fechada` nunca é fisicamente posicionada pelo SLE hoje (só participa do grafo como conceito abstrato) — `Alvo_Magico_Distante`/`Machado_Correntes`/`Estatua_Selo_Runico` viram um `SWITCH` decorativo (`action: "LOG_MESSAGE"`) em vez de abrir uma porta real. Construir uma porta física de verdade exigiria o SLE tratar `Porta_Metalica_Fechada` como um nó posicionável, não só um `targetId` textual — escopo maior, não atacado nesta rodada.
 - **`Barreira_Magica` segue nunca posicionada**: nada no grafo atual referencia sua derrota (`DISSIPADA`), então o DGG nunca a escolhe. Teria efeito se algo passasse a exigir esse estado — não fiz isso agora porque destruí-la à distância (o ataque real do Baleog nesse caso) exigiria colisão projétil-vs-interactiveObject, que não existe hoje (só ataque corpo-a-corpo destrói objetos).
 - **Fullscreen não pôde ser testado de ponta a ponta num navegador real** nesta sessão (só a lógica de troca de layout, via simulação de evento) — vale uma checagem manual rápida num navegador de verdade antes de considerar 100% fechado.
 
