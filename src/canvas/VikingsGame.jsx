@@ -688,8 +688,16 @@ export default function VikingsGame({ mode = "normal", onExit }) {
        let intentX = 0;
        if (state.keys["ArrowLeft"] || state.keys["a"] || state.keys["A"]) intentX = -1;
        if (state.keys["ArrowRight"] || state.keys["d"] || state.keys["D"]) intentX = 1;
-       
+
        activeHero.intentX = intentX;
+
+       // Escada: W/S (ou setas) seguram continuamente pra subir/descer enquanto o herói
+       // estiver sobre um tile de escada (ver _ladderColumnAt em platformCharacter.js) — sem
+       // efeito nenhum longe de escada.
+       let intentY = 0;
+       if (state.keys["ArrowUp"] || state.keys["w"] || state.keys["W"]) intentY = -1;
+       if (state.keys["ArrowDown"] || state.keys["s"] || state.keys["S"]) intentY = 1;
+       activeHero.intentY = intentY;
     }
 
     state.interactiveObjects.forEach(obj => {
@@ -740,7 +748,7 @@ export default function VikingsGame({ mode = "normal", onExit }) {
     });
 
     state.heroes.forEach(h => {
-       if (h !== activeHero) h.intentX = 0;
+       if (h !== activeHero) { h.intentX = 0; h.intentY = 0; }
        h.update(dt, state.map, state.heroes, state.interactiveObjects);
     });
 
@@ -863,6 +871,15 @@ export default function VikingsGame({ mode = "normal", onExit }) {
            ctx.fillRect(x + TILE_SIZE - 8, y, 3, TILE_SIZE);
            ctx.fillStyle = "#eab308";
            ctx.fillRect(x + 13, y + 14, 6, 6);
+        } else if (vis === 7) {
+           // Escada (TILE_LADDER em platformCharacter.js) — trilhos + degraus, madeira simples.
+           ctx.fillStyle = "#78350f";
+           ctx.fillRect(x + 4, y, 4, TILE_SIZE);
+           ctx.fillRect(x + TILE_SIZE - 8, y, 4, TILE_SIZE);
+           ctx.fillStyle = "#a16207";
+           for (let ry = 4; ry < TILE_SIZE; ry += 10) {
+              ctx.fillRect(x + 4, y + ry, TILE_SIZE - 8, 3);
+           }
         }
       }
     }

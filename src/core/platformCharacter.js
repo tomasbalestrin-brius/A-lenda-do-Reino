@@ -3,6 +3,12 @@ import { GRAVITY_HERO, checkAABB, TRADE_ITEM_MAX_DIST } from "./physics";
 
 const TERMINAL_VELOCITY = 0.6;
 
+// ID de colisão pra escada — não colide com nada existente (só 0=ar, 1=sólido, 2=plataforma
+// eram usados até aqui). Não bloqueia por padrão (isWalkablePlatform só barra em tile===1),
+// só vira especial quando o herói segura cima/baixo em cima dela (ver _isOnLadder/update()).
+const TILE_LADDER = 3;
+const LADDER_CLIMB_SPEED = 0.09; // px/ms — ritmo de subida/descida na escada
+
 // Força de pulo por viking (negativo = pra cima). Cada um pula uma altura
 // diferente — mantém a identidade de personagem (Erik ágil, Olaf robusto) e
 // também é o teto de segurança pra quanto o SLE pode variar a altura das salas.
@@ -26,7 +32,8 @@ export const ESTADOS = {
   DEFENDENDO: "DEFENDENDO",
   PLANANDO: "PLANANDO",
   MORTO: "MORTO",
-  DANO: "DANO"
+  DANO: "DANO",
+  ESCALANDO: "ESCALANDO"
 };
 
 export class PlatformCharacter extends Character {
@@ -41,6 +48,7 @@ export class PlatformCharacter extends Character {
     // FSM State
     this.estado = ESTADOS.PARADO;
     this.intentX = 0; // -1 (esquerda), 0 (parado), 1 (direita)
+    this.intentY = 0; // -1 (subir escada), 0 (parado), 1 (descer escada)
     this.intentRun = false;
     
     // Game Feel timers
@@ -135,6 +143,50 @@ export class PlatformCharacter extends Character {
     
     const wasGrounded = this.isGrounded;
     this.justLandedHard = false;
+
+    // Escalada de escada: checada ANTES da física normal, porque tem resolução própria
+    // (sem gravidade, movimento vertical direto, sem colisão X/Y) que substitui totalmente
+    // o bloco de baixo enquanto o herói estiver na escada.
+    const onLadder = map && map.layers && map.layers.collision ? this._ladderColumnAt(map) : null;
+    const canClimb = this.estado !== ESTADOS.EMBATE && this.estado !== ESTADOS.DANO && this.estado !== ESTADOS.MORTO;
+    if (canClimb && (this.estado === ESTADOS.ESCALANDO || (onLadder && this.intentY !== 0))) {
+       if (this.jumpBufferTimer > 0) {
+          // Pula pra fora da escada (mesma força de pulo do próprio viking)
+          this.estado = ESTADOS.PULANDO;
+          this.vy = this.jumpForce;
+          this.jumpBufferTimer = 0;
+          this.coyoteTimer = 0;
+       } else if (!onLadder) {
+          // Chegou no topo/base da escada — sai pra física normal a partir do próximo tick
+          this.estado = this.intentY < 0 ? ESTADOS.PULANDO : ESTADOS.CAINDO;
+          this.vy = 0;
+       } else {
+          this.estado = ESTADOS.ESCALANDO;
+          this.isGrounded = false;
+          this.vx = 0;
+          this.vy = this.intentY * LADDER_CLIMB_SPEED;
+
+          // Alinha o herói ao centro da coluna da escada (senão fica torto, já que a escada
+          // costuma ter 1 tile de largura)
+          const ladderCenterX = onLadder.col * 32 + 16 - this.hitbox.offsetX - this.hitbox.w / 2;
+          this.x += (ladderCenterX - this.x) * 0.3;
+          this.y += this.vy * deltaTimeMs;
+
+          this.drawX = this.x - 16;
+          this.drawY = this.y;
+          this.gridX = Math.floor((this.x + 16) / 32);
+          this.gridY = Math.floor((this.y + 16) / 32);
+
+          // Sem sprite dedicado de escalada ainda — usa a pose idle como placeholder seguro,
+          // mesmo padrão já usado pra outros estados sem arte própria (PLANANDO/DEFENDENDO).
+          this.animController.setSheet(this.spriteKey);
+          if (this.animController.currentAnimation !== "idle") {
+             this.animController.play("idle", { loop: true });
+          }
+          this.animController.update(deltaTimeMs);
+          return;
+       }
+    }
 
     // FSM: Process Intent to Velocity X
     if (this.estado !== ESTADOS.EMBATE && this.estado !== ESTADOS.DANO && this.estado !== ESTADOS.DEFENDENDO && this.estado !== ESTADOS.MORTO) {
@@ -373,6 +425,22 @@ export class PlatformCharacter extends Character {
 
     this.animController.speedMultiplier = this.estado === ESTADOS.CORRENDO ? 2.0 : 1.0;
     this.animController.update(deltaTimeMs);
+  }
+
+  // Verifica se a coluna central do herói tem uma escada na altura atual (ou levemente acima/
+  // abaixo, pra não "perder" a escada por 1px de erro de arredondamento no limite dos tiles).
+  _ladderColumnAt(map) {
+    const centerX = this.x + this.hitbox.offsetX + this.hitbox.w / 2;
+    const col = Math.floor(centerX / 32);
+    const topRow = Math.floor((this.y + this.hitbox.offsetY) / 32);
+    const bottomRow = Math.floor((this.y + this.hitbox.offsetY + this.hitbox.h - 0.1) / 32);
+    if (col < 0 || col >= map.width) return null;
+    for (let r = topRow; r <= bottomRow; r++) {
+      if (r >= 0 && r < map.height && map.layers.collision[r][col] === TILE_LADDER) {
+        return { col, row: r };
+      }
+    }
+    return null;
   }
 
   isWalkablePlatform(map, box, allCharacters, isMovingDown) {

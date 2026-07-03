@@ -134,8 +134,21 @@ Investigação (agente Explore + leitura direta) corrigiu um diagnóstico errado
 - **`scripts/playtest-pcg.mjs` ajustado**: a coluna de fronteira de câmara agora pode ficar totalmente sólida até bem alto (a porta trancada), o que dispararia falso-positivo no check de degrau — passou a excluir as colunas de fronteira (mesma constante `CHAMBER_COUNT` do SLE) dessa medição específica.
 - Verificado: 50 gerações (5 rodadas × 10 níveis) com `collision-ok=true`; instância isolada no console confirmou porta trancada (`collision=1, visual=6`) virando andável e invisível (`collision=0, visual=0`) após disparar a ação `OPEN_DOOR` com os `targetTiles` reais do trigger gerado.
 
+## Sétima rodada (mesmo dia): mecânica de escada (prova de conceito)
+
+Pedido do usuário após comparar contra referências visuais do Lost Vikings original (fundo pintado de caverna/sci-fi + escada como mecânica central de navegação vertical). Nesta rodada só a **mecânica em si** foi implementada e comprovada — ainda não está ligada à geração procedural (SLE) nem tem arte própria (usa a pose idle como placeholder, mesmo padrão já usado em PLANANDO/DEFENDENDO).
+
+- **`ESTADOS.ESCALANDO`** (novo estado da FSM) + **`TILE_LADDER=3`** (novo ID de colisão, não bloqueia por padrão — só vira especial quando o herói segura cima/baixo em cima dele).
+- **`platformCharacter.js`**: bloco novo em `update()`, checado ANTES da física normal (gravidade/colisão X/Y), com resolução própria — sem gravidade, movimento vertical direto (`LADDER_CLIMB_SPEED=0.09px/ms`), trava horizontal no centro da coluna da escada. Solta a tecla e o herói fica grudado (não cai); sai da escada ao alcançar o topo/base (volta pra física normal) ou ao pular (`jump()` já funciona estando `ESCALANDO`, sai com a força de pulo do próprio viking).
+- **`intentY`** (novo, paralelo a `intentX`): W/S ou setas Cima/Baixo, lido a cada frame em `VikingsGame.jsx` — sem efeito nenhum longe de escada.
+- **Visual**: `vis===7` em `render()` — escada de madeira simples (trilhos + degraus), até ter arte própria.
+- **Verificado** via instância isolada no console (escada injetada manualmente num nível carregado): sobe suave e continuamente segurando W, gruda no lugar ao soltar, desce com S, pula pra fora corretamente, sai no topo da escada devolvendo controle pra física normal. Um teste inicial mostrou o herói "voando" pra fora do mapa (y extremo) — investigado e confirmado como artefato do ambiente de preview (aba em segundo plano soma um `deltaTime` gigante num único tick, não um bug da mecânica); reproduzido de novo com timing controlado e a saída da escada funcionou corretamente.
+- `npm run test`/`npm run build`/`node scripts/playtest-pcg.mjs` seguem verdes (SLE não foi tocado nesta rodada).
+
 ## Pendente / decisões em aberto
 
+- **Escada ainda não gera proceduralmente**: o SLE não cria nenhum `TILE_LADDER` hoje — a mecânica existe e funciona, mas nenhum nível (fixo ou PCG) tem uma escada de verdade colocada nele ainda. Integrar ao SLE (decidir onde/quando vale a pena um trecho vertical em vez de escadaria) é o próximo passo, se o usuário quiser.
+- **Sem arte própria pra escada nem pro tileset de fundo (caverna/sci-fi)**: pedido de prompts pro usuário gerar via Gemini (não tenho ferramenta de geração de imagem aqui) — aguardando o usuário trazer os arquivos.
 - **Playtesting manual mais longo**: dados de geração (script Node, agora comitado) cobrem 10 níveis/3 temas por rodada, mas não substitui jogar manualmente por várias fases seguidas.
 - **`Barreira_Magica` segue nunca posicionada**: nada no grafo atual referencia sua derrota (`DISSIPADA`), então o DGG nunca a escolhe. Teria efeito se algo passasse a exigir esse estado — não fiz isso agora porque destruí-la à distância (o ataque real do Baleog nesse caso) exigiria colisão projétil-vs-interactiveObject, que não existe hoje (só ataque corpo-a-corpo destrói objetos).
 - **Fullscreen não pôde ser testado de ponta a ponta num navegador real** nesta sessão (só a lógica de troca de layout, via simulação de evento) — vale uma checagem manual rápida num navegador de verdade antes de considerar 100% fechado.
