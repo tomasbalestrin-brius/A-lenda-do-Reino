@@ -484,13 +484,13 @@ export default function CharacterCreation({ initialView = 'library', onExit }) {
 
           <div className="max-w-4xl mx-auto pb-32 md:pb-40">
             <ErrorBoundary onReset={() => setStep(0)}>
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence initial={false}>
                 <motion.div
                   key={step}
-                  initial={{ opacity: 0, x: 20 }}
+                  initial={{ opacity: 0, x: prefersReducedMotion ? 0 : 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
+                  exit={{ opacity: 0, x: prefersReducedMotion ? 0 : -20 }}
+                  transition={{ duration: prefersReducedMotion ? 0 : 0.2, ease: 'easeOut' }}
                   className="w-full"
                 >
                   <React.Suspense fallback={
