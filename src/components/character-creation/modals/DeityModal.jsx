@@ -234,7 +234,7 @@ export function DeityModal({ id, deus, onClose, onConfirm, isSelected }) {
       </motion.div>
 
       {/* Dynamic Background Effects */}
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
