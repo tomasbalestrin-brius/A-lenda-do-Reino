@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { getAllTrainedSkills } from '../../systems/characterStats';
 import { getSystem } from '../../systems/registry';
+import { ITENS } from '../../systems/t20/data/items';
 
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
 
