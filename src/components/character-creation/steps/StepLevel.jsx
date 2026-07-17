@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import CLASSES from '../../../data/t20/classes';
-import { computeStats } from '../../../utils/rules/characterStats';
+import { computeStats } from '../../../systems/characterStats';
+import { getSystem } from '../../../systems/registry';
 import { 
   TrendingUp, Shield, Zap, Heart, 
   Sword, Star, Trophy, Crown, Sparkles,
@@ -59,7 +59,8 @@ const getTierKey = (lvl) => {
 export function StepLevel() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
   const level = char.level || 1;
-  const cls = CLASSES[char.classe?.toLowerCase()];
+  const system = getSystem(char.system || 't20');
+  const cls = system.classes[char.classe?.toLowerCase()];
   
   // Real-time stats preview
   const stats = useMemo(() => computeStats(char), [char]);

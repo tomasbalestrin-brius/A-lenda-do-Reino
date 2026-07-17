@@ -1,4 +1,4 @@
-import { useOnlineStatus } from '../hooks/useOnlineStatus';
+import { useOnlineStatus } from '../shared/useOnlineStatus';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function OfflineBanner() {

@@ -1,10 +1,10 @@
 // Simple validator for data modules
-import { RACAS } from "../data/t20/races";
-import { CLASSES } from "../data/t20/classes";
-import { ORIGENS } from "../data/t20/origins";
-import { DEUSES } from "../data/t20/gods";
-import { PERICIAS } from "../data/t20/skills";
-import { ITENS } from "../data/t20/items";
+import { RACAS } from "../systems/t20/data/races";
+import { CLASSES } from "../systems/t20/data/classes";
+import { ORIGENS } from "../systems/t20/data/origins";
+import { DEUSES } from "../systems/t20/data/gods";
+import { PERICIAS } from "../systems/t20/data/skills";
+import { ITENS } from "../systems/t20/data/items";
 
 function toArray(input) {
   if (!input) return [];

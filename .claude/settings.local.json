@@ -24,7 +24,16 @@
       "Bash(grep -n \"I\\\\.\\\\|II\\\\.\\\\|III\\\\.\\\\|IV\\\\.\\\\|V\\\\.\\\\|VI\\\\.\\\\|VII\\\\.\\\\|VIII\\\\.\\\\|IX\\\\.\\\\|X\\\\.\\\\|XI\\\\.\\\\|XII\\\\.\\\\|XIII\\\\.\\\\|XIV\\\\.\\\\|XV\\\\.\\\\|XVI\\\\.\\\\|XVII\\\\.\\\\|XVIII\\\\.\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/Step*.jsx)",
       "Bash(grep -rn \"I\\\\.\\\\|II\\\\.\\\\|III\\\\.\\\\|IV\\\\.\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/Step*.jsx)",
       "Bash(head -5 grep -n \"h2\\\\|<h2\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/StepClassSpecialization.jsx)",
-      "Bash(head -5 grep -n \"h2\\\\|<h2\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/StepOrigemBeneficios.jsx)"
+      "Bash(head -5 grep -n \"h2\\\\|<h2\" c:/Users/tomas/a-lenda-do-reino/src/components/character-creation/steps/StepOrigemBeneficios.jsx)",
+      "Bash(grep -E \"\\\\.mjs|\\\\.sql|\\\\.ps1|\\\\.cjs|\\\\.js$\")",
+      "Bash(node -e ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(mkdir -p \"C:\\\\Users\\\\Tomás\\\\.claude\\\\plans\" 2>/dev/null; echo ok)",
+      "Bash(cat > *)",
+      "Bash(ls -la \"C:/Users/Tomás/.claude/skills\" 2>/dev/null || echo \"NO GLOBAL SKILLS DIR\")",
+      "Bash(rm src/services/supabaseClient.js)",
+      "Bash(rmdir src/services)",
+      "Bash(npx vite *)"
     ],
     "deny": [],
     "ask": []

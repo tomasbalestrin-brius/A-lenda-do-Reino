@@ -1,3 +1,6 @@
+// Domínio/PCG: fachada da geração procedural de níveis (design reverso). Orquestra
+// DependencyGraph (grafo de solubilidade) → SpatialLayoutEngine (layout físico). Dono ÚNICO
+// da montagem do nível; a adaptação pro formato do VikingsGame vive em generateLevel.js.
 import { DependencyGraph } from "./DependencyGraph";
 import { SpatialLayoutEngine } from "./SpatialLayoutEngine";
 

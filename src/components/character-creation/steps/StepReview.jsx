@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { getSystem } from '../../../systems/registry';
-import { ORIGENS } from '../../../data/t20/origins';
-import { divindades as DEUSES } from '../../../data/t20/gods';
-import { ITENS } from '../../../data/t20/items';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../../data/t20/conditionsAndBuffs';
-import { MELHORIAS, MATERIAIS } from '../../../data/t20/modificacoes';
+import { ORIGENS } from '../../../systems/t20/data/origins';
+import { divindades as DEUSES } from '../../../systems/t20/data/gods';
+import { ITENS } from '../../../systems/t20/data/items';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../../systems/t20/data/conditionsAndBuffs';
+import { MELHORIAS, MATERIAIS } from '../../../systems/t20/data/modificacoes';
 import DiceRollerBG3 from '../../DiceRollerBG3';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import { getAllTrainedSkills, getAllOwnedPowers } from '../../../utils/rules/characterStats';
+import { getAllTrainedSkills, getAllOwnedPowers } from '../../../systems/characterStats';
 
-import { exportToMarkdown } from '../../../utils/exportCharacter';
-import { exportToPDF } from '../../../utils/exportPDF';
+import { exportToMarkdown } from '../exportCharacter';
+import { exportToPDF } from '../exportPDF';
 import { LevelUpModal } from '../modals/LevelUpModal';
 import CombatRollerBG3 from './CombatRollerBG3';
 

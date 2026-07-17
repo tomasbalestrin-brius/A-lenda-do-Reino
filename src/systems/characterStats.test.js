@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { computeStats } from '../../systems/t20/computeStats';
-import { canGoNext, shouldSkipStep } from '../../systems/t20/navigation';
-import { ITENS } from '../../data/t20/items';
+import { computeStats } from './t20/computeStats';
+import { canGoNext, shouldSkipStep } from './t20/navigation';
+import { ITENS } from './t20/data/items';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 

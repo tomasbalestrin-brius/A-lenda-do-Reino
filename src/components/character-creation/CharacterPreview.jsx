@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { getAllTrainedSkills } from '../../utils/rules/characterStats';
+import { getAllTrainedSkills } from '../../systems/characterStats';
 import { getSystem } from '../../systems/registry';
 
 const ATTR_KEYS = ['FOR', 'DES', 'CON', 'INT', 'SAB', 'CAR'];
@@ -281,9 +281,9 @@ export const CharacterPreview = React.memo(function CharacterPreview({ char, sta
         <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Atributos</p>
         <div className="grid grid-cols-3 gap-1.5">
           {ATTR_KEYS.map(k => {
-            const base = char.atributos[k] || 0;
-            const bonus = stats.raceBonus[k] || 0;
-            const total = stats.attrs[k];
+            const base = char.atributos?.[k] || 0;
+            const bonus = stats.raceBonus?.[k] || 0;
+            const total = stats.attrs?.[k] || 0;
             return (
               <div key={k} className="flex flex-col items-center bg-gray-900/80 rounded-lg py-2 px-1">
                 <span className="text-[9px] text-gray-500 uppercase tracking-widest">{k}</span>
@@ -335,12 +335,12 @@ export const CharacterPreview = React.memo(function CharacterPreview({ char, sta
 
       {/* Idiomas */}
       <div className="bg-gray-800/80 rounded-xl border border-gray-700 p-3">
-        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Idiomas ({stats.totalLangsCount})</p>
+        <p className="text-[11px] text-gray-500 uppercase tracking-widest mb-2 font-semibold">Idiomas ({stats.totalLangsCount || 0})</p>
         <div className="flex flex-wrap gap-1">
-          {stats.languages.map(l => (
+          {(stats.languages || []).map(l => (
             <span key={l} className="text-[9px] bg-slate-900 text-slate-400 border border-slate-700 px-2 py-0.5 rounded-lg">🗣️ {l}</span>
           ))}
-          {Array.from({ length: stats.totalLangsCount - stats.languages.length }).map((_, i) => (
+          {Array.from({ length: Math.max(0, (stats.totalLangsCount || 0) - (stats.languages || []).length) }).map((_, i) => (
             <span key={i} className="text-[9px] bg-amber-900/20 text-amber-500/60 border border-amber-500/20 px-2 py-0.5 rounded-lg italic">Escolher</span>
           ))}
         </div>

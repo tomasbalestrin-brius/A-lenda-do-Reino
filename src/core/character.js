@@ -1,5 +1,6 @@
 import spriteManager from "./spriteManager";
 import AnimationController from "./animationController";
+import { isAABBWalkable } from "./tilemap";
 
 export class Character {
   /**
@@ -21,26 +22,44 @@ export class Character {
     this.type = type;
     this.spriteKey = spriteKey;
     
+    // Physics coordinates (pixels)
+    this.x = startGridX * 32;
+    this.y = startGridY * 32;
+    this.vx = 0;
+    this.vy = 0;
+    
+    // Hitbox for AABB (relative to x, y)
+    this.hitbox = { w: 16, h: 16, offsetX: 8, offsetY: 16 };
+    
+    // Legacy support for map transitions and tile logic
     this.gridX = startGridX;
     this.gridY = startGridY;
-    this.targetGridX = startGridX;
-    this.targetGridY = startGridY;
     
-    // Pixel coordinates on map (32px tile size)
-    this.drawX = startGridX * 32;
-    this.drawY = startGridY * 32;
+    // Bounding visual coordinates for drawing compatibility
+    this.drawX = this.x;
+    this.drawY = this.y;
     
     this.maxHp = options.maxHp || 100;
     this.hp = this.maxHp;
-    this.speed = options.speed || 0.005; // Tiles per millisecond
+    this.speed = options.speed || 0.12; // Pixels per millisecond
     this.direction = "down";
     
-    this.state = "idle"; // 'idle' | 'walk' | 'attack' | 'hurt' | 'dead'
+    this.state = "idle"; // 'idle' | 'walk' | 'attack' | 'hurt' | 'dead' | 'dash'
     this.moving = false;
     this.isDead = false;
     
     this.hurtTimer = 0;
     this.attackTimer = 0;
+    this.dashTimer = 0;
+    this.dashCooldown = 0;
+    this.knockbackTimer = 0;
+    this.chargeTimer = 0;
+    this.chargeDuration = 0;
+    
+    // AI Pathfinding state
+    this.pathfindingTimer = 0;
+    this.currentPath = [];
+    this.attackCooldown = 0;
     
     this.drawOptions = options.drawOptions || {
       scale: 1,
@@ -78,32 +97,89 @@ export class Character {
         this.animController.play("idle", { loop: true });
       }
     }
+    
+    // 2.1 Process Charging Attack
+    if (this.state === "charging") {
+      this.chargeTimer -= deltaTimeMs;
+      if (this.chargeTimer <= 0) {
+        this.chargeTimer = 0;
+        this.state = "attack";
+        this.attackTimer = 250;
+        this.animController.play("attack", { loop: false });
+      }
+    }
 
-    // 3. Process movement interpolation
-    if (this.moving && this.state !== "dead") {
-      const targetDrawX = this.targetGridX * 32;
-      const targetDrawY = this.targetGridY * 32;
-      
-      const diffX = targetDrawX - this.drawX;
-      const diffY = targetDrawY - this.drawY;
-      
-      const dist = Math.sqrt(diffX * diffX + diffY * diffY);
-      const step = this.speed * 32 * deltaTimeMs; // Speed converted to pixels per ms
+    // 2.5 Process Dash and Knockback
+    if (this.dashCooldown > 0) this.dashCooldown -= deltaTimeMs;
+    if (this.dashTimer > 0) {
+      this.dashTimer -= deltaTimeMs;
+      if (this.dashTimer <= 0) {
+        this.dashTimer = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.state = "idle";
+      }
+    }
+    
+    // AI Pathfinding timer
+    if (this.pathfindingTimer > 0) this.pathfindingTimer -= deltaTimeMs;
+    if (this.attackCooldown > 0) this.attackCooldown -= deltaTimeMs;
 
-      if (dist <= step) {
-        this.drawX = targetDrawX;
-        this.drawY = targetDrawY;
-        this.gridX = this.targetGridX;
-        this.gridY = this.targetGridY;
+    if (this.knockbackTimer > 0) {
+      this.knockbackTimer -= deltaTimeMs;
+      if (this.knockbackTimer <= 0) {
+        this.knockbackTimer = 0;
+        this.vx = 0;
+        this.vy = 0;
+        this.state = "idle";
+      }
+    }
+
+    // 3. Process Physics movement
+    if (this.state !== "dead" && this.state !== "attack") {
+      if (this.vx !== 0 || this.vy !== 0) {
+        this.moving = true;
+        
+        // Calculate new potential positions
+        const nextX = this.x + this.vx * deltaTimeMs;
+        const nextY = this.y + this.vy * deltaTimeMs;
+        
+        let moved = false;
+        
+        // Horizontal Collision
+        if (this.vx !== 0 && (!map || isAABBWalkable(map, nextX + this.hitbox.offsetX, this.y + this.hitbox.offsetY, this.hitbox.w, this.hitbox.h))) {
+          this.x = nextX;
+          moved = true;
+        }
+        
+        // Vertical Collision
+        if (this.vy !== 0 && (!map || isAABBWalkable(map, this.x + this.hitbox.offsetX, nextY + this.hitbox.offsetY, this.hitbox.w, this.hitbox.h))) {
+          this.y = nextY;
+          moved = true;
+        }
+        
+        // Sync legacy grid and drawing coordinates
+        this.drawX = this.x;
+        this.drawY = this.y;
+        this.gridX = Math.floor((this.x + 16) / 32);
+        this.gridY = Math.floor((this.y + 16) / 32);
+        
+        if (moved && this.state !== "walk" && this.state !== "hurt") {
+          this.state = "walk";
+          this.animController.play("walk", { loop: true });
+        } else if (!moved) {
+          // If moving but blocked, still animate but don't glide
+          if (this.state !== "walk" && this.state !== "hurt") {
+            this.state = "walk";
+            this.animController.play("walk", { loop: true });
+          }
+        }
+      } else {
         this.moving = false;
         if (this.state === "walk") {
           this.state = "idle";
           this.animController.play("idle", { loop: true });
         }
-      } else {
-        const ratio = step / dist;
-        this.drawX += diffX * ratio;
-        this.drawY += diffY * ratio;
       }
     }
 
@@ -112,41 +188,74 @@ export class Character {
   }
 
   /**
-   * Trigger character movement to a target cell.
-   * @param {number} nextX - Target grid X coordinate
-   * @param {number} nextY - Target grid Y coordinate
-   * @param {string} direction - Direction to face ('up', 'down', 'left', 'right')
+   * Set continuous velocity for pixel-perfect movement
+   * @param {number} vx - Velocity X
+   * @param {number} vy - Velocity Y
+   * @param {string} direction - Direction to face
    */
-  moveTo(nextX, nextY, direction) {
-    if (this.moving || this.state === "dead" || this.state === "attack") return;
-
-    this.targetGridX = nextX;
-    this.targetGridY = nextY;
-    this.direction = direction;
-    this.moving = true;
-    this.state = "walk";
-    
-    // Play walk animation if defined, otherwise continue idle
-    this.animController.play("walk", { loop: true });
+  setVelocity(vx, vy, direction) {
+    if (this.state === "dead" || this.state === "attack" || this.state === "dash" || this.knockbackTimer > 0) {
+      return;
+    }
+    this.vx = vx;
+    this.vy = vy;
+    if (direction) this.direction = direction;
   }
 
   /**
    * Triggers an attack action.
    */
   attack() {
-    if (this.moving || this.state === "dead" || this.state === "attack") return;
+    if (this.state === "dead" || this.state === "attack" || this.state === "dash") return;
 
+    this.vx = 0;
+    this.vy = 0;
     this.state = "attack";
     this.attackTimer = 250; // Attack animation lasts 250ms
     this.animController.play("attack", { loop: false });
   }
 
   /**
-   * Deducts HP, triggers hurt state and flash timer.
-   * @param {number} amount - Damage to apply
+   * Triggers a dash (dodge roll).
    */
-  takeDamage(amount) {
-    if (this.isDead) return;
+  dash() {
+    if (this.state === "dead" || this.state === "attack" || this.dashCooldown > 0 || this.dashTimer > 0) return;
+    
+    this.state = "dash";
+    this.dashTimer = 200; // 200ms dash duration
+    this.dashCooldown = 1200; // 1.2s cooldown
+    
+    // Determine dash velocity
+    const dashForce = this.speed * 4.0;
+    if (this.direction === "up") { this.vx = 0; this.vy = -dashForce; }
+    else if (this.direction === "down") { this.vx = 0; this.vy = dashForce; }
+    else if (this.direction === "left") { this.vx = -dashForce; this.vy = 0; }
+    else if (this.direction === "right") { this.vx = dashForce; this.vy = 0; }
+  }
+
+  /**
+   * Starts a telegraphed charging attack.
+   */
+  chargeAttack(duration = 600) {
+    if (this.state === "dead" || this.state === "attack" || this.state === "dash") return;
+    this.vx = 0;
+    this.vy = 0;
+    this.state = "charging";
+    this.chargeDuration = duration;
+    this.chargeTimer = duration;
+    // Optionally play a windup animation here if available, otherwise idle/shake
+    this.animController.play("idle", { loop: true });
+  }
+
+  /**
+   * Deducts HP, triggers hurt state and knockback.
+   * @param {number} amount - Damage to apply
+   * @param {number} srcX - Source X of damage (optional)
+   * @param {number} srcY - Source Y of damage (optional)
+   * @param {number} knockbackForce - Force to apply (optional)
+   */
+  takeDamage(amount, srcX = 0, srcY = 0, knockbackForce = 0) {
+    if (this.isDead || this.state === "dash") return; // Dash provides I-frames
 
     this.hp = Math.max(0, this.hp - amount);
     
@@ -159,6 +268,18 @@ export class Character {
       this.state = "hurt";
       this.hurtTimer = 400; // Flash red for 400ms
       this.animController.play("hurt", { loop: false });
+      
+      // Apply Knockback
+      if (knockbackForce > 0) {
+        this.knockbackTimer = 200;
+        const dx = this.x - srcX;
+        const dy = this.y - srcY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          this.vx = (dx / dist) * knockbackForce;
+          this.vy = (dy / dist) * knockbackForce;
+        }
+      }
     }
   }
 
@@ -169,6 +290,18 @@ export class Character {
   draw(ctx) {
     // Save context state
     ctx.save();
+    
+    // Draw Telegraphing Indicator for attacks
+    if (this.state === "charging" && this.chargeDuration > 0) {
+      const pct = 1 - Math.max(0, this.chargeTimer / this.chargeDuration);
+      ctx.beginPath();
+      ctx.arc(this.drawX + 16, this.drawY + 32, 32, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 50, 50, ${0.1 + (pct * 0.2)})`;
+      ctx.fill();
+      ctx.strokeStyle = `rgba(255, 0, 0, ${0.4 + (pct * 0.6)})`;
+      ctx.lineWidth = 1 + pct * 2;
+      ctx.stroke();
+    }
 
     // Apply damage flash filter if hurt
     if (this.hurtTimer > 0) {

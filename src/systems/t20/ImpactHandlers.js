@@ -1,5 +1,5 @@
-import { GENERAL_POWERS } from '../../data/t20/powers';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../data/t20/conditionsAndBuffs';
+import { GENERAL_POWERS } from './data/powers';
+import { CONDICOES_DATA, BUFFS_DATA } from './data/conditionsAndBuffs';
 
 /**
  * Registry of handlers for different impact types.

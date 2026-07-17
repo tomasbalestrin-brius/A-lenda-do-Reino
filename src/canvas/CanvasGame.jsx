@@ -1,14 +1,18 @@
+// Domínio/Jogo: motor do RPG top-down (mapas de tiles, pathfinding, Character, diálogos).
+// Um dos DOIS motores de canvas — este é o mundo de exploração; o platformer de puzzle é
+// VikingsGame.jsx. Não são duplicata: engines e formatos de nível distintos.
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import assetLoader from "../core/assetLoader";
 import spriteManager from "../core/spriteManager";
 import AnimationController from "../core/animationController";
-import { MAPS } from "../data/maps";
+import { MAPS } from "./maps";
 import { isWalkable } from "../core/tilemap";
+import { findPath } from "../core/pathfinding";
 import { Character } from "../core/character";
 import ParticleSystem from "../core/particleSystem";
-import { useCharacterStore } from "../store/useCharacterStore";
-import { computeStats } from "../utils/rules/characterStats";
+import { useCharacterStore } from "../components/character-creation/useCharacterStore";
+import { computeStats } from "../systems/characterStats";
 
 export default function CanvasGame({ onExit }) {
   const canvasRef = useRef(null);
@@ -54,6 +58,7 @@ export default function CanvasGame({ onExit }) {
       nextX: 0,
       nextY: 0
     },
+    globalHitStopTimer: 0,
     tileAnimationTimer: 0,
     keys: {},
     signposts: [
@@ -83,8 +88,8 @@ export default function CanvasGame({ onExit }) {
   });
 
   const TILE_SIZE = 32;
-  const CANVAS_WIDTH = 960;
-  const CANVAS_HEIGHT = 540;
+  const CANVAS_WIDTH = 640;
+  const CANVAS_HEIGHT = 360;
 
   // Initialize heroes and enemies once on mount (after assets load)
   const initializeEntities = () => {
@@ -115,19 +120,19 @@ export default function CanvasGame({ onExit }) {
     // 1. Setup 3 Heroes (Lost Vikings Style)
     const erik = new Character("erik", leaderName, "player", leaderSprite, 4, 4, {
       maxHp: leaderMaxHp,
-      speed: 0.005, // Unified walk speed for perfect follow alignment
+      speed: 0.15, // Unified walk speed for perfect follow alignment
       drawOptions: { scale: 0.08, width: 320, height: 400, anchorX: 0.5, anchorY: 1.0 }
     });
 
     const olaf = new Character("olaf", "Olaf (Bárbaro)", "player", "hero_barbaro", 3, 5, {
       maxHp: 120,
-      speed: 0.005, // Unified walk speed
+      speed: 0.15, // Unified walk speed
       drawOptions: { scale: 0.08, width: 320, height: 400, anchorX: 0.5, anchorY: 1.0 }
     });
 
     const baleog = new Character("baleog", "Baleog (Mago)", "player", "hero_mago", 5, 5, {
       maxHp: 70,
-      speed: 0.005, // Unified walk speed
+      speed: 0.15, // Unified walk speed
       drawOptions: { scale: 0.08, width: 320, height: 400, anchorX: 0.5, anchorY: 1.0 }
     });
 
@@ -139,7 +144,7 @@ export default function CanvasGame({ onExit }) {
     state.enemies.village = [
       new Character("slime1", "Geléia Verde", "enemy", "enemy_slime", 10, 5, {
         maxHp: 30,
-        speed: 0.002, // slow random moves
+        speed: 0.04, // slow random moves
         drawOptions: { scale: 0.9, width: 32, height: 32, anchorX: 0.5, anchorY: 1.0 }
       })
     ];
@@ -148,12 +153,12 @@ export default function CanvasGame({ onExit }) {
     state.enemies.forest = [
       new Character("goblin1", "Goblin Saqueador", "enemy", "enemy_goblin", 8, 3, {
         maxHp: 50,
-        speed: 0.003,
+        speed: 0.10,
         drawOptions: { scale: 1.0, width: 32, height: 32, anchorX: 0.5, anchorY: 1.0 }
       }),
       new Character("goblin2", "Goblin Atirador", "enemy", "enemy_goblin", 12, 10, {
         maxHp: 40,
-        speed: 0.003,
+        speed: 0.10,
         drawOptions: { scale: 1.0, width: 32, height: 32, anchorX: 0.5, anchorY: 1.0 }
       })
     ];
@@ -162,12 +167,12 @@ export default function CanvasGame({ onExit }) {
     state.enemies.cave = [
       new Character("slime2", "Slime Vulcânico", "enemy", "enemy_slime", 3, 11, {
         maxHp: 40,
-        speed: 0.002,
+        speed: 0.06,
         drawOptions: { scale: 1.0, width: 32, height: 32, anchorX: 0.5, anchorY: 1.0 }
       }),
       new Character("orc1", "Orc de Ferro", "enemy", "enemy_orc", 9, 4, {
         maxHp: 85,
-        speed: 0.0025,
+        speed: 0.08,
         drawOptions: { scale: 1.25, width: 32, height: 32, anchorX: 0.5, anchorY: 1.0 }
       })
     ];
@@ -182,14 +187,24 @@ export default function CanvasGame({ onExit }) {
       if (active) setLoadingProgress(percentage);
     });
 
+    // Sprites de herói reaproveitam os pacotes CC0 do modo Vikings (hero_knight/medieval_warrior/
+    // wizard — mesmos arquivos, ver HERO_ANIM_SPECS em VikingsGame.jsx). São tiras de animação
+    // (múltiplos quadros lado a lado); HERO_IDLE_FRAME_SIZE abaixo dá o tamanho real de 1 quadro
+    // pra cada uma, pra recortar só o quadro idle (índice 0) em vez de esticar a tira inteira.
+    const HERO_IDLE_FRAME_SIZE = {
+      hero_guerreiro_idle: { w: 180, h: 180 },
+      hero_barbaro_idle: { w: 184, h: 137 },
+      hero_mago_idle: { w: 231, h: 190 },
+    };
+
     const assetsToLoad = [
-      { key: "tileset_village", src: "./assets/tilesets/village.png" },
-      { key: "tileset_forest", src: "./assets/tilesets/forest.png" },
-      { key: "tileset_cave", src: "./assets/tilesets/cave.png" },
-      { key: "hero_guerreiro_idle", src: "./assets/sprites/heroes/humano_guerreiro_idle.png" },
-      { key: "hero_barbaro_idle", src: "./assets/sprites/heroes/humano_barbaro_idle.png" },
-      { key: "hero_mago_idle", src: "./assets/sprites/heroes/humano_arcanista_idle.png" },
-      { key: "enemy_slime", src: "./assets/sprites/enemies/slime.png" }
+      { key: "tileset_village", src: "/assets/tilesets/village.png" },
+      { key: "tileset_forest", src: "/assets/tilesets/forest.png" },
+      { key: "tileset_cave", src: "/assets/tilesets/cave.png" },
+      { key: "hero_guerreiro_idle", src: "/assets/sprites/heroes/hero_knight_idle.png" },
+      { key: "hero_barbaro_idle", src: "/assets/sprites/heroes/medieval_warrior_idle.png" },
+      { key: "hero_mago_idle", src: "/assets/sprites/heroes/wizard_idle.png" },
+      { key: "enemy_slime", src: "/assets/sprites/enemies/slime.png" }
     ];
 
     assetLoader
@@ -214,16 +229,15 @@ export default function CanvasGame({ onExit }) {
           frameHeight: 32
         });
 
-        // Register hero sheets dynamically based on loaded image sizes
+        // Register hero sheets usando o tamanho real de 1 quadro (as imagens são tiras de
+        // animação com vários quadros lado a lado, não um frame único).
         ["hero_guerreiro_idle", "hero_barbaro_idle", "hero_mago_idle"].forEach((key) => {
-          const img = assetLoader.getImage(key);
-          const w = img ? img.width : 32;
-          const h = img ? img.height : 32;
-          
+          const size = HERO_IDLE_FRAME_SIZE[key];
+
           spriteManager.defineSpriteSheet(key.replace("_idle", ""), {
             imageKey: key,
-            frameWidth: w,
-            frameHeight: h,
+            frameWidth: size.w,
+            frameHeight: size.h,
             animations: {
               idle: { frames: [0], frameDuration: 200 }
             }
@@ -244,6 +258,12 @@ export default function CanvasGame({ onExit }) {
       })
       .catch((err) => {
         console.error("Error loading game assets:", err);
+        if (active) {
+          initializeEntities();
+          syncHudState();
+          setLoading(false);
+          setTimeout(() => setShowBanner(false), 2500);
+        }
       });
 
     return () => {
@@ -338,50 +358,12 @@ export default function CanvasGame({ onExit }) {
     // Dead heroes cannot be selected
     if (state.heroes[index].isDead) return;
 
+    // Stop current hero before switching
+    const currentHero = state.heroes[state.activeHeroIndex];
+    if (currentHero) currentHero.setVelocity(0, 0);
+
     state.activeHeroIndex = index;
     syncHudState();
-  };
-
-  const getMoveDirection = (fx, fy, tx, ty) => {
-    if (tx < fx) return "left";
-    if (tx > fx) return "right";
-    if (ty < fy) return "up";
-    if (ty > fy) return "down";
-    return null;
-  };
-
-  const moveParty = (leader, nextX, nextY, direction) => {
-    const state = stateRef.current;
-    const positions = state.heroes.map(h => ({ x: h.gridX, y: h.gridY }));
-    
-    leader.moveTo(nextX, nextY, direction);
-    
-    if (state.followMode) {
-      const leaderIdx = state.activeHeroIndex;
-      const followers = [];
-      for (let i = 1; i < state.heroes.length; i++) {
-        followers.push((leaderIdx + i) % state.heroes.length);
-      }
-      
-      const f1 = state.heroes[followers[0]];
-      const f2 = state.heroes[followers[1]];
-      
-      if (f1 && !f1.isDead) {
-        const targetX1 = positions[leaderIdx].x;
-        const targetY1 = positions[leaderIdx].y;
-        f1.speed = leader.speed;
-        const dir1 = getMoveDirection(f1.gridX, f1.gridY, targetX1, targetY1);
-        f1.moveTo(targetX1, targetY1, dir1 || direction);
-        
-        if (f2 && !f2.isDead) {
-          const targetX2 = positions[followers[0]].x;
-          const targetY2 = positions[followers[0]].y;
-          f2.speed = leader.speed;
-          const dir2 = getMoveDirection(f2.gridX, f2.gridY, targetX2, targetY2);
-          f2.moveTo(targetX2, targetY2, dir2 || dir1 || direction);
-        }
-      }
-    }
   };
 
   const toggleFollowMode = () => {
@@ -458,6 +440,12 @@ export default function CanvasGame({ onExit }) {
     state.keys["ArrowDown"] = false;
     state.keys["ArrowLeft"] = false;
     state.keys["ArrowRight"] = false;
+    state.keys["ArrowRight"] = false;
+  };
+
+  const handleVirtualDash = () => {
+    const state = stateRef.current;
+    state.keys["Shift"] = true;
   };
 
   const handleVirtualSwitchHero = () => {
@@ -503,45 +491,61 @@ export default function CanvasGame({ onExit }) {
       drag: 0.95
     });
 
-    // Determine target grid coordinate in front of character
-    let tx = activeHero.gridX;
-    let ty = activeHero.gridY;
+    // Determine directional hitbox (48x48 box projected in front of hero)
+    const HITBOX_SIZE = 48;
+    const REACH = 24; 
     
-    if (activeHero.direction === "up") ty--;
-    else if (activeHero.direction === "down") ty++;
-    else if (activeHero.direction === "left") tx--;
-    else if (activeHero.direction === "right") tx++;
+    let hx = activeHero.x;
+    let hy = activeHero.y;
+    
+    if (activeHero.direction === "up") {
+       hx -= HITBOX_SIZE / 2 - 16;
+       hy -= REACH;
+    } else if (activeHero.direction === "down") {
+       hx -= HITBOX_SIZE / 2 - 16;
+       hy += REACH;
+    } else if (activeHero.direction === "left") {
+       hx -= REACH;
+       hy -= HITBOX_SIZE / 2 - 16;
+    } else if (activeHero.direction === "right") {
+       hx += REACH;
+       hy -= HITBOX_SIZE / 2 - 16;
+    }
 
-    // Check if an enemy is at the target cell or overlapping in the current cell
+    const hitbox = { x: hx, y: hy, w: HITBOX_SIZE, h: HITBOX_SIZE };
+
+    // Check intersecting enemies
     const mapEnemies = state.enemies[state.currentMapId] || [];
-    const targetEnemy = mapEnemies.find(e => 
-      !e.isDead && 
-      ((e.gridX === tx && e.gridY === ty) || (e.gridX === activeHero.gridX && e.gridY === activeHero.gridY))
-    );
+    const hitEnemies = mapEnemies.filter(e => {
+       if (e.isDead) return false;
+       return (
+         hitbox.x < e.x + 32 &&
+         hitbox.x + hitbox.w > e.x &&
+         hitbox.y < e.y + 32 &&
+         hitbox.y + hitbox.h > e.y
+       );
+    });
 
-    if (targetEnemy) {
-      // Inflict damage
-      targetEnemy.takeDamage(25);
-
+    if (hitEnemies.length > 0) {
+      // Hit-Stop Freeze
+      state.globalHitStopTimer = 30; // 30ms freeze
+      
       // Trigger screen shake
       state.shake.timer = 250;
       state.shake.intensity = 6;
 
-      // Spawn hit particles (gold/white sparks)
-      const px = targetEnemy.gridX * TILE_SIZE + TILE_SIZE / 2;
-      const py = targetEnemy.gridY * TILE_SIZE + TILE_SIZE / 2;
-      state.particles.spawn(px, py, 20, {
-        vxMin: -0.2,
-        vxMax: 0.2,
-        vyMin: -0.2,
-        vyMax: 0.2,
-        colors: ["#ffd700", "#ffaa00", "#ffffff"],
-        sizeMin: 3,
-        sizeMax: 6,
-        lifeMin: 250,
-        lifeMax: 500,
-        gravity: 0.0003,
-        drag: 0.97
+      hitEnemies.forEach(targetEnemy => {
+         targetEnemy.takeDamage(25, activeHero.x, activeHero.y, 0.15);
+
+         // Spawn hit particles
+         const px = targetEnemy.x + 16;
+         const py = targetEnemy.y + 16;
+         state.particles.spawn(px, py, 15, {
+           vxMin: -0.2, vxMax: 0.2, vyMin: -0.2, vyMax: 0.2,
+           colors: ["#ffd700", "#ffaa00", "#ffffff"],
+           sizeMin: 3, sizeMax: 6, lifeMin: 250, lifeMax: 500,
+           gravity: 0.0003, drag: 0.97
+         });
       });
     }
   };
@@ -560,6 +564,12 @@ export default function CanvasGame({ onExit }) {
     }
 
     if (isGameOver) return;
+
+    // Hit-Stop Mechanic: Freeze game logic for micro-seconds on heavy impact
+    if (state.globalHitStopTimer > 0) {
+      state.globalHitStopTimer -= dt;
+      return; 
+    }
 
     // Proximity check for interactive signposts
     const activeHero = state.heroes[state.activeHeroIndex];
@@ -692,127 +702,307 @@ export default function CanvasGame({ onExit }) {
     state.enemies[state.currentMapId].forEach(e => {
       e.update(dt, map);
       
-      // Basic AI Behavior
-      if (!e.moving && !e.isDead) {
-        // Run AI decision every ~1.5s
-        if (Math.random() < 0.015) {
-          const activeHero = state.heroes[state.activeHeroIndex];
-          const dist = Math.abs(e.gridX - activeHero.gridX) + Math.abs(e.gridY - activeHero.gridY);
-          
-          let dx = 0;
-          let dy = 0;
+      // AI Behavior & Combat
+      if (!e.isDead) {
+        const activeHero = state.heroes[state.activeHeroIndex];
+        
+        // 1. Telegraph & Attack Logic
+        if (e.state !== "attack" && e.state !== "charging" && e.knockbackTimer <= 0) {
+          const dx = activeHero.x - e.x;
+          const dy = activeHero.y - e.y;
+          const distPx = Math.sqrt(dx * dx + dy * dy);
 
-          if (e.spriteKey.includes("goblin") && dist <= 4) {
-            // Hunter AI: pursue active hero
-            if (activeHero.gridX < e.gridX) dx = -1;
-            else if (activeHero.gridX > e.gridX) dx = 1;
-            else if (activeHero.gridY < e.gridY) dy = -1;
-            else if (activeHero.gridY > e.gridY) dy = 1;
+          if (distPx < 45 && e.attackCooldown <= 0) {
+            // Trigger charge attack
+            e.chargeAttack(700);
+            e.attackCooldown = 2500; // 2.5s cooldown
           } else {
-            // Patrolling/Slime AI: random movement
-            const rand = Math.floor(Math.random() * 4);
-            if (rand === 0) dx = -1;
-            else if (rand === 1) dx = 1;
-            else if (rand === 2) dy = -1;
-            else if (rand === 3) dy = 1;
-          }
+            // 2. Movement Logic
+            // Continuous AI tracking
+            if (e.spriteKey.includes("goblin") && distPx < 160) {
+              const speed = e.speed * 0.5; // Goblins run slightly slower than heroes
+              
+              if (e.attackCooldown > 0 && distPx < 80) {
+                 // Retreating / Flanking behavior: Walk AWAY from the hero
+                 const ratio = (speed * 0.8) / distPx; // Walk away slightly slower
+                 let dir = e.direction;
+                 if (Math.abs(dx) > Math.abs(dy)) dir = -dx > 0 ? "right" : "left";
+                 else dir = -dy > 0 ? "down" : "up";
+                 e.setVelocity(-dx * ratio, -dy * ratio, dir);
+              } else {
+              
+              // Run Pathfinding A* every 500ms
+              if (e.pathfindingTimer <= 0) {
+                 e.currentPath = findPath(map, e.gridX, e.gridY, activeHero.gridX, activeHero.gridY);
+                 e.pathfindingTimer = 500;
+              }
 
-          if (dx !== 0 || dy !== 0) {
-            const nextX = e.gridX + dx;
-            const nextY = e.gridY + dy;
-            const dir = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down";
-            
-            // Check wall collision and ensure enemies don't step out of room edges
-            if (isWalkable(map, nextX, nextY)) {
-              e.moveTo(nextX, nextY, dir);
+              if (e.currentPath && e.currentPath.length > 0) {
+                 const targetNode = e.currentPath[0];
+                 // 32 is TILE_SIZE (hardcoded in most places, let's just use 32)
+                 const targetPixelX = targetNode.x * 32 + 16;
+                 const targetPixelY = targetNode.y * 32 + 16;
+                 
+                 const pdx = targetPixelX - (e.x + 16);
+                 const pdy = targetPixelY - (e.y + 16);
+                 const pdDist = Math.sqrt(pdx * pdx + pdy * pdy);
+
+                 if (pdDist < 8) {
+                    // Reached node, remove it
+                    e.currentPath.shift();
+                    e.setVelocity(0, 0); // Stop briefly if needed, or keep going next frame
+                 } else {
+                    const ratio = speed / pdDist;
+                    let dir = e.direction;
+                    if (Math.abs(pdx) > Math.abs(pdy)) dir = pdx > 0 ? "right" : "left";
+                    else dir = pdy > 0 ? "down" : "up";
+                    e.setVelocity(pdx * ratio, pdy * ratio, dir);
+                 }
+              } else {
+                // Fallback vector movement
+                const ratio = speed / distPx;
+                let dir = e.direction;
+                if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? "right" : "left";
+                else dir = dy > 0 ? "down" : "up";
+                e.setVelocity(dx * ratio, dy * ratio, dir);
+              }
+            } // end of non-retreating goblin behavior
+          } else {
+              // Slimes / Idle Goblins: Random wandering
+              if (Math.random() < 0.02) {
+                const rand = Math.floor(Math.random() * 5); // 0-3 move, 4 stop
+                const speed = e.speed * 0.3;
+                if (rand === 0) e.setVelocity(-speed, 0, "left");
+                else if (rand === 1) e.setVelocity(speed, 0, "right");
+                else if (rand === 2) e.setVelocity(0, -speed, "up");
+                else if (rand === 3) e.setVelocity(0, speed, "down");
+                else e.setVelocity(0, 0);
+              }
             }
           }
         }
-      }
 
-      // Check collision impact with any hero (apply damage)
-      state.heroes.forEach(h => {
-        if (!e.isDead && !h.isDead && e.gridX === h.gridX && e.gridY === h.gridY) {
-          // Apply damage only if hero is not currently in invincibility/hurt frames
-          if (h.hurtTimer === 0 && h.state !== "hurt") {
-            h.takeDamage(10);
-            syncHudState();
-
-            // Trigger screen shake (stronger shake for player damage)
-            state.shake.timer = 300;
-            state.shake.intensity = 7;
-
-            // Spawn hurt particles (red/white sparks)
-            const px = h.gridX * TILE_SIZE + TILE_SIZE / 2;
-            const py = h.gridY * TILE_SIZE + TILE_SIZE / 2;
-            state.particles.spawn(px, py, 20, {
-              vxMin: -0.2,
-              vxMax: 0.2,
-              vyMin: -0.2,
-              vyMax: 0.2,
-              colors: ["#ef4444", "#fca5a5", "#ffffff"],
-              sizeMin: 3,
-              sizeMax: 6,
-              lifeMin: 300,
-              lifeMax: 500,
-              gravity: 0.0005,
-              drag: 0.98
-            });
-          }
+        // 3. Apply Damage when attack finishes (first few ms of attack state)
+        if (e.state === "attack" && e.attackTimer > 200) {
+          state.heroes.forEach(h => {
+            if (!h.isDead && h.hurtTimer === 0 && h.state !== "dash") {
+              const hDist = Math.sqrt(Math.pow(e.x - h.x, 2) + Math.pow(e.y - h.y, 2));
+              if (hDist < 45) { // Hit radius
+                h.takeDamage(10, e.x, e.y, 0.4);
+                syncHudState();
+                
+                state.globalHitStopTimer = 30; // Game feel
+                state.shake.timer = 300;
+                state.shake.intensity = 7;
+                
+                const px = h.x + 16;
+                const py = h.y + 16;
+                state.particles.spawn(px, py, 20, {
+                  vxMin: -0.2, vxMax: 0.2, vyMin: -0.2, vyMax: 0.2,
+                  colors: ["#ef4444", "#fca5a5", "#ffffff"],
+                  sizeMin: 3, sizeMax: 6, lifeMin: 300, lifeMax: 500,
+                  gravity: 0.0005, drag: 0.98
+                });
+              }
+            }
+          });
         }
-      });
+      }
     });
 
     // Don't process input during transition
     if (fade.transitioning || fade.alpha > 0.5) return;
 
     // 3. Process Input for Active Hero
-    if (activeHero && !activeHero.moving && activeHero.state !== "dead" && activeHero.state !== "attack") {
-      let dx = 0;
-      let dy = 0;
+    if (activeHero && activeHero.state !== "dead" && activeHero.state !== "attack") {
+      let vx = 0;
+      let vy = 0;
+      const speed = activeHero.speed;
 
-      if (state.keys["ArrowUp"] || state.keys["w"] || state.keys["W"]) {
-        dy = -1;
-        activeHero.direction = "up";
-      } else if (state.keys["ArrowDown"] || state.keys["s"] || state.keys["S"]) {
-        dy = 1;
-        activeHero.direction = "down";
-      } else if (state.keys["ArrowLeft"] || state.keys["a"] || state.keys["A"]) {
-        dx = -1;
-        activeHero.direction = "left";
-      } else if (state.keys["ArrowRight"] || state.keys["d"] || state.keys["D"]) {
-        dx = 1;
-        activeHero.direction = "right";
+      if (state.keys["Shift"]) {
+        activeHero.dash();
+        state.keys["Shift"] = false;
       }
 
-      if (dx !== 0 || dy !== 0) {
-        const nextX = activeHero.gridX + dx;
-        const nextY = activeHero.gridY + dy;
+      if (state.keys["ArrowUp"] || state.keys["w"] || state.keys["W"]) vy = -speed;
+      if (state.keys["ArrowDown"] || state.keys["s"] || state.keys["S"]) vy = speed;
+      if (state.keys["ArrowLeft"] || state.keys["a"] || state.keys["A"]) vx = -speed;
+      if (state.keys["ArrowRight"] || state.keys["d"] || state.keys["D"]) vx = speed;
 
-        // Check map exits
-        let isExit = false;
-        if (nextX < 0 && map.exits.left) {
-          triggerExitTransition(map.exits.left);
-          isExit = true;
-        } else if (nextX >= map.width && map.exits.right) {
-          triggerExitTransition(map.exits.right);
-          isExit = true;
-        } else if (nextY < 0 && map.exits.up) {
-          triggerExitTransition(map.exits.up);
-          isExit = true;
-        } else if (nextY >= map.height && map.exits.down) {
-          triggerExitTransition(map.exits.down);
-          isExit = true;
-        }
+      // Normalize diagonal movement
+      if (vx !== 0 && vy !== 0) {
+        const factor = 1 / Math.sqrt(2);
+        vx *= factor;
+        vy *= factor;
+      }
 
-        if (!isExit && isWalkable(map, nextX, nextY)) {
-          // Verify that we are not stepping on another hero's tile (only in Split Mode)
-          const blockedByHero = !state.followMode && state.heroes.some(h => h.id !== activeHero.id && !h.isDead && h.gridX === nextX && h.gridY === nextY);
-          if (!blockedByHero) {
-            moveParty(activeHero, nextX, nextY, activeHero.direction);
+      let direction = activeHero.direction;
+      if (vx > 0) direction = "right";
+      else if (vx < 0) direction = "left";
+      else if (vy > 0) direction = "down";
+      else if (vy < 0) direction = "up";
+
+      activeHero.setVelocity(vx, vy, direction);
+
+      // Check map exits
+      const centerGridX = Math.floor((activeHero.x + 16) / 32);
+      const centerGridY = Math.floor((activeHero.y + 16) / 32);
+      let isExit = false;
+
+      if (centerGridX < 0 && map.exits.left) {
+        triggerExitTransition(map.exits.left);
+        isExit = true;
+      } else if (centerGridX >= map.width && map.exits.right) {
+        triggerExitTransition(map.exits.right);
+        isExit = true;
+      } else if (centerGridY < 0 && map.exits.up) {
+        triggerExitTransition(map.exits.up);
+        isExit = true;
+      } else if (centerGridY >= map.height && map.exits.down) {
+        triggerExitTransition(map.exits.down);
+        isExit = true;
+      }
+
+      if (isExit) {
+        activeHero.setVelocity(0, 0);
+      }
+    }
+
+    // 3.5 Process Follower AI (Physics following)
+    if (state.followMode && activeHero && activeHero.state !== "dead") {
+      const followers = state.heroes.filter(h => h.id !== activeHero.id);
+      let targetToFollow = activeHero;
+
+      followers.forEach(f => {
+        if (!f.isDead && f.state !== "attack") {
+          const dx = targetToFollow.x - f.x;
+          const dy = targetToFollow.y - f.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist > 48) { // Keep ~1.5 tiles distance
+            const speed = f.speed;
+            
+            // Pathfinding if they fall behind significantly
+            if (dist > 64) {
+               if (f.pathfindingTimer <= 0) {
+                  f.currentPath = findPath(map, f.gridX, f.gridY, targetToFollow.gridX, targetToFollow.gridY);
+                  f.pathfindingTimer = 300;
+               }
+               
+               if (f.currentPath && f.currentPath.length > 0) {
+                  const targetNode = f.currentPath[0];
+                  const targetPixelX = targetNode.x * 32 + 16;
+                  const targetPixelY = targetNode.y * 32 + 16;
+                  
+                  const pdx = targetPixelX - (f.x + 16);
+                  const pdy = targetPixelY - (f.y + 16);
+                  const pdDist = Math.sqrt(pdx * pdx + pdy * pdy);
+
+                  if (pdDist < 8) {
+                     f.currentPath.shift();
+                  } else {
+                     const ratio = speed / pdDist;
+                     let dir = f.direction;
+                     if (Math.abs(pdx) > Math.abs(pdy)) dir = pdx > 0 ? "right" : "left";
+                     else dir = pdy > 0 ? "down" : "up";
+                     f.setVelocity(pdx * ratio, pdy * ratio, dir);
+                  }
+                  targetToFollow = f; // Chain followers
+                  return;
+               }
+            }
+            
+            const ratio = speed / dist;
+            let dir = f.direction;
+            if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? "right" : "left";
+            else dir = dy > 0 ? "down" : "up";
+            
+            f.setVelocity(dx * ratio, dy * ratio, dir);
+          } else {
+            f.setVelocity(0, 0);
           }
         }
-      }
+        targetToFollow = f; // Chain followers
+      });
+    } else {
+      // Follow Mode OFF: Auto-attack mode for companions
+      state.heroes.forEach(h => {
+        if (activeHero && h.id !== activeHero.id && !h.isDead && h.state !== "attack" && h.knockbackTimer <= 0) {
+          // Find nearest enemy
+          let nearestDist = Infinity;
+          let target = null;
+          state.enemies[state.currentMapId].forEach(e => {
+            if (!e.isDead) {
+              const d = Math.sqrt(Math.pow(e.x - h.x, 2) + Math.pow(e.y - h.y, 2));
+              if (d < nearestDist) {
+                nearestDist = d;
+                target = e;
+              }
+            }
+          });
+
+          if (target && nearestDist < 120) { // Aggro radius
+            if (nearestDist < 45) { // Hit radius
+              h.setVelocity(0, 0);
+              
+              // Face target
+              const dx = target.x - h.x;
+              const dy = target.y - h.y;
+              if (Math.abs(dx) > Math.abs(dy)) h.direction = dx > 0 ? "right" : "left";
+              else h.direction = dy > 0 ? "down" : "up";
+
+              h.attack();
+              target.takeDamage(10, h.x, h.y, 0.2); // Allies hit for 10
+              state.globalHitStopTimer = 15; // Small hitstop
+              
+              state.particles.spawn(target.x + 16, target.y + 16, 10, {
+                vxMin: -0.1, vxMax: 0.1, vyMin: -0.1, vyMax: 0.1,
+                colors: ["#3b82f6", "#60a5fa", "#ffffff"],
+                sizeMin: 2, sizeMax: 4, lifeMin: 200, lifeMax: 400
+              });
+            } else {
+              // Move towards enemy
+              const speed = h.speed * 0.8;
+              
+              if (h.pathfindingTimer <= 0) {
+                 h.currentPath = findPath(map, h.gridX, h.gridY, target.gridX, target.gridY);
+                 h.pathfindingTimer = 500;
+              }
+
+              if (h.currentPath && h.currentPath.length > 0) {
+                 const targetNode = h.currentPath[0];
+                 const targetPixelX = targetNode.x * 32 + 16;
+                 const targetPixelY = targetNode.y * 32 + 16;
+                 
+                 const pdx = targetPixelX - (h.x + 16);
+                 const pdy = targetPixelY - (h.y + 16);
+                 const pdDist = Math.sqrt(pdx * pdx + pdy * pdy);
+
+                 if (pdDist < 8) {
+                    h.currentPath.shift();
+                 } else {
+                    const ratio = speed / pdDist;
+                    let dir = h.direction;
+                    if (Math.abs(pdx) > Math.abs(pdy)) dir = pdx > 0 ? "right" : "left";
+                    else dir = pdy > 0 ? "down" : "up";
+                    h.setVelocity(pdx * ratio, pdy * ratio, dir);
+                 }
+              } else {
+                // Fallback vector movement
+                const dx = target.x - h.x;
+                const dy = target.y - h.y;
+                const ratio = speed / nearestDist;
+                let dir = h.direction;
+                if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? "right" : "left";
+                else dir = dy > 0 ? "down" : "up";
+                h.setVelocity(dx * ratio, dy * ratio, dir);
+              }
+            }
+          } else {
+            h.setVelocity(0, 0);
+          }
+        }
+      });
     }
 
     // 4. Camera centering on ACTIVE player
@@ -1206,7 +1396,7 @@ export default function CanvasGame({ onExit }) {
           <div className="absolute inset-0 pointer-events-none z-20 opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,_rgba(0,0,0,0.25)_50%),_linear-gradient(90deg,_rgba(255,0,0,0.06),_rgba(0,255,0,0.02),_rgba(0,0,255,0.06))] bg-[size:100%_4px,_6px_100%]" />
 
           {loading ? (
-            <div className="w-[960px] h-[540px] max-w-full flex flex-col items-center justify-center bg-gray-950 p-6 text-center">
+            <div className="w-full h-[50vh] flex flex-col items-center justify-center bg-gray-950 p-6 text-center">
               <div className="w-16 h-16 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin mb-6" />
               <h3 className="pixel-font text-amber-500 text-[10px] animate-pulse uppercase">
                 Carregando Aventura...
@@ -1224,7 +1414,7 @@ export default function CanvasGame({ onExit }) {
                 ref={canvasRef}
                 width={CANVAS_WIDTH}
                 height={CANVAS_HEIGHT}
-                className="block max-w-full"
+                className="w-full h-auto max-h-[80vh] object-contain block mx-auto shadow-2xl"
                 style={{ imageRendering: "pixelated" }}
               />
               
@@ -1385,6 +1575,15 @@ export default function CanvasGame({ onExit }) {
                 >
                   👥
                   <span className="text-[6px] mt-0.5 font-black uppercase">Grupo</span>
+                </button>
+
+                <button
+                  onClick={handleVirtualDash}
+                  className="w-12 h-12 rounded-full pixel-border-stone bg-slate-700 hover:bg-slate-600 active:scale-95 text-cyan-100 flex flex-col items-center justify-center font-bold text-xs"
+                  title="Esquivar"
+                >
+                  💨
+                  <span className="text-[6px] mt-0.5 font-black uppercase">Dash</span>
                 </button>
 
                 <button

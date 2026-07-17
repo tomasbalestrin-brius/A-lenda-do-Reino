@@ -1,34 +1,21 @@
 /**
  * Tormenta20 System — Self-registering module.
- * 
- * This file imports the existing T20 logic and registers it as a system
- * in the central registry. During the migration phase, it delegates to
- * the original files in utils/rules/ and data/t20/.
- * 
- * After Fase 2 is complete, the actual logic will live inside this directory.
+ *
+ * This file imports the T20 logic and registers it as a system in the
+ * central registry: computeStats/navigation delegate to sibling files in
+ * this directory; shared engine infra (BonusRegistry, ImpactHandlers,
+ * constants) lives in systems/shared/ and systems/t20/.
  */
 
 import { registerSystem } from '../registry';
 import { computeStats, getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from './computeStats';
 import { canGoNext, shouldSkipStep } from './navigation';
-import { RACES } from '../../data/t20/races';
-import CLASSES from '../../data/t20/classes';
-import { ORIGENS } from '../../data/t20/origins';
+import { RACES } from './data/races';
+import CLASSES from './data/classes';
+import { ORIGENS } from './data/origins';
 import { getInitialCharState } from './initialState';
 import { getResetRules } from './resetRules';
-
-
-
-// ─── Step Labels (matching current STEP_LABELS) ───────────────────────────────
-// NOTE: During the migration, steps still use the shared components.
-// After Fase 4, each step will be a lazy-loaded component from this directory.
-
-const STEP_LABELS_T20 = [
-  "Raça", "Herança", "Classe", "Identidade", "Esp. de Classe", 
-  "Origem", "Benefícios", "Divindade", "Nível", "Magias", 
-  "Atributos", "Perícias (Classe)", "Perícias (Int)", "Equipamento", 
-  "Poderes", "Progressão", "Aliados", "Revisão"
-];
+import { steps } from './steps';
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
@@ -53,8 +40,8 @@ const T20System = {
   getInitialCharState,
   getResetRules,
 
-  // Steps (labels only during migration; components added in Fase 4)
-  steps: STEP_LABELS_T20.map(label => ({ label, component: null })),
+  // Steps (componentes reais de src/components/character-creation/steps/, ver ./steps)
+  steps,
 
   // Componentes visuais (null durante migração; adicionados em Fase 4)
   PlaySheetComponent: null,

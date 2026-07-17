@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVttStore } from '../../store/useVttStore';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useVttStore, selectIsGM } from './useVttStore';
+import { useAuthStore } from '../../shared/useAuthStore';
 
 import { VttTabletop } from './VttTabletop';
 
@@ -16,7 +16,7 @@ export function Lobby({ onBack, onOpenSheet, characters = [] }) {
 
   const me = players.find(p => p.user_id === user?.id);
   const isLinked = !!me?.character_name;
-  const isGM = me?.role === 'game_master';
+  const isGM = useVttStore(selectIsGM);
 
   const handleJoin = async (e) => {
     e.preventDefault();

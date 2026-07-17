@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { isWalkable } from "../tilemap";
-import { MAPS } from "../../data/maps";
+import { MAPS } from "../../canvas/maps";
 
 describe("Tilemap & Collision Checking", () => {
   it("should return false for out of bounds coordinates", () => {

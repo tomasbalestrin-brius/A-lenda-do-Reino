@@ -1,11 +1,11 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { useCharacterStore } from '../store/useCharacterStore';
+import { useCharacterStore } from './character-creation/useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import { useAuthStore } from '../store/useAuthStore';
-import { computeStats } from '../utils/rules/characterStats';
-import { useCharacterPersistence } from '../hooks/useCharacterPersistence';
-import { useCreationNavigation } from '../hooks/useCreationNavigation';
+import { useAuthStore } from '../shared/useAuthStore';
+import { computeStats } from '../systems/characterStats';
+import { useCharacterPersistence } from './character-creation/useCharacterPersistence';
+import { useCreationNavigation } from './character-creation/useCreationNavigation';
 import { ErrorBoundary } from './ErrorBoundary';
 import { getSystem } from '../systems/registry';
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { TOKEN_CONDITIONS } from '../../../data/t20/vttConstants';
+import { TOKEN_CONDITIONS } from '../../../systems/t20/data/vttConstants';
 
 export function TokenContextMenu({ token, position, onClose, onApplyCondition, onRemoveCondition, isGM, isOwner }) {
   const activeConditions = token.conditions || [];

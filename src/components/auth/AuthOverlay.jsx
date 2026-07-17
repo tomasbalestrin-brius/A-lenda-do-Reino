@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAuthStore } from '../../shared/useAuthStore';
 
 export function AuthOverlay() {
   const [isLogin, setIsLogin] = useState(true);

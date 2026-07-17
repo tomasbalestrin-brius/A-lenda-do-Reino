@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import { PARCEIROS } from '../../../data/t20/parceiros';
-import { ORIGENS } from '../../../data/t20/origins';
-import { PERICIAS as PERICIAS_LIST } from '../../../data/t20/skills';
+import { PARCEIROS } from '../../../systems/t20/data/parceiros';
+import { ORIGENS } from '../../../systems/t20/data/origins';
+import { PERICIAS as PERICIAS_LIST } from '../../../systems/t20/data/skills';
 
 export function StepAllies() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));

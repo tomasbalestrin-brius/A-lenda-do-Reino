@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { getSystem } from '../../../systems/registry';
 import { useShallow } from 'zustand/react/shallow';
+import { useCharacterStore } from '../useCharacterStore';
+import { RaceModal } from '../modals/RaceModal';
 
 function attrBonusDisplay(race) {
   if (!race || !race.atributos) return [];

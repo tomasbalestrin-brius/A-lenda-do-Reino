@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { useCharacterStore } from '../store/useCharacterStore';
-import { canGoNext, shouldSkipStep } from '../utils/rules/navigation';
-import { computeStats } from '../utils/rules/characterStats';
+import { useCharacterStore } from './useCharacterStore';
+import { canGoNext, shouldSkipStep } from '../../systems/navigation';
+import { computeStats } from '../../systems/characterStats';
 
-import { getSystem } from '../systems/registry';
+import { getSystem } from '../../systems/registry';
 
 export function useCreationNavigation(initialView = 'library') {
   const [view, setView] = useState(initialView);

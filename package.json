@@ -23,7 +23,10 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "gen:docs": "node scripts/gen-docs.mjs",
+    "docs:refs": "node scripts/check-doc-refs.mjs",
+    "docs:check": "node scripts/gen-docs.mjs --check && node scripts/check-doc-refs.mjs"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",

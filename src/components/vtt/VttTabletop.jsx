@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useVttStore } from '../../store/useVttStore';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useVttStore, selectIsGM } from './useVttStore';
+import { useAuthStore } from '../../shared/useAuthStore';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { VttGrid } from './VttGrid';
 import { VttJournal, parseChatCommand, executeRoll } from './VttJournal';
-import { MONSTERS } from '../../data/t20/monsters';
+import { MONSTERS } from '../../systems/t20/data/monsters';
 import { MonsterSheet } from './MonsterSheet';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../data/t20/conditionsAndBuffs';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../systems/t20/data/conditionsAndBuffs';
 
 // ─── Sound Effects ─────────────────────────────────────────────────────────────
 const AudioCtx = typeof window !== 'undefined' ? (window.AudioContext || window.webkitAudioContext) : null;
@@ -323,7 +323,7 @@ export function VttTabletop({ room, onOpenSheet }) {
   const [selectedCombatant, setSelectedCombatant] = useState(null);
 
   const myPlayer = players.find(p => p.user_id === user?.id);
-  const isGM = myPlayer?.role === 'game_master';
+  const isGM = useVttStore(selectIsGM);
 
   // Watch for turn changes
   useEffect(() => {

@@ -1,5 +1,5 @@
-import { ITENS } from '../data/t20/items';
-import { CONDICOES_DATA, BUFFS_DATA } from '../data/t20/conditionsAndBuffs';
+import { ITENS } from '../../systems/t20/data/items';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../systems/t20/data/conditionsAndBuffs';
 
 export function exportToPDF(char, stats) {
   const signStr = (n) => (n >= 0 ? `+${n}` : String(n));

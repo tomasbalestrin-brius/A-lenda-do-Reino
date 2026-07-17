@@ -1,5 +1,5 @@
 import { CLASSES, RACES, ITENS } from './data';
-import { ATTR_KEYS } from '../../utils/rules/constants';
+import { ATTR_KEYS } from '../shared/constants';
 import { getSpellProgression } from './spellSlots';
 
 export function computeStats(char) {
@@ -185,6 +185,7 @@ export function computeStats(char) {
     saveCAR: mods.CAR + (saveProf.includes('CAR') ? profBonus : 0),
     totalLevel,
     skills, detailedAttacks: [], traits,
+    raceBonus: {},
     classLevels: { [char.classe?.toLowerCase() || 'guerreiro']: totalLevel },
     spellSlots: getSpellProgression({ [char.classe?.toLowerCase() || 'guerreiro']: totalLevel }, { [char.classe?.toLowerCase() || 'guerreiro']: char.subclasse }),
     pontosDisponiveis: 27 - ATTR_KEYS.reduce((sum, k) => {

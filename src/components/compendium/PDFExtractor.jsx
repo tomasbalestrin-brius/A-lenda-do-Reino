@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { extractTextFromPDF } from '../../utils/pdfUtils';
+import { extractTextFromPDF } from './pdfUtils';
 
 export function PDFExtractor({ file, fileName, onClose }) {
   const [stage, setStage] = useState('idle'); // idle, extracting, done

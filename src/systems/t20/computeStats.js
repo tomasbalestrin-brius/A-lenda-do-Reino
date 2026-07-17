@@ -1,7 +1,7 @@
 import { CLASSES, RACES, ORIGENS, ITENS, GENERAL_POWERS, DEUSES, CONDICOES_DATA } from './data';
-import { MATERIAIS, MELHORIAS } from '../../data/t20/modificacoes';
-import PERICIAS_LIST from '../../data/t20/skills';
-import { MAGIC_ITEMS_ALL, ENCANTOS_ARMA, ENCANTOS_ARMADURA } from '../../data/t20/magicItems';
+import { MATERIAIS, MELHORIAS } from './data/modificacoes';
+import PERICIAS_LIST from './data/skills';
+import { MAGIC_ITEMS_ALL, ENCANTOS_ARMA, ENCANTOS_ARMADURA } from './data/magicItems';
 
 import {
   ATTR_KEYS, POINT_BUY_POOL, ATTR_TOTAL_COST,
@@ -9,9 +9,10 @@ import {
   RACE_LANGUAGES, SIZE_MODS, 
   TRAINING_BONUS, TRAINING_BONUS_THRESHOLDS,
   SKILL_ATTR_MAP
-} from '../../utils/rules/constants';
+} from '../shared/constants';
 import { BonusRegistry } from '../shared/BonusRegistry';
-import { applyImpacts, applyEquipmentImpacts, applyAliadoImpacts, applyConditionsAndBuffs } from '../../utils/rules/ImpactHandlers';
+import { applyImpacts, applyEquipmentImpacts, applyAliadoImpacts, applyConditionsAndBuffs } from './ImpactHandlers';
+import { hasPower } from '../shared/utils';
 
 /** Processes automated impacts from powers and items. */
 function applyAutomatedImpacts(char, allPowers, registry, context) {
@@ -36,16 +37,6 @@ function getTrainingBonus(level) {
   if (level >= TRAINING_BONUS_THRESHOLDS.high) return TRAINING_BONUS.high;
   if (level >= TRAINING_BONUS_THRESHOLDS.mid) return TRAINING_BONUS.mid;
   return TRAINING_BONUS.low;
-}
-
-/** 
- * Helper para verificar posse de poder lidando com acentuação e caixa.
- */
-function hasPower(powerSet, name) {
-  if (!powerSet || !name) return false;
-  const normalize = (s) => s?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const searchName = normalize(name);
-  return [...powerSet].some(p => normalize(p) === searchName);
 }
 
 // ─── 14. CONDITIONS & PENALTIES ───────────────────────────────────

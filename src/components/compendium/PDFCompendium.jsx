@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PDFViewer } from './PDFViewer';
 import { PDFExtractor } from './PDFExtractor';
-import { formatFileSize } from '../../utils/pdfUtils';
+import { formatFileSize } from './pdfUtils';
 
 export function PDFCompendium({ onBack }) {
   const [pdfFiles, setPdfFiles] = useState([]); // { id, name, file, size, addedAt }

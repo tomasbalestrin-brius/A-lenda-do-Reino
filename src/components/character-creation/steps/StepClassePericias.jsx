@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import CLASSES_T20 from '../../../data/t20/classes';
-import CLASSES_DND5E from '../../../data/dnd5e/classes';
-import { ORIGENS as ORIGENS_T20 } from '../../../data/t20/origins';
-import { ORIGINS_DND5E } from '../../../data/dnd5e/origins';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import CLASSES_T20 from '../../../systems/t20/data/classes';
+import CLASSES_DND5E from '../../../systems/dnd5e/data/classes';
+import { ORIGENS as ORIGENS_T20 } from '../../../systems/t20/data/origins';
+import { ORIGINS_DND5E } from '../../../systems/dnd5e/data/origins';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getSystem } from '../../../systems/registry';
 

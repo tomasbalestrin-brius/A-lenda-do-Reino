@@ -1,5 +1,8 @@
+// Domínio/Estado: estado do personagem em criação e jogo (Zustand). Dono ÚNICO do char
+// ativo; delega estado inicial e regras de reset ao sistema registrado
+// (getInitialCharState / getResetRules), nunca embute regra de T20/D&D aqui.
 import { create } from 'zustand';
-import { getSystem, hasSystem } from '../systems/registry';
+import { getSystem, hasSystem } from '../../systems/registry';
 
 // ─── Initial State ────────────────────────────────────────────────────────────
 // Delegates to the registered system's getInitialCharState().

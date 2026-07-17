@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { OriginModal } from '../modals/OriginModal';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useCharacterStore } from '../useCharacterStore';
 import { getSystem } from '../../../systems/registry';
 import { useShallow } from 'zustand/react/shallow';
 

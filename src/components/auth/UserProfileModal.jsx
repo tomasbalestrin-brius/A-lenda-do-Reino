@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '../../store/useAuthStore';
+import { useAuthStore } from '../../shared/useAuthStore';
 
 export function UserProfileModal({ isOpen, onClose }) {
   const { user, updateProfile, deleteAccount, loading } = useAuthStore();

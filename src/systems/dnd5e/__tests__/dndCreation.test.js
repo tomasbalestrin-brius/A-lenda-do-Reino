@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeStats } from '../../systems/dnd5e/computeStats';
-import { canGoNext, shouldSkipStep } from '../../systems/dnd5e/navigation';
+import { computeStats } from '../computeStats';
+import { canGoNext, shouldSkipStep } from '../navigation';
 
 function makeDNDChar(overrides = {}) {
   return {

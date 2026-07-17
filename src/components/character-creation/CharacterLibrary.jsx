@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getSystem } from '../../systems/registry';
-import { VELOX_PRESET } from '../../data/t20/presets/velox';
+import { computeStats } from '../../systems/characterStats';
+import { VELOX_PRESET } from '../../systems/t20/data/presets/velox';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
@@ -17,7 +18,8 @@ function CharCard({ item, onLoad, onPlay, onDelete, isExample = false }) {
   const system = getSystem(char.system || 't20');
   const cls = system.classes[char.classe] || {};
   const race = system.races[char.raca] || {};
-  const s = char.stats || {};
+  // Calculado ao vivo (nunca lido de char.stats — esse campo não é persistido no save).
+  const s = computeStats(char) || {};
   return (
     <div className="group bg-gray-900/40 backdrop-blur-md border border-gray-800/60 rounded-3xl p-6 flex flex-col gap-6 hover:border-amber-500/50 transition-all hover:bg-gray-900/60 shadow-2xl overflow-hidden relative">
       <div className="absolute top-0 right-0 p-6 opacity-5 text-6xl group-hover:opacity-10 transition-opacity">

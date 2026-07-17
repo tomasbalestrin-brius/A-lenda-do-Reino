@@ -1,3 +1,5 @@
+// Domínio/Auth: sessão de autenticação (Supabase). Dono ÚNICO do user/session no cliente.
+// Sem VITE_SUPABASE_URL, cai em bypass local (mockSession no localStorage) para dev.
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
@@ -15,6 +17,18 @@ export const useAuthStore = create((set) => ({
   initializeAuth: async () => {
     try {
       set({ loading: true });
+
+      // LOCAL DEV BYPASS
+      if (!import.meta.env.VITE_SUPABASE_URL) {
+        const mockSession = localStorage.getItem('mockSession') ? JSON.parse(localStorage.getItem('mockSession')) : null;
+        set({ 
+          session: mockSession, 
+          user: mockSession?.user || null, 
+          loading: false 
+        });
+        return;
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) throw error;
@@ -41,6 +55,17 @@ export const useAuthStore = create((set) => ({
   signIn: async (email, password, rememberMe = true) => {
     try {
       set({ loading: true, error: null });
+
+      // LOCAL DEV BYPASS: If no Supabase URL is set in .env, mock the login
+      if (!import.meta.env.VITE_SUPABASE_URL) {
+        console.warn("Local Dev: Bypassing Supabase Auth since .env is missing.");
+        const mockUser = { id: 'local-dev-user', email, role: 'authenticated' };
+        const mockSession = { access_token: 'mock-token', user: mockUser };
+        if (rememberMe !== false) localStorage.setItem('mockSession', JSON.stringify(mockSession));
+        set({ session: mockSession, user: mockUser, loading: false });
+        return { data: { user: mockUser, session: mockSession }, error: null };
+      }
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -67,6 +92,17 @@ export const useAuthStore = create((set) => ({
   signUp: async (email, password) => {
     try {
       set({ loading: true, error: null });
+
+      // LOCAL DEV BYPASS
+      if (!import.meta.env.VITE_SUPABASE_URL) {
+        console.warn("Local Dev: Bypassing Supabase Auth since .env is missing.");
+        const mockUser = { id: 'local-dev-user', email, role: 'authenticated' };
+        const mockSession = { access_token: 'mock-token', user: mockUser };
+        localStorage.setItem('mockSession', JSON.stringify(mockSession));
+        set({ session: mockSession, user: mockUser, loading: false });
+        return { data: { user: mockUser, session: mockSession }, error: null };
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -82,6 +118,13 @@ export const useAuthStore = create((set) => ({
   signOut: async () => {
     try {
       set({ loading: true });
+      
+      if (!import.meta.env.VITE_SUPABASE_URL) {
+        localStorage.removeItem('mockSession');
+        set({ user: null, session: null, loading: false });
+        return;
+      }
+
       await supabase.auth.signOut();
       set({ user: null, session: null, loading: false });
     } catch (error) {

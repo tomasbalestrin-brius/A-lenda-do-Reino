@@ -1,6 +1,9 @@
+// Domínio/App: casca e roteador de topo (landing → auth → criação → jogo). Dono ÚNICO do
+// appMode e do gate de auth (AuthOverlay). Carrega CanvasGame (RPG) direto e
+// CharacterCreation/VikingsGame sob lazy.
 import React, { useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
-import { useAuthStore } from "./store/useAuthStore";
+import { useAuthStore } from "./shared/useAuthStore";
 import { AuthOverlay } from "./components/auth/AuthOverlay";
 import { PWAUpdateToast } from "./components/PWAUpdateToast";
 import { OfflineBanner } from "./components/OfflineBanner";

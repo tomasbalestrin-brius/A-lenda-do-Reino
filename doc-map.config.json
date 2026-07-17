@@ -1,0 +1,9 @@
+{
+  "srcRoot": "src",
+  "pathAlias": {},
+  "out": "CLAUDE.md",
+  "headerTags": ["Domínio", "Domain", "Dono ÚNICO"],
+  "extensions": ["js", "jsx"],
+  "lineCap": 200,
+  "projectName": "a-lenda-do-reino"
+}

@@ -1,8 +1,11 @@
+// Domínio/Jogo: motor do platformer de puzzle estilo Lost Vikings (PlatformCharacter,
+// TriggerSystem, PuzzleManager, PCG). O outro motor de canvas — CanvasGame.jsx — é o RPG
+// top-down. Formato de nível canônico do PCG é lido daqui (ver src/pcg/generateLevel.js).
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import spriteManager from "../core/spriteManager";
 import ParticleSystem from "../core/particleSystem";
-import { VIKING_LEVELS } from "../data/vikingLevels";
+import { VIKING_LEVELS } from "./vikingLevels";
 import { PlatformCharacter } from "../core/platformCharacter";
 import { TriggerSystem } from "../core/triggerSystem";
 import { PuzzleManager } from "../core/puzzleManager";

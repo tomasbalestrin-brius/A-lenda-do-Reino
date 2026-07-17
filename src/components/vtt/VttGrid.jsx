@@ -1,13 +1,13 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVttStore } from '../../store/useVttStore';
-import { useAuthStore } from '../../store/useAuthStore';
-import { supabase } from '../../services/supabaseClient';
+import { useVttStore } from './useVttStore';
+import { useAuthStore } from '../../shared/useAuthStore';
+import { supabase } from '../../lib/supabase';
 import { Token } from './grid/Token';
 import { GridCell } from './grid/GridCell';
 import { TokenContextMenu } from './grid/TokenContextMenu';
 import { GMPanel } from './grid/GMPanel';
-import { TOKEN_CONDITIONS } from '../../data/t20/vttConstants';
+import { TOKEN_CONDITIONS } from '../../systems/t20/data/vttConstants';
 
 // TOKEN_CONDITIONS and Sub-components moved to separate files
 
@@ -132,10 +132,8 @@ export function VttGrid({ isGM }) {
   };
 
   const handleMove = (tokenId, newX, newY, tokenType) => {
-    const player = players.find(p => p.user_id === user?.id);
     const isOwner = tokenId === user?.id && tokenType === 'player';
-    const isGMUser = player?.role === 'game_master';
-    if (!isOwner && !isGMUser) return;
+    if (!isOwner && !isGM) return;
 
     const x = Math.max(0, Math.min(GRID_SIZE - 1, newX));
     const y = Math.max(0, Math.min(GRID_SIZE - 1, newY));
@@ -186,10 +184,8 @@ export function VttGrid({ isGM }) {
   const handleTokenRightClick = (e, token) => {
     e.preventDefault();
     e.stopPropagation();
-    const player = players.find(p => p.user_id === user?.id);
-    const isGMUser = player?.role === 'game_master';
     const isOwner = token.userId === user?.id;
-    if (!isGMUser && !isOwner) return;
+    if (!isGM && !isOwner) return;
 
     // Clamp menu position to viewport
     const vw = window.innerWidth, vh = window.innerHeight;
@@ -197,7 +193,7 @@ export function VttGrid({ isGM }) {
     if (x + 250 > vw) x = vw - 254;
     if (y + 360 > vh) y = vh - 364;
 
-    setContextMenu({ token, x, y, isGM: isGMUser, isOwner });
+    setContextMenu({ token, x, y, isGM, isOwner });
     setDragToken(null);
   };
 

@@ -1,5 +1,23 @@
+// Domínio/VTT: estado da mesa multiplayer (sala, jogadores, combate, grid, eventos).
+// Dono ÚNICO da sessão de VTT e da resolução de papel: 'game_master' vs 'player' é decidido
+// aqui (room.game_master_id === user.id, em joinRoom). As telas devem CONSULTAR este store,
+// nunca rederivar `role === 'game_master'` por conta própria.
 import { create } from 'zustand';
-import { supabase } from '../services/supabaseClient';
+import { supabase } from '../../lib/supabase';
+
+// Seletor ÚNICO de "o usuário atual é o mestre?". Fonte da verdade: currentRoom.game_master_id
+// (o mesmo campo que decide a role em joinRoom), com fallback no papel do jogador. Reativo:
+// lê currentUserId + currentRoom + players. As telas usam `useVttStore(selectIsGM)` — nunca
+// rederivam `role === 'game_master'` por conta própria.
+export const selectIsGM = (s) => {
+  const uid = s.currentUserId;
+  if (!uid) return false;
+  if (s.currentRoom && s.currentRoom.game_master_id != null) {
+    return s.currentRoom.game_master_id === uid;
+  }
+  const p = s.players.find((pl) => pl.user_id === uid);
+  return p ? p.role === 'game_master' : false;
+};
 
 export const useVttStore = create((set, get) => ({
   currentRoom: null,

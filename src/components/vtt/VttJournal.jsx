@@ -1,15 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useVttStore } from '../../store/useVttStore';
-import { useAuthStore } from '../../store/useAuthStore';
-import { ITENS } from '../../data/t20/items';
-import { MAGIC_ITEMS_ALL } from '../../data/t20/magicItems';
-import { MONSTERS } from '../../data/t20/monsters';
-import { CONDICOES_DATA, BUFFS_DATA } from '../../data/t20/conditionsAndBuffs';
+import { useVttStore } from './useVttStore';
+import { useAuthStore } from '../../shared/useAuthStore';
+import { ITENS } from '../../systems/t20/data/items';
+import { MAGIC_ITEMS_ALL } from '../../systems/t20/data/magicItems';
+import { MONSTERS } from '../../systems/t20/data/monsters';
+import { CONDICOES_DATA, BUFFS_DATA } from '../../systems/t20/data/conditionsAndBuffs';
 import {
   magiasArcanas1, magiasArcanas2, magiasArcanas3,
   magiasDivinas1,  magiasDivinas2,
-} from '../../data/t20/spellsData';
+} from '../../systems/t20/data/spellsData';
 
 // ─── Dice helpers (exported for use in VttTabletop) ────────────────────────────
 function parseDiceExpression(expr) {

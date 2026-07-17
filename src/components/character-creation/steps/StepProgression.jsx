@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CLASSES from '../../../data/t20/classes';
-import GENERAL_POWERS from '../../../data/t20/powers';
-import SPELLS from '../../../data/t20/spellsData';
-import { checkPowerEligibility, checkClassEligibility } from '../../../utils/rules/prerequisites';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import CLASSES from '../../../systems/t20/data/classes';
+import GENERAL_POWERS from '../../../systems/t20/data/powers';
+import SPELLS from '../../../systems/t20/data/spellsData';
+import { checkPowerEligibility, checkClassEligibility } from '../prerequisites';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 
 export function StepProgression({ stats }) {

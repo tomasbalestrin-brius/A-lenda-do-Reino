@@ -1,7 +1,7 @@
-import CLASSES from '../../data/t20/classes';
-import { ORIGENS } from '../../data/t20/origins';
+import CLASSES from '../../systems/t20/data/classes';
+import { ORIGENS } from '../../systems/t20/data/origins';
 
-import { getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from './characterStats';
+import { getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from '../../systems/characterStats';
 
 /**
  * Verifica se um personagem atende a todos os pré-requisitos de um poder.

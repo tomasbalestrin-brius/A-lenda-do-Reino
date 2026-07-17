@@ -25,7 +25,7 @@ describe("Character", () => {
   it("should initialize with correct default state", () => {
     const char = new Character("erik", "Erik", "player", "hero_sheet", 5, 10, {
       maxHp: 80,
-      speed: 0.005,
+      speed: 0.12,
       drawOptions: { scale: 0.8, anchorX: 0.5, anchorY: 1.0 }
     });
 
@@ -35,13 +35,13 @@ describe("Character", () => {
     expect(char.spriteKey).toBe("hero_sheet");
     expect(char.gridX).toBe(5);
     expect(char.gridY).toBe(10);
-    expect(char.targetGridX).toBe(5);
-    expect(char.targetGridY).toBe(10);
-    expect(char.drawX).toBe(5 * 32);
-    expect(char.drawY).toBe(10 * 32);
+    expect(char.x).toBe(5 * 32);
+    expect(char.y).toBe(10 * 32);
+    expect(char.vx).toBe(0);
+    expect(char.vy).toBe(0);
     expect(char.maxHp).toBe(80);
     expect(char.hp).toBe(80);
-    expect(char.speed).toBe(0.005);
+    expect(char.speed).toBe(0.12);
     expect(char.direction).toBe("down");
     expect(char.state).toBe("idle");
     expect(char.moving).toBe(false);
@@ -81,39 +81,45 @@ describe("Character", () => {
     expect(char.state).toBe("idle"); // attack state is reset to idle
   });
 
-  it("should start movement correctly via moveTo", () => {
+  it("should start movement correctly via setVelocity", () => {
     const char = new Character("erik", "Erik", "player", "hero_sheet", 5, 10);
     
-    char.moveTo(6, 10, "right");
+    char.setVelocity(0.12, 0, "right");
     
-    expect(char.targetGridX).toBe(6);
-    expect(char.targetGridY).toBe(10);
+    expect(char.vx).toBe(0.12);
+    expect(char.vy).toBe(0);
     expect(char.direction).toBe("right");
+    
+    // Simulate one frame to trigger walk state
+    char.update(16);
     expect(char.moving).toBe(true);
     expect(char.state).toBe("walk");
     expect(char.animController.currentAnimation).toBe("walk");
   });
 
-  it("should interpolate movement positions smoothly and stop when target reached", () => {
+  it("should apply physics velocity smoothly", () => {
     const char = new Character("erik", "Erik", "player", "hero_sheet", 5, 10, {
-      speed: 0.005 // 0.005 * 32 * dt
+      speed: 0.12
     });
 
-    char.moveTo(6, 10, "right");
+    char.setVelocity(0.1, 0, "right");
 
-    // First update: speed * 32 * 100ms = 0.005 * 32 * 100 = 16 pixels
+    // First update: 0.1 * 100ms = 10 pixels
     char.update(100);
     expect(char.moving).toBe(true);
-    expect(char.gridX).toBe(5); // grid position doesn't update until reached
-    expect(char.drawX).toBe(5 * 32 + 16);
+    expect(char.x).toBe(5 * 32 + 10);
 
-    // Second update: moves another 16 pixels (reaches 32px diff)
+    // Second update: moves another 10 pixels
     char.update(100);
+    expect(char.moving).toBe(true);
+    expect(char.x).toBe(5 * 32 + 20);
+    expect(char.state).toBe("walk");
+    
+    // Stop moving
+    char.setVelocity(0, 0);
+    char.update(16);
     expect(char.moving).toBe(false);
-    expect(char.gridX).toBe(6);
-    expect(char.drawX).toBe(6 * 32);
     expect(char.state).toBe("idle");
-    expect(char.animController.currentAnimation).toBe("idle");
   });
 
   it("should take damage correctly and die if HP hits 0", () => {
@@ -137,9 +143,8 @@ describe("Character", () => {
     expect(char.isDead).toBe(true);
 
     // Try moving
-    char.moveTo(6, 10, "right");
-    expect(char.moving).toBe(false);
-    expect(char.gridX).toBe(5);
+    char.setVelocity(0.1, 0, "right");
+    expect(char.vx).toBe(0);
 
     // Try attacking
     char.attack();

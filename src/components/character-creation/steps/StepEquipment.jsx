@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { ITENS } from '../../../data/t20/items';
-import { ORIGENS } from '../../../data/t20/origins';
-import { CLASSES } from '../../../data/t20/classes';
-import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../data/t20/modificacoes';
-import { ACESSORIOS, ARMAS_MAGICAS, ARMADURAS_MAGICAS } from '../../../data/t20/magicItems';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { ITENS } from '../../../systems/t20/data/items';
+import { ORIGENS } from '../../../systems/t20/data/origins';
+import { CLASSES } from '../../../systems/t20/data/classes';
+import { MELHORIAS, MATERIAIS, CUSTOS_MELHORIAS } from '../../../systems/t20/data/modificacoes';
+import { ACESSORIOS, ARMAS_MAGICAS, ARMADURAS_MAGICAS } from '../../../systems/t20/data/magicItems';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import { computeStats } from '../../../utils/rules/characterStats';
+import { computeStats } from '../../../systems/characterStats';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function StepEquipment() {

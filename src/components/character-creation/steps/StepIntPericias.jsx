@@ -1,7 +1,7 @@
 import React from 'react';
-import CLASSES from '../../../data/t20/classes';
-import { ORIGENS } from '../../../data/t20/origins';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import CLASSES from '../../../systems/t20/data/classes';
+import { ORIGENS } from '../../../systems/t20/data/origins';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 
 export function StepIntPericias({ stats }) {

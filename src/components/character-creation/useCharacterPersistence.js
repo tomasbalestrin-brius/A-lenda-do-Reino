@@ -1,6 +1,9 @@
+// Domínio/Persistência: auto-save (localStorage, debounce 800ms) + CRUD do personagem no
+// Supabase com fallback local. Dono ÚNICO da persistência de personagem; SCHEMA_VERSION
+// versiona o formato salvo.
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabase';
-import { useCharacterStore } from '../store/useCharacterStore';
+import { supabase } from '../../lib/supabase';
+import { useCharacterStore } from './useCharacterStore';
 
 const AUTOSAVE_KEY = 'lenda_autosave';
 const LOCAL_CHARS_KEY = 'lenda_personagens';

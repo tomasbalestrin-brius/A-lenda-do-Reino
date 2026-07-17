@@ -1,4 +1,4 @@
-import { getSystem } from '../../systems/registry';
+import { getSystem } from './registry';
 
 export function canGoNext(step, char, stats) {
   const systemId = char.system || 't20';

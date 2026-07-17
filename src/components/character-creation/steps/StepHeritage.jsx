@@ -1,11 +1,11 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import RACES from '../../../data/t20/races';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { getSystem } from '../../../systems/registry';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
-import { GENERAL_POWERS } from '../../../data/t20/powers';
-import { computeStats } from '../../../utils/rules/characterStats';
-import { checkPowerEligibility } from '../../../utils/rules/prerequisites';
+import { GENERAL_POWERS } from '../../../systems/t20/data/powers';
+import { computeStats } from '../../../systems/characterStats';
+import { checkPowerEligibility } from '../prerequisites';
 
 const RACE_ICONS = {
   humano: '🧑', anao: '⛏️', elfo: '🌟', dahllan: '🌺',
@@ -46,6 +46,8 @@ const ALL_PERICIAS = [
 
 export function StepHeritage() {
   const { char, updateChar } = useCharacterStore(useShallow(state => ({ char: state.char, updateChar: state.updateChar })));
+  const system = getSystem(char.system || 't20');
+  const RACES = system.races;
   const [somenteDisp, setSomenteDisp] = React.useState(false);
   const [searchPower, setSearchPower] = React.useState('');
   const raca = char.raca;

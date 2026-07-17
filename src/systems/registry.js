@@ -1,6 +1,9 @@
+// Domínio/Sistemas: registro central dos sistemas de RPG (T20, D&D 5e). Dono ÚNICO do
+// contrato SystemContract: todo acesso a lógica de sistema passa por getSystem(id) —
+// nada de condicional por-sistema espalhado fora daqui.
 /**
  * RPG System Registry
- * 
+ *
  * Central registry where each RPG system (T20, D&D 5e, etc.) registers itself
  * with a standardized contract. The rest of the app accesses system-specific
  * logic exclusively through this registry, eliminating scattered conditionals.

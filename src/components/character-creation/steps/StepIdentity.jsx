@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useCharacterStore } from '../useCharacterStore';
 import { useShallow } from 'zustand/react/shallow';
 import { motion } from 'framer-motion';
 import { getSystem } from '../../../systems/registry';

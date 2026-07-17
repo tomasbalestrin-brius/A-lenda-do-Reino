@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ClassModal } from '../modals/ClassModal';
-import { useCharacterStore } from '../../../store/useCharacterStore';
+import { useCharacterStore } from '../useCharacterStore';
 import { getSystem } from '../../../systems/registry';
 import { useShallow } from 'zustand/react/shallow';
-import { STANDARD_KIT_ITEMS } from '../../../utils/rules/constants';
+import { STANDARD_KIT_ITEMS } from '../../../systems/shared/constants';
 
 const CLASS_ICONS = {
   arcanista: '✨', barbaro: '⚔️', bardo: '🎵', bucaneiro: '⚓',
