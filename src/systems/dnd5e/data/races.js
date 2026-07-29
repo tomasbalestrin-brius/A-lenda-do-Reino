@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: races.js
 const RACES_DND5E = {
   anao: {
     nome: "Anão",

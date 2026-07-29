@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: computeStats.js
 import { CLASSES, RACES, ORIGENS, ITENS, GENERAL_POWERS, DEUSES, CONDICOES_DATA } from './data';
 import { MATERIAIS, MELHORIAS } from './data/modificacoes';
 import PERICIAS_LIST from './data/skills';

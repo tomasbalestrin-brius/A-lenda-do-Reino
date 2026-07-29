@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: SystemContext.jsx
 import React, { createContext, useContext, useMemo } from 'react';
 import { getSystem } from './registry';
 

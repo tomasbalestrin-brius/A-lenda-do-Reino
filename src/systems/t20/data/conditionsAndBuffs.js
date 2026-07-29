@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: conditionsAndBuffs.js
 export const CONDICOES_DATA = {
   abalado: { nome: 'Abalado', icone: '😨', penalidade: { pericia_geral: -2 } },
   agarrado: { nome: 'Agarrado', icone: '🤼', penalidade: { atk: -2 }, tags: ['desprevenido'] },

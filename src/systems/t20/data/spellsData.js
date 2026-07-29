@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: spellsData.js
 // ===================================
 // TORMENTA 20 (Jogo do Ano) - MÓDULO DE MAGIAS (CURADO)
 // ===================================

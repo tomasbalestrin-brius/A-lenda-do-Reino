@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: ImpactHandlers.js
 import { GENERAL_POWERS } from './data/powers';
 import { CONDICOES_DATA, BUFFS_DATA } from './data/conditionsAndBuffs';
 

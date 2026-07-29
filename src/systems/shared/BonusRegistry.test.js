@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: BonusRegistry.test.js
 import { describe, it, expect, beforeEach } from 'vitest';
 import { BonusRegistry } from './BonusRegistry';
 

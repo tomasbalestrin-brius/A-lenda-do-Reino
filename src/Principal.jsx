@@ -1,18 +1,15 @@
+// Domínio: app | Dono ÚNICO de: Principal.jsx
 // Domínio/App: casca e roteador de topo (landing → auth → criação → jogo). Dono ÚNICO do
-// appMode e do gate de auth (AuthOverlay). Carrega CanvasGame (RPG) direto e
-// CharacterCreation/VikingsGame sob lazy.
+// appMode e do gate de auth (AuthOverlay).
 import React, { useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "./shared/useAuthStore";
-import { AuthOverlay } from "./components/auth/AuthOverlay";
-import { PWAUpdateToast } from "./components/PWAUpdateToast";
-import { OfflineBanner } from "./components/OfflineBanner";
-import { LandscapeWarning } from "./components/LandscapeWarning";
+import { AuthOverlay } from "./shared/auth/AuthOverlay";
+import { PWAUpdateToast } from "./shared/components/PWAUpdateToast";
+import { OfflineBanner } from "./shared/components/OfflineBanner";
+import { LandscapeWarning } from "./shared/components/LandscapeWarning";
 import "./index.css";
-import CanvasGame from "./canvas/CanvasGame";
-
-const CharacterCreation = lazy(() => import("./components/CharacterCreation"));
-const VikingsGame = lazy(() => import("./canvas/VikingsGame"));
+const CharacterCreation = lazy(() => import("./modules/character-creation/CharacterCreation"));
 
 const LoadingScreen = () => (
   <motion.div
@@ -123,94 +120,6 @@ const LandingPage = ({ onSelect }) => (
         </button>
       </div>
 
-      {/* CARD 3: AVENTURA PIXEL */}
-      <div 
-        className="pixel-border-wood medieval-wood-bg flex flex-col justify-between p-6 h-[340px] shadow-2xl relative group"
-      >
-        {/* Metal corners decoration */}
-        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-400" />
-        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-400" />
-        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-400" />
-        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-400" />
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="pixel-border-gold w-12 h-12 flex items-center justify-center text-2xl bg-amber-500/20 border-amber-500/50">
-              ⚔️
-            </div>
-            <span className="pixel-font text-[8px] text-yellow-500">16-BIT MINI RPG</span>
-          </div>
-          <h3 className="pixel-font pixel-shadow-sm text-sm text-[#fff8dc] mb-3 uppercase">Aventura</h3>
-          <p className="text-slate-300 text-[11px] leading-relaxed font-medium">
-            Explore Arton em tempo real em um mini-RPG pixel-art 16-bit com movimentação suave, câmera e combate cooperativo.
-          </p>
-        </div>
-        <button 
-          onClick={() => onSelect('adventure')}
-          className="pixel-btn-gold w-full py-2.5 rounded-none font-bold uppercase tracking-wider text-[10px]"
-        >
-          Entrar na Jornada ⚔️
-        </button>
-      </div>
-
-      {/* CARD 4: MODO VIKINGS */}
-      <div 
-        className="pixel-border-wood medieval-wood-bg flex flex-col justify-between p-6 h-[340px] shadow-2xl relative group"
-      >
-        {/* Metal corners decoration */}
-        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-400" />
-        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-400" />
-        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-400" />
-        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-400" />
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="pixel-border-gold w-12 h-12 flex items-center justify-center text-2xl bg-cyan-500/20 border-cyan-500/50">
-              🛡️
-            </div>
-            <span className="pixel-font text-[8px] text-cyan-500">PUZZLE PLATFORMER</span>
-          </div>
-          <h3 className="pixel-font pixel-shadow-sm text-sm text-[#fff8dc] mb-3 uppercase">Modo Vikings</h3>
-          <p className="text-slate-300 text-[11px] leading-relaxed font-medium">
-            Um modo de puzzle e plataforma cooperativo, onde você controla 3 heróis simultaneamente usando suas habilidades únicas.
-          </p>
-        </div>
-        <button 
-          onClick={() => onSelect('vikings')}
-          className="pixel-btn-gold w-full py-2.5 rounded-none font-bold uppercase tracking-wider text-[10px]"
-        >
-          Jogar Vikings 🛡️
-        </button>
-      </div>
-
-      {/* CARD 5: JORNADA INFINITA (PCG) */}
-      <div 
-        className="pixel-border-wood medieval-wood-bg flex flex-col justify-between p-6 w-full md:w-[340px] h-[340px] shadow-2xl relative group"
-      >
-        <div className="absolute top-1 left-1 w-3 h-3 border-t-2 border-l-2 border-gray-400" />
-        <div className="absolute top-1 right-1 w-3 h-3 border-t-2 border-r-2 border-gray-400" />
-        <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-gray-400" />
-        <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-gray-400" />
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="pixel-border-gold w-12 h-12 flex items-center justify-center text-2xl bg-purple-500/20 border-purple-500/50">
-              🌀
-            </div>
-            <span className="pixel-font text-[8px] text-purple-500">PROCEDURAL</span>
-          </div>
-          <h3 className="pixel-font pixel-shadow-sm text-sm text-[#fff8dc] mb-3 uppercase">Jornada Viking</h3>
-          <p className="text-slate-300 text-[11px] leading-relaxed font-medium">
-            Desafie os deuses em uma sequência infinita de níveis procedurais inéditos com dificuldade crescente.
-          </p>
-        </div>
-        <button 
-          onClick={() => onSelect('vikings-pcg')}
-          className="pixel-btn-gold w-full py-2.5 rounded-none font-bold uppercase tracking-wider text-[10px] bg-purple-600 hover:bg-purple-500 text-white border-black shadow-[inset_-4px_-4px_0_0_#4c1d95,inset_4px_4px_0_0_#d8b4fe,0_4px_0_0_#000] active:shadow-[inset_4px_4px_0_0_#4c1d95,inset_-4px_-4px_0_0_#d8b4fe]"
-        >
-          Iniciar Jornada 🌀
-        </button>
-      </div>
     </div>
 
     <div className="mt-16 pixel-font text-[8px] text-slate-500 tracking-wider">
@@ -232,26 +141,6 @@ export default function App() {
 
   if (appMode === 'landing') {
     return <LandingPage onSelect={setAppMode} />;
-  }
-
-  if (appMode === 'adventure') {
-    return <CanvasGame onExit={() => setAppMode('landing')} />;
-  }
-
-  if (appMode === 'vikings') {
-    return (
-      <Suspense fallback={<LoadingScreen />}>
-        <VikingsGame onExit={() => setAppMode('landing')} />
-      </Suspense>
-    );
-  }
-
-  if (appMode === 'vikings-pcg') {
-    return (
-      <Suspense fallback={<LoadingScreen />}>
-        <VikingsGame mode="pcg" onExit={() => setAppMode('landing')} />
-      </Suspense>
-    );
   }
 
   return (

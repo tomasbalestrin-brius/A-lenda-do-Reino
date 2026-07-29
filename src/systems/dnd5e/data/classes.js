@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: classes.js
 const CLASSES_DND5E = {
   barbaro: {
     nome: "Bárbaro",

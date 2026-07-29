@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: powers.js
 // Tormenta20 - Poderes Gerais (Livro Jogo do Ano)
 export const GENERAL_POWERS = {
   combate: [

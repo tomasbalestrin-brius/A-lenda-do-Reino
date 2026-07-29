@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: magicItems.js
 // Tormenta20 - Itens Mágicos (Capítulo 8)
 // Cada item ou encanto possui um campo 'impacto' para automação numérica.
 

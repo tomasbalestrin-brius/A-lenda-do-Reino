@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: gods.js
 // ===================================
 // TORMENTA 20 - MÓDULO DE DIVINDADES
 // ===================================

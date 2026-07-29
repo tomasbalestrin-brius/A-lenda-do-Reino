@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: origins.js
 export const ORIGINS_DND5E = {
   acolito: {
     nome: "Acólito",

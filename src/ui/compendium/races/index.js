@@ -1,3 +1,4 @@
+// Domínio: app | Dono ÚNICO de: index.js
 import { humano } from './humano';
 import { anao } from './anao';
 import { elfo } from './elfo';

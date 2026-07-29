@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: classes.js
 // Tormenta20 - Classes (Livro Básico — dados exatos)
 // periciasObrigatorias: automáticas (sem escolha) ou ['A', 'B'] = escolhe um
 // periciasClasse: lista de onde escolher as opcionais

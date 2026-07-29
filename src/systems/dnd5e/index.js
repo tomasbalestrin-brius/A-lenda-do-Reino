@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: index.js
 /**
  * D&D 5e System — Self-registering module.
  * 
@@ -10,66 +11,71 @@
  */
 
 import { registerSystem } from '../registry';
+import { BaseSystem } from '../BaseSystem';
 import { computeStats } from './computeStats';
 import { canGoNext, shouldSkipStep } from './navigation';
 import { RACES, CLASSES, ORIGENS } from './data';
-import { getInitialCharState } from './initialState';
 import { getResetRules } from './resetRules';
-import { STEP_LABELS, steps } from './steps';
-import { DND5ePlaySheet } from './playsheet/DND5ePlaySheet';
-
-
-
-// ─── Step Labels ──────────────────────────────────────────────────────────────
-// D&D uses fewer steps than T20, but maps to the same indices for now.
-// Full step decoupling happens in Fase 4.
-
-const STEP_LABELS_DND = [
-  "Raça", "Herança", "Classe", "Identidade", "Subclasse",
-  "Antecedente", "Benefícios", "Divindade", "Nível", "Magias",
-  "Atributos", "Perícias (Classe)", "Perícias (Int)", "Equipamento",
-  "Poderes", "Progressão", "Aliados", "Revisão"
-];
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
-const DND5eSystem = {
-  id: 'dnd5e',
-  name: 'Dungeons & Dragons 5e',
-  icon: '🐉',
-  color: '#dc2626',
-  description: 'O RPG de fantasia mais jogado do mundo — Livro do Jogador 5ª Edição.',
+class DND5eSystem extends BaseSystem {
+  constructor() {
+    super({
+      id: 'dnd5e',
+      name: 'Dungeons & Dragons 5e',
+      icon: '🐉',
+      color: '#dc2626',
+      description: 'O RPG de fantasia mais jogado do mundo — Livro do Jogador 5ª Edição.',
+      races: RACES,
+      classes: CLASSES,
+      origins: ORIGENS,
+    });
+    // D&D uses 27-point buy
+    this.pointBuyPool = 27;
+  }
+
+  getInitialCharState() {
+    return {
+      ...super.getInitialCharState(),
+      // D&D 5e specific
+      spellSlots: {},
+      deathSaves: { successes: 0, failures: 0 },
+    };
+  }
 
   // Motor de regras
-  computeStats: (char) => computeStats({ ...char, system: 'dnd5e' }),
-  getAllTrainedSkills: (char) => new Set(char.pericias || []),
-  getAllOwnedPowers: (char) => new Set(char.poderes || []),
-  getAllProficiencies: (char) => new Set(char.proficiencias || []),
+  computeStats(char) {
+    return computeStats({ ...char, system: 'dnd5e' });
+  }
+
+  getAllTrainedSkills(char) {
+    return new Set(char.pericias || []);
+  }
+
+  getAllOwnedPowers(char) {
+    return new Set(char.poderes || []);
+  }
+
+  getAllProficiencies(char) {
+    return new Set(char.proficiencias || []);
+  }
 
   // Navegação
-  canGoNext: (step, char, stats) => canGoNext(step, { ...char, system: 'dnd5e' }, stats),
-  shouldSkipStep: (step, char, stats) => shouldSkipStep(step, { ...char, system: 'dnd5e' }, stats),
+  canGoNext(step, char, stats) {
+    return canGoNext(step, { ...char, system: 'dnd5e' }, stats);
+  }
 
-  // Estado
-  getInitialCharState,
-  getResetRules,
+  shouldSkipStep(step, char, stats) {
+    return shouldSkipStep(step, { ...char, system: 'dnd5e' }, stats);
+  }
 
-  // Steps
-  steps,
+  getResetRules() {
+    return getResetRules();
+  }
+}
 
-  // Componentes visuais
-  PlaySheetComponent: DND5ePlaySheet,
-  CharacterPreviewComponent: null,
+const dnd5eInstance = new DND5eSystem();
+registerSystem(dnd5eInstance);
 
-  // Dados
-  races: RACES,
-  classes: CLASSES,
-  origins: ORIGENS,
-
-  // D&D uses 27-point buy
-  pointBuyPool: 27,
-};
-
-registerSystem(DND5eSystem);
-
-export default DND5eSystem;
+export default dnd5eInstance;

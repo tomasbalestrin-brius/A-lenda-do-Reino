@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: races.js
 // Tormenta20 - Raças (Livro Básico — dados exatos do livro)
 // Atributos: o valor já É o modificador (ex: +2 significa +2 direto)
 

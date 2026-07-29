@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: navigation.js
 import { CLASSES, RACES } from './data';
 
 export function canGoNext(step, char, stats) {

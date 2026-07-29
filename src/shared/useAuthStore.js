@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: useAuthStore.js
 // Domínio/Auth: sessão de autenticação (Supabase). Dono ÚNICO do user/session no cliente.
 // Sem VITE_SUPABASE_URL, cai em bypass local (mockSession no localStorage) para dev.
 import { create } from 'zustand';

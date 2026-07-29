@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: resetRules.js
 import { ORIGENS } from './data';
 
 export function getResetRules() {

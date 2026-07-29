@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: migrate.js
 /**
  * Migration utility for converting characters saved in the old format
  * (with inline system-specific fields) to the new format.

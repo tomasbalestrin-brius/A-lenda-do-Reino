@@ -1,28 +1,31 @@
-# ⚔️ A Lenda do Reino - RPG Maker PWA
+# ⚔️ A Lenda do Reino - Hub de RPG & VTT PWA
 
-Um ecossistema completo para jogadores de RPG, combinando um **Criador de Personagens Multissistema** (PWA) com um **Action-RPG Side-Scroller** dinâmico. Desenvolvido com foco na fidelidade ao sistema **Tormenta20: Jogo do Ano** e expansível para **D&D 5e**.
+Um ecossistema completo para jogadores e mestres de RPG, combinando um **Criador de Personagens Multissistema**, uma **Mesa Virtual (VTT)** completa e motores de jogo (Action-RPG e Puzzle Platformer). Desenvolvido com foco na fidelidade aos sistemas **Tormenta20: Jogo do Ano** e **Dungeons & Dragons 5e**.
 
-## 🚀 Funcionalidades
+## 🚀 Funcionalidades Principais
 
-### 📱 Criador de Personagens (PWA)
-- **Multissistema**: Suporte inicial completo para Tormenta20 e estrutura pronta para D&D 5e.
-- **Mobile-First**: Interface otimizada para smartphones, ideal para uso durante sessões de mesa.
-- **Offline Ready**: Funciona sem internet após a primeira instalação (Progressive Web App).
-- **Cálculos Automáticos**: PV, PM, Modificadores e Defesa calculados em tempo real.
+### 📱 Criador de Personagens Multissistema (PWA)
+- **Sistemas Suportados**: Tormenta20 e D&D 5e totalmente integrados (classes, raças, magias, itens).
+- **Ficha Digital Automática**: PV, PM, Modificadores, Defesa, Spell Slots e Inventário geridos em tempo real.
+- **Ferramentas Extras**: Leitor/extrator de PDF integrado e exportação da ficha.
+- **Offline First**: Funciona sem internet (Progressive Web App) com auto-save local.
 
-### 🎮 Action-RPG Side-Scroller
-- **Combate Dinâmico**: Mecânicas de ação inspiradas em *Skul* e *Salt and Sanctuary*.
-- **Integração T20**: Atributos e habilidades do personagem influenciam diretamente o gameplay.
-- **Visual Profissional**: Parallax background, iluminação dinâmica e efeitos de impacto (Screen Shake, Hit Stop).
+### 🎲 Mesa Virtual (VTT) & Multiplayer
+- **Real-Time Multiplayer**: Sincronização em nuvem e modo multiplayer via **Supabase**.
+- **Virtual Tabletop**: Grid de batalha (VttGrid), gerenciamento de tokens, painel do mestre (GMPanel) e diário (VttJournal).
+- **Rolador de Dados**: Simulação rica para resolução de ações no modo online.
+
+### 🎮 Motores de Jogo Integrados
+- **RPG Top-Down**: Motor em HTML5 Canvas (`CanvasGame`) com sistema de diálogos, movimentação livre e pathfinding.
+- **Puzzle Platformer**: Motor com geração procedural de níveis (PCG), físicas avançadas e mecânicas no estilo *Lost Vikings*.
 
 ## 🛠️ Tecnologias
 
 - **Frontend**: React + Vite
 - **Estilização**: Tailwind CSS + Framer Motion
-- **Estado**: Zustand
-- **PWA**: Service Workers + Web Manifest
-- **Desktop**: Electron (opcional)
-- **Deploy**: Vercel / GitHub Pages
+- **Estado Local**: Zustand
+- **Backend & Cloud**: Supabase (Autenticação, Database, Real-time)
+- **Testes**: Vitest
 
 ## 📦 Como Rodar o Projeto
 
@@ -37,23 +40,31 @@ Um ecossistema completo para jogadores de RPG, combinando um **Criador de Person
    npm install
    ```
 
-3. **Inicie o servidor de desenvolvimento**:
+3. **Configuração de Ambiente (Supabase)**:
+   Crie um arquivo `.env` na raiz do projeto com as chaves do seu projeto Supabase (necessário para os recursos multiplayer e salvar ficha na nuvem):
+   ```env
+   VITE_SUPABASE_URL=sua_url_aqui
+   VITE_SUPABASE_ANON_KEY=sua_key_aqui
+   ```
+
+4. **Inicie o servidor de desenvolvimento**:
    ```bash
    npm run dev
    ```
 
-4. **Para rodar como Desktop (Electron)**:
+5. **Comandos Úteis**:
    ```bash
-   npm run electron:dev
+   npm run test        # Roda os testes com Vitest
+   npm run gen:docs    # Atualiza o arquivo CLAUDE.md com o mapa do sistema
    ```
 
 ## 🌐 Deploy na Vercel
 
-Este projeto está configurado para deploy instantâneo na Vercel. Basta conectar seu repositório do GitHub à plataforma Vercel e o deploy será feito automaticamente a cada push na branch `main`.
+Configurado para deploy contínuo na Vercel. Lembre-se de adicionar as variáveis de ambiente (`VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`) nas configurações de Environment Variables do projeto na Vercel.
 
 ## 📜 Licença
 
-Este projeto é uma ferramenta de fã para a comunidade de RPG. Certifique-se de respeitar os direitos autorais dos sistemas de RPG utilizados (Jambô Editora para Tormenta20 e Wizards of the Coast para D&D).
+Projeto feito de fãs para fãs. Certifique-se de respeitar os direitos autorais dos sistemas de RPG (Jambô Editora para Tormenta20 e Wizards of the Coast para D&D).
 
 ---
-Desenvolvido com ❤️ para a comunidade de Arton.
+Desenvolvido com ❤️ para a comunidade.

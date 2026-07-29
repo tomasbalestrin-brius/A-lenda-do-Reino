@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: spellSlots.js
 /**
  * D&D 5e Spell Slots and Cantrips progression logic.
  */

@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: monsters.js
 export const MONSTERS = {
   goblin: {
     id: 'goblin',

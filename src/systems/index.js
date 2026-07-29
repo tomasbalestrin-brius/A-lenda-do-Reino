@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: index.js
 /**
  * Systems module — central entry point.
  * 

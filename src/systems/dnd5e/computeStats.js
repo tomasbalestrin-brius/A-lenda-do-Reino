@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: computeStats.js
 import { CLASSES, RACES, ITENS } from './data';
 import { ATTR_KEYS } from '../shared/constants';
 import { getSpellProgression } from './spellSlots';

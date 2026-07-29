@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: parceiros.js
 // Tormenta20 - Aliados e Parceiros (Livro Jogo do Ano)
 export const PARCEIROS = {
   tipos: [

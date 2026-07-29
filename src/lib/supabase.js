@@ -1,3 +1,4 @@
+// Domínio: app | Dono ÚNICO de: supabase.js
 // Domínio/Infra: client único do Supabase (browser). Dono ÚNICO da instância GoTrue.
 // NUNCA criar um segundo createClient() no app: duas instâncias disputam o mesmo refresh
 // token na mesma storage key e derrubam a sessão uma da outra (logout aleatório em sessão

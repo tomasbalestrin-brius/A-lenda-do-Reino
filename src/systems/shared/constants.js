@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: constants.js
 /**
  * Constantes de regras do Tormenta20.
  * Valores extraídos diretamente do Livro Básico T20.

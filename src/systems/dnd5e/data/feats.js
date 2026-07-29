@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: feats.js
 /**
  * D&D 5e Feats (Talentos) list and requirements.
  */

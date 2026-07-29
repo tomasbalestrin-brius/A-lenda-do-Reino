@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: dndCreation.test.js
 import { describe, it, expect } from 'vitest';
 import { computeStats } from '../computeStats';
 import { canGoNext, shouldSkipStep } from '../navigation';

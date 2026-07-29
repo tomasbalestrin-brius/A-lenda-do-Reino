@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: selectors.js
 import { RACAS } from "./races";
 import { CLASSES } from "./classes";
 import { ORIGENS } from "./origins";

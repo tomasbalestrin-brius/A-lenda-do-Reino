@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: characterStats.js
 // Domínio/Regras: dispatcher ÚNICO de cálculo de ficha. computeStats(char) delega ao motor
 // do sistema ativo (getSystem(id).computeStats). Os motores por sistema
 // (systems/t20/computeStats.js, systems/dnd5e/computeStats.js) são implementações distintas,

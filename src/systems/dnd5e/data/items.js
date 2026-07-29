@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: items.js
 /**
  * D&D 5e Items, Weapons and Armors.
  */

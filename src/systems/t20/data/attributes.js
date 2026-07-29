@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: attributes.js
 ﻿export const ATRIBUTOS = [
   { id: "FOR", nome: "ForÃ§a" },
   { id: "DES", nome: "Destreza" },

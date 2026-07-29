@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: index.js
 export { default as CLASSES } from './classes';
 export { RACES } from './races';
 export { ORIGENS } from './origins';

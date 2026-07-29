@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: dice.js
 export function rollDice(formula) {
   const match =
     typeof formula === "string" && formula.match(/(\d+)d(\d+)([+\-]\d+)?/);

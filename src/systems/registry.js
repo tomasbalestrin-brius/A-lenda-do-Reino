@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: registry.js
 // Domínio/Sistemas: registro central dos sistemas de RPG (T20, D&D 5e). Dono ÚNICO do
 // contrato SystemContract: todo acesso a lógica de sistema passa por getSystem(id) —
 // nada de condicional por-sistema espalhado fora daqui.
@@ -14,13 +15,6 @@
 const systems = {};
 
 /**
- * @typedef {Object} SystemStep
- * @property {string} label - Display name for the sidebar
- * @property {React.LazyExoticComponent | React.ComponentType} component - Step component
- * @property {string} [icon] - Optional emoji icon
- */
-
-/**
  * @typedef {Object} SystemContract
  * @property {string} id - Unique system identifier (e.g., 't20', 'dnd5e')
  * @property {string} name - Human-readable system name
@@ -29,21 +23,16 @@ const systems = {};
  * @property {string} description - Short system description
  * 
  * @property {Function} computeStats - (charData) => statsObject
- * @property {SystemStep[]} steps - Ordered list of creation steps
  * @property {Function} canGoNext - (stepIndex, char, stats) => { ok, reason }
  * @property {Function} shouldSkipStep - (stepIndex, char, stats) => boolean
  * @property {Function} getInitialCharState - () => object (initial character state)
  * @property {Function} getResetRules - () => object (field reset rules)
- * 
- * @property {React.ComponentType} PlaySheetComponent - Character sheet component
- * @property {React.ComponentType} [CharacterPreviewComponent] - Preview panel component
  * 
  * @property {Object} races - Race data dictionary
  * @property {Object} classes - Class data dictionary
  * @property {Object} origins - Origins/Backgrounds data dictionary
  * 
  * @property {number} [pointBuyPool] - Points available for attribute purchase
- * @property {string[]} [stepLabels] - Computed from steps, cached
  */
 
 /**
@@ -57,10 +46,6 @@ export function registerSystem(system) {
   if (systems[system.id]) {
     console.warn(`registerSystem: overwriting existing system '${system.id}'`);
   }
-
-  // Cache derived values
-  system.stepLabels = system.steps.map(s => s.label);
-  system.maxSteps = system.steps.length;
 
   systems[system.id] = system;
 }

@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: characterStats.test.js
 import { describe, it, expect } from 'vitest';
 import { computeStats } from './t20/computeStats';
 import { canGoNext, shouldSkipStep } from './t20/navigation';

@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: items.js
 // =============================================================================
 // ITENS — Tormenta20 (Tabelas 3-3, 3-4, 3-5 do Livro Básico)
 // Dados extraídos diretamente das tabelas oficiais.

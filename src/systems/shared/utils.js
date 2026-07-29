@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: utils.js
 /**
  * Shared utility functions used by multiple RPG system engines.
  */

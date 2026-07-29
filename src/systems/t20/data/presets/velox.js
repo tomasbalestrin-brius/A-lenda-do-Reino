@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: velox.js
 // Velox The Vulpera — Personagem de Exemplo
 // Moreau-Raposa, Guerreiro Nível 1 — Reinos de Moreania DLC
 // Criado por Tomas / A Lenda do Reino

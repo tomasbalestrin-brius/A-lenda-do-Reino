@@ -1,3 +1,4 @@
+// Domínio: app | Dono ÚNICO de: validate-data.js
 // Simple validator for data modules
 import { RACAS } from "../systems/t20/data/races";
 import { CLASSES } from "../systems/t20/data/classes";

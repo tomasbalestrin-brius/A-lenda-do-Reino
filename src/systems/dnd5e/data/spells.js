@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: spells.js
 /**
  * D&D 5e Spells.
  */

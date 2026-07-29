@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: useOnlineStatus.js
 import { useState, useEffect } from 'react';
 
 export function useOnlineStatus() {

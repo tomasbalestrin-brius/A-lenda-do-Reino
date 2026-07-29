@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: navigation.js
 import { getSystem } from './registry';
 
 export function canGoNext(step, char, stats) {

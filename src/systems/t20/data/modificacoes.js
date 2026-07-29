@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: modificacoes.js
 // Tormenta20 - Sistema de Melhorias e Materiais Especiais (Cap. 3)
 
 export const MELHORIAS = {

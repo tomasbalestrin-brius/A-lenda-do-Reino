@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: index.js
 /**
  * Tormenta20 System — Self-registering module.
  *
@@ -8,54 +9,81 @@
  */
 
 import { registerSystem } from '../registry';
+import { BaseSystem } from '../BaseSystem';
 import { computeStats, getAllTrainedSkills, getAllOwnedPowers, getAllProficiencies } from './computeStats';
 import { canGoNext, shouldSkipStep } from './navigation';
 import { RACES } from './data/races';
 import CLASSES from './data/classes';
 import { ORIGENS } from './data/origins';
-import { getInitialCharState } from './initialState';
 import { getResetRules } from './resetRules';
-import { steps } from './steps';
 
 // ─── Register ─────────────────────────────────────────────────────────────────
 
-const T20System = {
-  id: 't20',
-  name: 'Tormenta20',
-  icon: '⚔️',
-  color: '#f59e0b',
-  description: 'Sistema Tormenta20 Jogo do Ano — o RPG de fantasia brasileiro mais popular.',
+class T20System extends BaseSystem {
+  constructor() {
+    super({
+      id: 't20',
+      name: 'Tormenta20',
+      icon: '⚔️',
+      color: '#f59e0b',
+      description: 'Sistema Tormenta20 Jogo do Ano — o RPG de fantasia brasileiro mais popular.',
+      races: RACES,
+      classes: CLASSES,
+      origins: ORIGENS,
+    });
+    this.pointBuyPool = 10;
+  }
 
-  // Motor de regras (delega para implementação existente durante a migração)
-  computeStats: (char) => computeStats({ ...char, system: 't20' }),
-  getAllTrainedSkills: (char) => getAllTrainedSkills(char),
-  getAllOwnedPowers: (char) => getAllOwnedPowers(char),
-  getAllProficiencies: (char) => getAllProficiencies(char),
+  getInitialCharState() {
+    return {
+      ...super.getInitialCharState(),
+      modalDeus: null,
+      deus: null,
+      crencasBeneficios: [],
+      poderesGerais: [],
+      aliado: null,
+      idiomas: ['Comum'],
+      dinheiro: 0,
+      spellEnhancements: {},
+      pmAtual: null,
+      beneficiosAtivos: [],
+      logRecursos: [],
+      atributos: { FOR: 0, DES: 0, CON: 0, INT: 0, SAB: 0, CAR: 0 },
+    };
+  }
 
-  // Navegação (delega para implementação existente)
-  canGoNext: (step, char, stats) => canGoNext(step, { ...char, system: 't20' }, stats),
-  shouldSkipStep: (step, char, stats) => shouldSkipStep(step, { ...char, system: 't20' }, stats),
+  // Motor de regras
+  computeStats(char) {
+    return computeStats({ ...char, system: 't20' });
+  }
+  
+  getAllTrainedSkills(char) {
+    return getAllTrainedSkills(char);
+  }
 
-  // Estado
-  getInitialCharState,
-  getResetRules,
+  getAllOwnedPowers(char) {
+    return getAllOwnedPowers(char);
+  }
 
-  // Steps (componentes reais de src/components/character-creation/steps/, ver ./steps)
-  steps,
+  getAllProficiencies(char) {
+    return getAllProficiencies(char);
+  }
 
-  // Componentes visuais (null durante migração; adicionados em Fase 4)
-  PlaySheetComponent: null,
-  CharacterPreviewComponent: null,
+  // Navegação
+  canGoNext(step, char, stats) {
+    return canGoNext(step, { ...char, system: 't20' }, stats);
+  }
 
-  // Dados
-  races: RACES,
-  classes: CLASSES,
-  origins: ORIGENS,
+  shouldSkipStep(step, char, stats) {
+    return shouldSkipStep(step, { ...char, system: 't20' }, stats);
+  }
 
-  // Constantes
-  pointBuyPool: 10,
-};
+  getResetRules() {
+    return getResetRules();
+  }
+}
 
-registerSystem(T20System);
+const t20Instance = new T20System();
+registerSystem(t20Instance);
 
-export default T20System;
+export default t20Instance;

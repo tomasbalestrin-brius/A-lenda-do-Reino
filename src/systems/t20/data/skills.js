@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: skills.js
 export const PERICIAS = [
   { id: "acrobacia", nome: "Acrobacia", atributo: "DES", treinada: false, penalidade: true },
   { id: "adestramento", nome: "Adestramento", atributo: "CAR", treinada: true, penalidade: false },

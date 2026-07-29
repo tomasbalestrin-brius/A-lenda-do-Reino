@@ -1,3 +1,4 @@
+// Domínio: shared | Dono ÚNICO de: BonusRegistry.js
 /**
  * BonusRegistry manages stat bonuses according to T20 JdA stacking rules:
  * - Habilidades (Poderes, Raças, Origens) de fontes diferentes ACUMULAM.

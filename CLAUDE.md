@@ -11,230 +11,177 @@
 
 | domínio | arqs | entry | o que faz (do header) |
 |---|---|---|---|
-| `(raiz)` | 3 | `Principal.jsx` | casca e roteador de topo (landing → auth → criação → jogo). |
-| `canvas` | 4 +1t | `CanvasGame.jsx` | motor do RPG top-down (mapas de tiles, pathfinding, Character, diálogos). |
-| `components` | 58 | `StepClass.jsx` |  |
-| `core` | 17 +6t | `particleSystem.js` |  |
-| `lib` | 1 | `supabase.js` | client único do Supabase (browser). |
-| `pcg` | 10 | `LevelGenerator.js` | fachada da geração procedural de níveis (design reverso). |
-| `scripts` | 1 | `validate-data.js` | Simple validator for data modules |
-| `shared` | 3 | `useAuthStore.js` | sessão de autenticação (Supabase). |
-| `systems` | 52 +3t | `registry.js` | registro central dos sistemas de RPG (T20, D&D 5e). |
-| `ui` | 1 | `index.js` |  |
+| `(raiz)` | 3 | `Principal.jsx` | app | Dono ÚNICO de: Principal.jsx Domínio/App: casca e roteador de topo (landing → auth → criação → jogo). |
+| `lib` | 1 | `supabase.js` | app | Dono ÚNICO de: supabase.js Domínio/Infra: client único do Supabase (browser). |
+| `modules` | 61 | `CharacterCreation.jsx` | character-creation | Dono ÚNICO de: CharacterCreation.jsx |
+| `scripts` | 1 | `validate-data.js` | app | Dono ÚNICO de: validate-data.js Simple validator for data modules |
+| `shared` | 10 | `useAuthStore.js` | shared | Dono ÚNICO de: useAuthStore.js Domínio/Auth: sessão de autenticação (Supabase). |
+| `systems` | 45 +3t | `registry.js` | systems | Dono ÚNICO de: registry.js Domínio/Sistemas: registro central dos sistemas de RPG (T20, D&D 5e). |
+| `ui` | 1 | `index.js` | app | Dono ÚNICO de: index.js |
 
 ## Grafo de deps (domínio → domínios que ele usa)
 
 ```
-(raiz)        → canvas · components · shared · systems
-canvas        → components · core · pcg · systems
-components    → lib · shared · systems
-core          → canvas
+(raiz)        → shared · systems
 lib           → (nenhum — folha)
-pcg           → (nenhum — folha)
+modules       → lib · shared · systems
 scripts       → systems
 shared        → lib
-systems       → components
+systems       → (nenhum — folha)
 ui            → (nenhum — folha)
 ```
 
 ## Índice por domínio
 
 ### `(raiz)` — `src/*.js`
-entry: `Principal.jsx` · usa: canvas, components, shared, systems
+entry: `Principal.jsx` · usa: shared, systems
 
-- `Principal.jsx` — casca e roteador de topo (landing → auth → criação → jogo).
-- `index.js` — (sem header)
-- `main.jsx` — (sem header)
-
-### `canvas` — `src/canvas/`
-entry: `CanvasGame.jsx` · usa: components, core, pcg, systems
-
-- `CanvasGame.jsx` — motor do RPG top-down (mapas de tiles, pathfinding, Character, diálogos).
-- `VikingsGame.jsx` — motor do platformer de puzzle estilo Lost Vikings (PlatformCharacter, TriggerSystem, PuzzleManager, PCG).
-- `dialog.test.jsx` _(test)_ — (sem header)
-- `maps.js` — (sem header)
-- `vikingLevels.js` — (sem header)
-
-### `components` — `src/components/`
-entry: `StepClass.jsx` · usa: lib, shared, systems
-
-- `AuthOverlay.jsx` — (sem header)
-- `CharacterCreation.jsx` — (sem header)
-- `CharacterLibrary.jsx` — (sem header)
-- `CharacterPreview.jsx` — (sem header)
-- `ClassModal.jsx` — (sem header)
-- `CombatRollerBG3.jsx` — (sem header)
-- `DNDCombatBlock.jsx` — (sem header)
-- `DNDSkillsBlock.jsx` — (sem header)
-- `DNDSpellsBlock.jsx` — (sem header)
-- `DeityModal.jsx` — (sem header)
-- `DiceRollerBG3.jsx` — (sem header)
-- `ErrorBoundary.jsx` — (sem header)
-- `GMPanel.jsx` — (sem header)
-- `GridCell.jsx` — (sem header)
-- `LandscapeWarning.jsx` — (sem header)
-- `LevelUpModal.jsx` — (sem header)
-- `Lobby.jsx` — (sem header)
-- `MonsterSheet.jsx` — (sem header)
-- `OfflineBanner.jsx` — (sem header)
-- `OriginModal.jsx` — (sem header)
-- `PDFCompendium.jsx` — (sem header)
-- `PDFExtractor.jsx` — (sem header)
-- `PDFViewer.jsx` — (sem header)
-- `PWAUpdateToast.jsx` — (sem header)
-- `PlaySheet.jsx` — (sem header)
-- `RaceModal.jsx` — (sem header)
-- `StepAllies.jsx` — (sem header)
-- `StepAttributes.jsx` — (sem header)
-- `StepClass.jsx` — (sem header)
-- `StepClassSpecialization.jsx` — (sem header)
-- `StepClassePericias.jsx` — (sem header)
-- `StepDeus.jsx` — (sem header)
-- `StepEquipment.jsx` — (sem header)
-- `StepHeritage.jsx` — (sem header)
-- `StepIdentity.jsx` — (sem header)
-- `StepIntPericias.jsx` — (sem header)
-- `StepLevel.jsx` — (sem header)
-- `StepOrigemBeneficios.jsx` — (sem header)
-- `StepOrigin.jsx` — (sem header)
-- `StepPowers.jsx` — (sem header)
-- `StepProgression.jsx` — (sem header)
-- `StepRace.jsx` — (sem header)
-- `StepReview.jsx` — (sem header)
-- `StepSpells.jsx` — (sem header)
-- `Token.jsx` — (sem header)
-- `TokenContextMenu.jsx` — (sem header)
-- `UserProfileModal.jsx` — (sem header)
-- `VttGrid.jsx` — (sem header)
-- `VttJournal.jsx` — (sem header)
-- `VttTabletop.jsx` — (sem header)
-- `exportCharacter.js` — (sem header)
-- `exportPDF.js` — (sem header)
-- `pdfUtils.js` — (sem header)
-- `prerequisites.js` — (sem header)
-- `useCharacterPersistence.js` — auto-save (localStorage, debounce 800ms) + CRUD do personagem no Supabase com fallback local.
-- `useCharacterStore.js` — estado do personagem em criação e jogo (Zustand).
-- `useCreationNavigation.js` — (sem header)
-- `useVttStore.js` — estado da mesa multiplayer (sala, jogadores, combate, grid, eventos).
-
-### `core` — `src/core/`
-entry: `particleSystem.js` · usa: canvas
-
-- `animationController.js` — (sem header)
-- `animationController.test.js` _(test)_ — (sem header)
-- `assetLoader.js` — (sem header)
-- `assetLoader.test.js` _(test)_ — (sem header)
-- `audioManager.js` — (sem header)
-- `character.js` — (sem header)
-- `character.test.js` _(test)_ — (sem header)
-- `dialogueManager.js` — (sem header)
-- `enemy.js` — (sem header)
-- `interactiveObject.js` — (sem header)
-- `particleSystem.js` — (sem header)
-- `particleSystem.test.js` _(test)_ — (sem header)
-- `pathfinding.js` — (sem header)
-- `physics.js` — Gravidade do herói (jogável, controlado por input) — ajustada para sensação 70Hz.
-- `platformCharacter.js` — (sem header)
-- `progression.js` — Meta-progressão local do modo Jornada Viking (PCG): recorde de nível + títulos desbloqueáveis.
-- `projectile.js` — (sem header)
-- `puzzleManager.js` — (sem header)
-- `spriteManager.js` — (sem header)
-- `spriteManager.test.js` _(test)_ — (sem header)
-- `tilemap.js` — (sem header)
-- `tilemap.test.js` _(test)_ — (sem header)
-- `triggerSystem.js` — (sem header)
+- `Principal.jsx` — app | Dono ÚNICO de: Principal.jsx Domínio/App: casca e roteador de topo (landing → auth → criação → jogo).
+- `index.js` — app | Dono ÚNICO de: index.js
+- `main.jsx` — app | Dono ÚNICO de: main.jsx
 
 ### `lib` — `src/lib/`
 entry: `supabase.js` · usa: —
 
-- `supabase.js` — client único do Supabase (browser).
+- `supabase.js` — app | Dono ÚNICO de: supabase.js Domínio/Infra: client único do Supabase (browser).
 
-### `pcg` — `src/pcg/`
-entry: `LevelGenerator.js` · usa: —
+### `modules` — `src/modules/`
+entry: `CharacterCreation.jsx` · usa: lib, shared, systems
 
-- `DependencyGraph.js` — (sem header)
-- `LevelGenerator.js` — fachada da geração procedural de níveis (design reverso).
-- `PuzzleElementLibrary.js` — (sem header)
-- `SpatialLayoutEngine.js` — (sem header)
-- `generateLevel.js` — (sem header)
-- `viking_asset_mapper.js` — (sem header)
-- `viking_dgg_implementation.js` — (sem header)
-- `viking_lsv_implementation.js` — (sem header)
-- `viking_pel_implementation.js` — (sem header)
-- `viking_sle_implementation.js` — (sem header)
+- `CharacterCreation.jsx` — character-creation | Dono ÚNICO de: CharacterCreation.jsx
+- `CharacterLibrary.jsx` — character-creation | Dono ÚNICO de: CharacterLibrary.jsx
+- `CharacterPreview.jsx` — character-creation | Dono ÚNICO de: CharacterPreview.jsx
+- `ClassModal.jsx` — character-creation | Dono ÚNICO de: ClassModal.jsx
+- `CombatRollerBG3.jsx` — character-creation | Dono ÚNICO de: CombatRollerBG3.jsx
+- `ConfirmBackModal.jsx` — character-creation | Dono ÚNICO de: ConfirmBackModal.jsx
+- `DND5ePlaySheet.jsx` — playsheet | Dono ÚNICO de: DND5ePlaySheet.jsx
+- `DNDCombatBlock.jsx` — playsheet | Dono ÚNICO de: DNDCombatBlock.jsx
+- `DNDSkillsBlock.jsx` — playsheet | Dono ÚNICO de: DNDSkillsBlock.jsx
+- `DNDSpellsBlock.jsx` — playsheet | Dono ÚNICO de: DNDSpellsBlock.jsx
+- `DeathSaveTracker.jsx` — playsheet | Dono ÚNICO de: DeathSaveTracker.jsx
+- `DeityModal.jsx` — character-creation | Dono ÚNICO de: DeityModal.jsx
+- `GMPanel.jsx` — vtt | Dono ÚNICO de: GMPanel.jsx
+- `GridCell.jsx` — vtt | Dono ÚNICO de: GridCell.jsx
+- `LevelUpModal.jsx` — character-creation | Dono ÚNICO de: LevelUpModal.jsx
+- `Lobby.jsx` — vtt | Dono ÚNICO de: Lobby.jsx
+- `MonsterSheet.jsx` — vtt | Dono ÚNICO de: MonsterSheet.jsx
+- `OriginModal.jsx` — character-creation | Dono ÚNICO de: OriginModal.jsx
+- `PDFCompendium.jsx` — compendium | Dono ÚNICO de: PDFCompendium.jsx
+- `PDFExtractor.jsx` — compendium | Dono ÚNICO de: PDFExtractor.jsx
+- `PDFViewer.jsx` — compendium | Dono ÚNICO de: PDFViewer.jsx
+- `PlaySheet.jsx` — playsheet | Dono ÚNICO de: PlaySheet.jsx
+- `RaceModal.jsx` — character-creation | Dono ÚNICO de: RaceModal.jsx
+- `SavingThrowsBlock.jsx` — playsheet | Dono ÚNICO de: SavingThrowsBlock.jsx
+- `SpellSlotTracker.jsx` — playsheet | Dono ÚNICO de: SpellSlotTracker.jsx
+- `StepAllies.jsx` — character-creation | Dono ÚNICO de: StepAllies.jsx
+- `StepAttributes.jsx` — character-creation | Dono ÚNICO de: StepAttributes.jsx
+- `StepClass.jsx` — character-creation | Dono ÚNICO de: StepClass.jsx
+- `StepClassSkills.jsx` — character-creation | Dono ÚNICO de: StepClassSkills.jsx
+- `StepClassSpecialization.jsx` — character-creation | Dono ÚNICO de: StepClassSpecialization.jsx
+- `StepDeity.jsx` — character-creation | Dono ÚNICO de: StepDeity.jsx
+- `StepEquipment.jsx` — character-creation | Dono ÚNICO de: StepEquipment.jsx
+- `StepHeritage.jsx` — character-creation | Dono ÚNICO de: StepHeritage.jsx
+- `StepIdentity.jsx` — character-creation | Dono ÚNICO de: StepIdentity.jsx
+- `StepIntSkills.jsx` — character-creation | Dono ÚNICO de: StepIntSkills.jsx
+- `StepLevel.jsx` — character-creation | Dono ÚNICO de: StepLevel.jsx
+- `StepOrigin.jsx` — character-creation | Dono ÚNICO de: StepOrigin.jsx
+- `StepOriginBenefits.jsx` — character-creation | Dono ÚNICO de: StepOriginBenefits.jsx
+- `StepPowers.jsx` — character-creation | Dono ÚNICO de: StepPowers.jsx
+- `StepProgression.jsx` — character-creation | Dono ÚNICO de: StepProgression.jsx
+- `StepRace.jsx` — character-creation | Dono ÚNICO de: StepRace.jsx
+- `StepReview.jsx` — character-creation | Dono ÚNICO de: StepReview.jsx
+- `StepSpells.jsx` — character-creation | Dono ÚNICO de: StepSpells.jsx
+- `Token.jsx` — vtt | Dono ÚNICO de: Token.jsx
+- `TokenContextMenu.jsx` — vtt | Dono ÚNICO de: TokenContextMenu.jsx
+- `VttGrid.jsx` — vtt | Dono ÚNICO de: VttGrid.jsx
+- `VttJournal.jsx` — vtt | Dono ÚNICO de: VttJournal.jsx
+- `VttTabletop.jsx` — vtt | Dono ÚNICO de: VttTabletop.jsx
+- `WizardContent.jsx` — character-creation | Dono ÚNICO de: WizardContent.jsx
+- `WizardSteps.jsx` — character-creation | Dono ÚNICO de: WizardSteps.jsx
+- `dnd5eSteps.js` — character-creation | Dono ÚNICO de: dnd5eSteps.js
+- `exportCharacter.js` — character-creation | Dono ÚNICO de: exportCharacter.js
+- `exportPDF.js` — character-creation | Dono ÚNICO de: exportPDF.js
+- `pdfUtils.js` — compendium | Dono ÚNICO de: pdfUtils.js
+- `prerequisites.js` — character-creation | Dono ÚNICO de: prerequisites.js
+- `registryUI.js` — character-creation | Dono ÚNICO de: registryUI.js
+- `t20Steps.js` — character-creation | Dono ÚNICO de: t20Steps.js
+- `useCharacterPersistence.js` — character-creation | Dono ÚNICO de: useCharacterPersistence.js Domínio/Persistência: auto-save (localStorage, debounce 800ms) + CRUD do personagem …
+- `useCharacterStore.js` — character-creation | Dono ÚNICO de: useCharacterStore.js Domínio/Estado: estado do personagem em criação e jogo (Zustand).
+- `useCreationNavigation.js` — character-creation | Dono ÚNICO de: useCreationNavigation.js
+- `useVttStore.js` — estado da mesa multiplayer (sala, jogadores, combate, grid, eventos).
 
 ### `scripts` — `src/scripts/`
 entry: `validate-data.js` · usa: systems
 
-- `validate-data.js` — Simple validator for data modules
+- `validate-data.js` — app | Dono ÚNICO de: validate-data.js Simple validator for data modules
 
 ### `shared` — `src/shared/`
 entry: `useAuthStore.js` · usa: lib
 
-- `dice.js` — (sem header)
-- `useAuthStore.js` — sessão de autenticação (Supabase).
-- `useOnlineStatus.js` — (sem header)
+- `AuthOverlay.jsx` — shared | Dono ÚNICO de: AuthOverlay.jsx
+- `DiceRollerBG3.jsx` — shared | Dono ÚNICO de: DiceRollerBG3.jsx
+- `ErrorBoundary.jsx` — shared | Dono ÚNICO de: ErrorBoundary.jsx
+- `LandscapeWarning.jsx` — shared | Dono ÚNICO de: LandscapeWarning.jsx
+- `OfflineBanner.jsx` — shared | Dono ÚNICO de: OfflineBanner.jsx
+- `PWAUpdateToast.jsx` — shared | Dono ÚNICO de: PWAUpdateToast.jsx
+- `UserProfileModal.jsx` — shared | Dono ÚNICO de: UserProfileModal.jsx
+- `dice.js` — shared | Dono ÚNICO de: dice.js
+- `useAuthStore.js` — shared | Dono ÚNICO de: useAuthStore.js Domínio/Auth: sessão de autenticação (Supabase).
+- `useOnlineStatus.js` — shared | Dono ÚNICO de: useOnlineStatus.js
 
 ### `systems` — `src/systems/`
-entry: `registry.js` · usa: components
+entry: `registry.js` · usa: —
 
-- `BonusRegistry.js` — (sem header)
-- `BonusRegistry.test.js` _(test)_ — (sem header)
-- `DND5ePlaySheet.jsx` — (sem header)
-- `DeathSaveTracker.jsx` — (sem header)
-- `ImpactHandlers.js` — (sem header)
-- `SavingThrowsBlock.jsx` — (sem header)
-- `SpellSlotTracker.jsx` — (sem header)
-- `SystemContext.jsx` — (sem header)
-- `attributes.js` — (sem header)
-- `characterStats.js` — dispatcher ÚNICO de cálculo de ficha.
-- `characterStats.test.js` _(test)_ — (sem header)
-- `classes.js` — (sem header)
-- `classes.js` — Tormenta20 - Classes (Livro Básico — dados exatos) periciasObrigatorias: automáticas (sem escolha) ou ['A', 'B'] = escolhe um periciasClasse: lista…
-- `computeStats.js` — (sem header)
-- `computeStats.js` — (sem header)
-- `conditionsAndBuffs.js` — (sem header)
-- `constants.js` — (sem header)
-- `dndCreation.test.js` _(test)_ — (sem header)
-- `feats.js` — (sem header)
-- `gods.js` — =================================== TORMENTA 20 - MÓDULO DE DIVINDADES ===================================
-- `index.js` — (sem header)
-- `index.js` — (sem header)
-- `index.js` — (sem header)
-- `index.js` — (sem header)
-- `index.js` — (sem header)
-- `index.js` — (sem header)
-- `index.js` — (sem header)
-- `initialState.js` — (sem header)
-- `initialState.js` — (sem header)
-- `items.js` — (sem header)
-- `items.js` — ============================================================================= ITENS — Tormenta20 (Tabelas 3-3, 3-4, 3-5 do Livro Básico) Dados extr…
-- `magicItems.js` — Tormenta20 - Itens Mágicos (Capítulo 8) Cada item ou encanto possui um campo 'impacto' para automação numérica.
-- `migrate.js` — (sem header)
-- `modificacoes.js` — Tormenta20 - Sistema de Melhorias e Materiais Especiais (Cap.
-- `monsters.js` — (sem header)
-- `navigation.js` — (sem header)
-- `navigation.js` — (sem header)
-- `navigation.js` — (sem header)
-- `origins.js` — (sem header)
-- `origins.js` — (sem header)
-- `parceiros.js` — Tormenta20 - Aliados e Parceiros (Livro Jogo do Ano)
-- `powers.js` — Tormenta20 - Poderes Gerais (Livro Jogo do Ano)
-- `races.js` — (sem header)
-- `races.js` — Tormenta20 - Raças (Livro Básico — dados exatos do livro) Atributos: o valor já É o modificador (ex: +2 significa +2 direto)
-- `registry.js` — registro central dos sistemas de RPG (T20, D&D 5e).
-- `resetRules.js` — (sem header)
-- `resetRules.js` — (sem header)
-- `selectors.js` — (sem header)
-- `skills.js` — (sem header)
-- `spellSlots.js` — (sem header)
-- `spells.js` — (sem header)
-- `spellsData.js` — =================================== TORMENTA 20 (Jogo do Ano) - MÓDULO DE MAGIAS (CURADO) ===================================
-- `utils.js` — (sem header)
-- `velox.js` — Velox The Vulpera — Personagem de Exemplo Moreau-Raposa, Guerreiro Nível 1 — Reinos de Moreania DLC Criado por Tomas / A Lenda do Reino
-- `vttConstants.js` — (sem header)
+- `BaseSystem.js` — systems | Dono ÚNICO de: BaseSystem.js
+- `BonusRegistry.js` — shared | Dono ÚNICO de: BonusRegistry.js
+- `BonusRegistry.test.js` _(test)_ — shared | Dono ÚNICO de: BonusRegistry.test.js
+- `ImpactHandlers.js` — systems | Dono ÚNICO de: ImpactHandlers.js
+- `SystemContext.jsx` — systems | Dono ÚNICO de: SystemContext.jsx
+- `attributes.js` — systems | Dono ÚNICO de: attributes.js
+- `characterStats.js` — systems | Dono ÚNICO de: characterStats.js Domínio/Regras: dispatcher ÚNICO de cálculo de ficha.
+- `characterStats.test.js` _(test)_ — systems | Dono ÚNICO de: characterStats.test.js
+- `classes.js` — systems | Dono ÚNICO de: classes.js
+- `classes.js` — systems | Dono ÚNICO de: classes.js Tormenta20 - Classes (Livro Básico — dados exatos) periciasObrigatorias: automáticas (sem escolha) ou ['A', 'B'…
+- `computeStats.js` — systems | Dono ÚNICO de: computeStats.js
+- `computeStats.js` — systems | Dono ÚNICO de: computeStats.js
+- `conditionsAndBuffs.js` — systems | Dono ÚNICO de: conditionsAndBuffs.js
+- `constants.js` — shared | Dono ÚNICO de: constants.js
+- `dndCreation.test.js` _(test)_ — systems | Dono ÚNICO de: dndCreation.test.js
+- `feats.js` — systems | Dono ÚNICO de: feats.js
+- `gods.js` — systems | Dono ÚNICO de: gods.js =================================== TORMENTA 20 - MÓDULO DE DIVINDADES ===================================
+- `index.js` — systems | Dono ÚNICO de: index.js
+- `index.js` — systems | Dono ÚNICO de: index.js
+- `index.js` — systems | Dono ÚNICO de: index.js
+- `index.js` — systems | Dono ÚNICO de: index.js
+- `index.js` — systems | Dono ÚNICO de: index.js
+- `items.js` — systems | Dono ÚNICO de: items.js
+- `items.js` — systems | Dono ÚNICO de: items.js ============================================================================= ITENS — Tormenta20 (Tabelas 3-3, 3-…
+- `magicItems.js` — systems | Dono ÚNICO de: magicItems.js Tormenta20 - Itens Mágicos (Capítulo 8) Cada item ou encanto possui um campo 'impacto' para automação numérica.
+- `migrate.js` — systems | Dono ÚNICO de: migrate.js
+- `modificacoes.js` — systems | Dono ÚNICO de: modificacoes.js Tormenta20 - Sistema de Melhorias e Materiais Especiais (Cap.
+- `monsters.js` — systems | Dono ÚNICO de: monsters.js
+- `navigation.js` — systems | Dono ÚNICO de: navigation.js
+- `navigation.js` — systems | Dono ÚNICO de: navigation.js
+- `navigation.js` — systems | Dono ÚNICO de: navigation.js
+- `origins.js` — systems | Dono ÚNICO de: origins.js
+- `origins.js` — systems | Dono ÚNICO de: origins.js
+- `parceiros.js` — systems | Dono ÚNICO de: parceiros.js Tormenta20 - Aliados e Parceiros (Livro Jogo do Ano)
+- `powers.js` — systems | Dono ÚNICO de: powers.js Tormenta20 - Poderes Gerais (Livro Jogo do Ano)
+- `races.js` — systems | Dono ÚNICO de: races.js
+- `races.js` — systems | Dono ÚNICO de: races.js Tormenta20 - Raças (Livro Básico — dados exatos do livro) Atributos: o valor já É o modificador (ex: +2 significa…
+- `registry.js` — systems | Dono ÚNICO de: registry.js Domínio/Sistemas: registro central dos sistemas de RPG (T20, D&D 5e).
+- `resetRules.js` — systems | Dono ÚNICO de: resetRules.js
+- `resetRules.js` — systems | Dono ÚNICO de: resetRules.js
+- `selectors.js` — systems | Dono ÚNICO de: selectors.js
+- `skills.js` — systems | Dono ÚNICO de: skills.js
+- `spellSlots.js` — systems | Dono ÚNICO de: spellSlots.js
+- `spells.js` — systems | Dono ÚNICO de: spells.js
+- `spellsData.js` — systems | Dono ÚNICO de: spellsData.js =================================== TORMENTA 20 (Jogo do Ano) - MÓDULO DE MAGIAS (CURADO) ==================…
+- `utils.js` — shared | Dono ÚNICO de: utils.js
+- `velox.js` — systems | Dono ÚNICO de: velox.js Velox The Vulpera — Personagem de Exemplo Moreau-Raposa, Guerreiro Nível 1 — Reinos de Moreania DLC Criado por To…
+- `vttConstants.js` — systems | Dono ÚNICO de: vttConstants.js
 
 ### `ui` — `src/ui/`
 entry: `index.js` · usa: —
 
-- `index.js` — (sem header)
+- `index.js` — app | Dono ÚNICO de: index.js

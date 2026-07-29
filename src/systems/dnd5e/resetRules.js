@@ -1,3 +1,4 @@
+// Domínio: systems | Dono ÚNICO de: resetRules.js
 export function getResetRules() {
   return {
     onRaceChange: (newChar) => {
